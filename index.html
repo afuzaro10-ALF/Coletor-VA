@@ -72,8 +72,8 @@
                 </div>
             </div>
 
-            <div class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
-                <span class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
+            <div id="cardCadastro" class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3 transition-colors duration-300">
+                <span id="txtStatusCadastro" class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
                 
                 <div class="grid grid-cols-1 gap-3">
                     <div>
@@ -132,6 +132,7 @@
         let baseProdutos = {};
         let usuarioLogado = "";
         let html5QrCodeScanner = null;
+        let produtoEncontrado = false; // Flag para controlar se o produto existe ou não
 
         function autenticar() {
             const usuario = document.getElementById("loginUsuario").value.trim();
@@ -186,28 +187,24 @@
                 .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
 
-        // --- SISTEMA DO SCANNER VIA CÂMERA ---
         function alternarCamera() {
             const container = document.getElementById('leitorCameraContainer');
             const txtBtn = document.getElementById('txtBtnCamera');
 
-            // Se a câmera já estiver rodando, desliga ela
             if (html5QrCodeScanner) {
                 desligarCamera();
                 return;
             }
 
-            // Exibe o container da câmera
             container.classList.remove('hidden');
             txtBtn.innerText = "Desligar";
 
             html5QrCodeScanner = new Html5Qrcode("reader");
             
-            // Configurações do leitor para focar em códigos de barras de produtos (EAN_13, EAN_8, etc.)
             const config = { 
                 fps: 15, 
                 qrbox: (width, height) => {
-                    return { width: width * 0.85, height: height * 0.45 }; // Formato retangular ideal para barras
+                    return { width: width * 0.85, height: height * 0.45 };
                 },
                 formatsToSupport: [ 
                     Html5QrcodeSupportedFormats.EAN_13, 
@@ -217,22 +214,18 @@
                 ]
             };
 
-            // Inicia usando a câmera traseira do celular ('environment')
             html5QrCodeScanner.start(
                 { facingMode: "environment" }, 
                 config, 
                 (decodedText) => {
-                    // Quando ler com sucesso:
                     document.getElementById('campoCodigo').value = decodedText;
                     buscarProduto(decodedText);
-                    desligarCamera(); // Fecha a câmera automaticamente após o bip
+                    desligarCamera();
                 },
-                (errorMessage) => {
-                    // Silencioso: Ignora erros de leitura enquanto foca
-                }
+                (errorMessage) => {}
             ).catch(err => {
-                console.error("Erro ao abrir câmera: ", err);
-                alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+                console.error(err);
+                alert("Não foi possível acessar a câmera. Verifique as permissões.");
                 desligarCamera();
             });
         }
@@ -269,9 +262,24 @@
 
         function buscarProduto(codigo) {
             codigo = codigo.trim();
+            
+            if (!codigo) {
+                resetarCamposCadastro();
+                return;
+            }
+
             const prod = baseProdutos[codigo];
+            const card = document.getElementById('cardCadastro');
+            const statusTxt = document.getElementById('txtStatusCadastro');
 
             if (prod) {
+                produtoEncontrado = true;
+                
+                // Restaura o estilo azul padrão
+                card.className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
+                statusTxt.innerText = "Dados do Cadastro Localizado";
+                statusTxt.className = "text-xs font-bold text-blue-500 uppercase tracking-wider block";
+
                 document.getElementById('txtItemEDescricao').value = prod.item + (prod.descricao ? " - " + prod.descricao : "");
                 document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
                 document.getElementById('txtFamilia').value = prod.familia;
@@ -284,19 +292,48 @@
                 
                 calcularTotalFinanceiro();
             } else {
-                document.getElementById('txtItemEDescricao').value = '';
-                document.getElementById('txtFornecedor').value = '';
-                document.getElementById('txtFamilia').value = '';
-                document.getElementById('txtCusto').value = '';
-                document.getElementById('txtTotalFinanceiro').value = '';
+                produtoEncontrado = false;
+                
+                // Altera o estilo do card para Alerta Vermelho
+                card.className = "p-4 bg-red-50 rounded-xl border border-red-200 space-y-3";
+                statusTxt.innerText = "⚠️ ATENÇÃO: Produto não encontrado no cadastro!";
+                statusTxt.className = "text-xs font-bold text-red-600 uppercase tracking-wider block";
+
+                document.getElementById('txtItemEDescricao').value = "PRODUTO NÃO CADASTRADO";
+                document.getElementById('txtFornecedor').value = "-";
+                document.getElementById('txtFamilia').value = "-";
+                document.getElementById('txtCusto').value = "0,00";
+                document.getElementById('txtTotalFinanceiro').value = "0,00";
+                
+                // Limpa datasets internos
+                document.getElementById('txtItemEDescricao').dataset.itemBruto = '';
+                document.getElementById('txtItemEDescricao').dataset.descricaoBruta = '';
+                document.getElementById('txtItemEDescricao').dataset.fornecedorReal = '';
+                document.getElementById('txtItemEDescricao').dataset.linhaReal = '';
             }
+        }
+
+        function resetarCamposCadastro() {
+            produtoEncontrado = false;
+            const card = document.getElementById('cardCadastro');
+            const statusTxt = document.getElementById('txtStatusCadastro');
+            
+            card.className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
+            statusTxt.innerText = "Dados do Cadastro Localizado";
+            statusTxt.className = "text-xs font-bold text-blue-500 uppercase tracking-wider block";
+
+            document.getElementById('txtItemEDescricao').value = '';
+            document.getElementById('txtFornecedor').value = '';
+            document.getElementById('txtFamilia').value = '';
+            document.getElementById('txtCusto').value = '';
+            document.getElementById('txtTotalFinanceiro').value = '';
         }
 
         function calcularTotalFinanceiro() {
             const custoTexto = document.getElementById('txtCusto').value;
             const qtd = parseInt(document.getElementById('campoQtd').value) || 0;
 
-            if (custoTexto) {
+            if (custoTexto && produtoEncontrado) {
                 const custoNum = parseFloat(custoTexto.replace('.', '').replace(',', '.'));
                 const total = custoNum * qtd;
                 document.getElementById('txtTotalFinanceiro').value = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
@@ -310,15 +347,8 @@
             const validadeInput = document.getElementById('campoValidade').value;
             const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
 
-            const item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
-            const descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
-            const fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
-            const linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
-            const familia = document.getElementById('txtFamilia').value;
-            const totalPerdaTexto = document.getElementById('txtTotalFinanceiro').value;
-
-            if (!codigo || !item) {
-                alert("Por favor, bipe um produto cadastrado.");
+            if (!codigo) {
+                alert("Por favor, insira ou bipe um código de barras.");
                 return;
             }
             if (quantidade <= 0) {
@@ -333,19 +363,34 @@
             const [ano, mes, dia] = validadeInput.split('-');
             const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
 
-            const params = new URLSearchParams({
+            // Objeto base de envio (Dados que SEMPRE vão, independente se há cadastro ou não)
+            let payload = {
                 loja: loja,
                 usuario: usuarioLogado,
                 codigoBarras: codigo,
                 validade: dataValidadeFormatada,
-                quantidade: quantidade,
-                item: item,
-                descricao: descricao,
-                fornecedor: fornecedor,
-                linha: linha,
-                familia: familia,
-                totalPerda: totalPerdaTexto
-            });
+                quantidade: quantidade
+            };
+
+            // Se o produto existir na listagem, injeta os dados adicionais do cadastro
+            if (produtoEncontrado) {
+                payload.item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
+                payload.descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
+                payload.fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
+                payload.linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
+                payload.familia = document.getElementById('txtFamilia').value;
+                payload.totalPerda = document.getElementById('txtTotalFinanceiro').value;
+            } else {
+                // Se NÃO existir, preenche o resto explicitamente vazio (ou com "Não Cadastrado")
+                payload.item = "NÃO CADASTRADO";
+                payload.descricao = "";
+                payload.fornecedor = "";
+                payload.linha = "";
+                payload.familia = "";
+                payload.totalPerda = "0,00";
+            }
+
+            const params = new URLSearchParams(payload);
 
             btn.disabled = true;
             btn.innerText = "⏳ Gravando na Planilha...";
@@ -359,7 +404,10 @@
                 body: params.toString()
             })
             .then(() => {
-                alert(`✅ Processamento Concluído!\nItem: ${item}`);
+                alert(produtoEncontrado 
+                    ? `✅ Coleta concluída com sucesso!\nItem: ${payload.item}` 
+                    : `⚠️ Registrado apenas dados básicos (Código: ${codigo}) pois o produto não está cadastrado.`
+                );
                 resetarFormulario();
             })
             .catch(err => {
