@@ -59,17 +59,15 @@
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras</label>
-                <div class="flex space-x-2">
-                    <input type="text" id="campoCodigo" onkeydown="verificarEnterScanner(event)" oninput="verificarTamanhoScanner(this.value)" placeholder="Digite ou use a câmera ao lado" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
-                    <button onclick="alternarCamera()" type="button" class="px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold flex items-center justify-center space-x-1 whitespace-nowrap shadow">
-                        📷 <span id="txtBtnCamera">Ligar Câmera</span>
-                    </button>
-                </div>
-                
-                <div id="leitorCameraContainer" class="hidden mt-3 p-2 bg-black rounded-xl overflow-hidden relative border border-gray-700 shadow-inner">
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Scanner de Código de Barras Ativo</label>
+                <div id="leitorCameraContainer" class="p-2 bg-black rounded-xl overflow-hidden relative border border-gray-700 shadow-inner">
                     <div id="reader" class="w-full"></div>
                 </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras (Digitado ou Escaneado)</label>
+                <input type="text" id="campoCodigo" onkeydown="verificarEnterScanner(event)" oninput="verificarTamanhoScanner(this.value)" placeholder="O scanner preencherá aqui automaticamente" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
             </div>
 
             <div id="cardCadastro" class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3 transition-colors duration-300">
@@ -132,7 +130,8 @@
         let baseProdutos = {};
         let usuarioLogado = "";
         let html5QrCodeScanner = null;
-        let produtoEncontrado = false; // Flag para controlar se o produto existe ou não
+        let produtoEncontrado = false;
+        let emPausaLeitura = false; // Evita bips repetidos seguidos no mesmo milissegundo
 
         function autenticar() {
             const usuario = document.getElementById("loginUsuario").value.trim();
@@ -143,9 +142,9 @@
                 document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
                 document.getElementById("secaoLogin").classList.add("hidden");
                 document.getElementById("secaoColetor").classList.remove("hidden");
-                document.getElementById('campoCodigo').focus();
                 
                 inicializarBaseCadastro();
+                ligarCameraAutomatica(); // Inicializa o scanner na hora
             } else {
                 alert("Usuário ou senha incorretos!");
             }
@@ -169,7 +168,7 @@
 
                     for (let i = 1; i < linhas.length; i++) {
                         if (!linhas[i].trim()) continue;
-                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+                        const colunas = líneas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
                         
                         const codigo = colunas[idxCod];
                         if (codigo) {
@@ -187,24 +186,14 @@
                 .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
 
-        function alternarCamera() {
-            const container = document.getElementById('leitorCameraContainer');
-            const txtBtn = document.getElementById('txtBtnCamera');
-
-            if (html5QrCodeScanner) {
-                desligarCamera();
-                return;
-            }
-
-            container.classList.remove('hidden');
-            txtBtn.innerText = "Desligar";
-
+        // --- INICIALIZAÇÃO AUTOMÁTICA DA CÂMERA ---
+        function ligarCameraAutomatica() {
             html5QrCodeScanner = new Html5Qrcode("reader");
             
             const config = { 
-                fps: 15, 
+                fps: 20, // Aumentado um pouco para leituras mais fluidas
                 qrbox: (width, height) => {
-                    return { width: width * 0.85, height: height * 0.45 };
+                    return { width: width * 0.85, height: height * 0.45 }; // Formato de mira retangular
                 },
                 formatsToSupport: [ 
                     Html5QrcodeSupportedFormats.EAN_13, 
@@ -218,32 +207,23 @@
                 { facingMode: "environment" }, 
                 config, 
                 (decodedText) => {
+                    // Se estiver no tempo de espera pós-bip, ignora novas leituras temporariamente
+                    if (emPausaLeitura) return;
+
+                    emPausaLeitura = true;
                     document.getElementById('campoCodigo').value = decodedText;
                     buscarProduto(decodedText);
-                    desligarCamera();
+                    
+                    // Cria uma pequena pausa de 2 segundos para o operador ver as info e digitar qtd/validade antes do próximo bip
+                    setTimeout(() => {
+                        emPausaLeitura = false;
+                    }, 2000);
                 },
                 (errorMessage) => {}
             ).catch(err => {
-                console.error(err);
-                alert("Não foi possível acessar a câmera. Verifique as permissões.");
-                desligarCamera();
+                console.error("Erro ao iniciar câmera automática:", err);
+                alert("Erro ao abrir a câmera de forma automática. Garanta o acesso HTTPS e dê permissões no navegador.");
             });
-        }
-
-        function desligarCamera() {
-            const container = document.getElementById('leitorCameraContainer');
-            const txtBtn = document.getElementById('txtBtnCamera');
-            
-            if (html5QrCodeScanner) {
-                html5QrCodeScanner.stop().then(() => {
-                    html5QrCodeScanner = null;
-                    container.classList.add('hidden');
-                    txtBtn.innerText = "Ligar Câmera";
-                }).catch(err => console.error(err));
-            } else {
-                container.classList.add('hidden');
-                txtBtn.innerText = "Ligar Câmera";
-            }
         }
 
         function verificarEnterScanner(event) {
@@ -275,7 +255,6 @@
             if (prod) {
                 produtoEncontrado = true;
                 
-                // Restaura o estilo azul padrão
                 card.className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
                 statusTxt.innerText = "Dados do Cadastro Localizado";
                 statusTxt.className = "text-xs font-bold text-blue-500 uppercase tracking-wider block";
@@ -294,7 +273,6 @@
             } else {
                 produtoEncontrado = false;
                 
-                // Altera o estilo do card para Alerta Vermelho
                 card.className = "p-4 bg-red-50 rounded-xl border border-red-200 space-y-3";
                 statusTxt.innerText = "⚠️ ATENÇÃO: Produto não encontrado no cadastro!";
                 statusTxt.className = "text-xs font-bold text-red-600 uppercase tracking-wider block";
@@ -305,7 +283,6 @@
                 document.getElementById('txtCusto').value = "0,00";
                 document.getElementById('txtTotalFinanceiro').value = "0,00";
                 
-                // Limpa datasets internos
                 document.getElementById('txtItemEDescricao').dataset.itemBruto = '';
                 document.getElementById('txtItemEDescricao').dataset.descricaoBruta = '';
                 document.getElementById('txtItemEDescricao').dataset.fornecedorReal = '';
@@ -363,7 +340,6 @@
             const [ano, mes, dia] = validadeInput.split('-');
             const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
 
-            // Objeto base de envio (Dados que SEMPRE vão, independente se há cadastro ou não)
             let payload = {
                 loja: loja,
                 usuario: usuarioLogado,
@@ -372,7 +348,6 @@
                 quantidade: quantidade
             };
 
-            // Se o produto existir na listagem, injeta os dados adicionais do cadastro
             if (produtoEncontrado) {
                 payload.item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
                 payload.descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
@@ -381,7 +356,6 @@
                 payload.familia = document.getElementById('txtFamilia').value;
                 payload.totalPerda = document.getElementById('txtTotalFinanceiro').value;
             } else {
-                // Se NÃO existir, preenche o resto explicitamente vazio (ou com "Não Cadastrado")
                 payload.item = "NÃO CADASTRADO";
                 payload.descricao = "";
                 payload.fornecedor = "";
@@ -425,7 +399,8 @@
             document.getElementById('campoQtd').value = '1';
             document.getElementById('campoValidade').value = '';
             buscarProduto('');
-            document.getElementById('campoCodigo').focus();
+            // Força a liberação da trava de bips para a próxima leitura
+            emPausaLeitura = false;
         }
     </script>
 </body>
