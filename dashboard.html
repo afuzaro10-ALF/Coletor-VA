@@ -1,1 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Controle - Validades</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        body { background-color: #f1f5f9; color: #1e293b; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .card-kpi { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .chart-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 350px; }
+    </style>
+</head>
+<body>
 
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0 text-primary fw-bold">📊 Painel de Controle de Validades</h1>
+            <div>
+                <button class="btn btn-secondary btn-sm me-2" onclick="window.location.href='index.html'">📱 Voltar ao Coletor</button>
+                <button class="btn btn-primary btn-sm" onclick="fetchData()">🔄 Atualizar Dados</button>
+            </div>
+        </div>
+
+        <div class="card card-kpi p-3 mb-4 bg-white">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small text-muted">Filtrar por Loja</label>
+                    <select id="filter-store" class="form-select" onchange="applyFilters()">
+                        <option value="ALL">Todas as Lojas</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card card-kpi bg-white p-4 border-start border-primary border-4">
+                    <div class="small text-muted fw-bold text-uppercase">Total de Itens Coletados</div>
+                    <div id="kpi-total-itens" class="h2 fw-bold mt-2">0</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-kpi bg-white p-4 border-start border-warning border-4">
+                    <div class="small text-muted fw-bold text-uppercase">Quantidade Total em Estoque</div>
+                    <div id="kpi-total-qtd" class="h2 fw-bold mt-2">0</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-kpi bg-white p-4 border-start border-success border-4">
+                    <div class="small text-muted fw-bold text-uppercase">Lojas Ativas no Período</div>
+                    <div id="kpi-lojas-ativas" class="h2 fw-bold mt-2">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="fw-bold mb-3 small text-muted text-uppercase">Volumetria de Coletas por Loja</h5>
+                    <canvas id="chart-lojas"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <h5 class="fw-bold mb-3 small text-muted text-uppercase">Cronograma de Vencimentos (Por Mês/Ano)</h5>
+                    <canvas id="chart-vencimentos"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-kpi bg-white p-4">
+            <h5 class="fw-bold mb-3 small text-muted text-uppercase">Últimos Itens Coletados</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Data Coleta</th>
+                            <th>Loja</th>
+                            <th>Operador</th>
+                            <th>Código de Barras</th>
+                            <th>Vencimento</th>
+                            <th>Qtd</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <tr><td colspan="6" class="text-center text-muted">Carregando dados em tempo real...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Link direto da API do Google Sheets
+        const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/export?format=csv&gid=0";
+
+        let rawRows = [];
+        let chartLojasInstance = null;
+        let chartVencInstance = null;
+
+        function getProp(obj, matches) {
+            for (let key in obj) {
+                let normalizedKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+                if (matches.includes(normalizedKey)) {
+                    return obj[key];
+                }
+            }
+            return "";
+        }
+
+        function formatDisplayDate(dateStr) {
+            if (!dateStr) return "-";
+            dateStr = dateStr.trim();
+            if (dateStr.includes('-') && dateStr.indexOf('-') === 4) {
+                const parts = dateStr.split('-');
+                return `${parts[2].substring(0,2)}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        }
+
+        function getMonthYearLabel(dateStr) {
+            if (!dateStr) return null;
+            dateStr = dateStr.trim();
+            if (dateStr.includes('-') && dateStr.indexOf('-') === 4) {
+                const parts = dateStr.split('-');
+                return `${parts[1]}/${parts[0]}`;
+            }
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if (parts.length >= 3) {
+                    return `${parts[1]}/${parts[2].substring(0,4)}`;
+                }
+            }
+            return null;
+        }
+
+        function fetchData() {
+            Papa.parse(SHEETS_CSV_URL + "&nocache=" + new Date().getTime(), {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    rawRows = results.data;
+                    populateStoreFilter();
+                    applyFilters();
+                },
+                error: function(err) {
+                    console.error(err);
+                    document.getElementById('table-body').innerHTML = `<tr><td colspan="6" class="text-center text-danger">Erro de conexão com o banco de dados online.</td></tr>`;
+                }
+            });
+        }
+
+        function populateStoreFilter() {
+            const select = document.getElementById('filter-store');
+            const currentVal = select.value;
+            const uniqueStores = [...new Set(rawRows.map(r => getProp(r, ['loja'])))].filter(Boolean).sort();
+            
+            select.innerHTML = '<option value="ALL">Todas as Lojas</option>';
+            uniqueStores.forEach(store => {
+                select.innerHTML += `<option value="${store}">${store}</option>`;
+            });
+            select.value = currentVal;
+        }
+
+        function applyFilters() {
+            const selectedStore = document.getElementById('filter-store').value;
+            const filteredData = rawRows.filter(row => {
+                let storeVal = getProp(row, ['loja']);
+                return selectedStore === "ALL" || storeVal === selectedStore;
+            });
+
+            updateKPIs(filteredData);
+            renderTable(filteredData);
+            renderCharts(filteredData);
+        }
+
+        function updateKPIs(data) {
+            document.getElementById('kpi-total-itens').innerText = data.length;
+            const totalQtd = data.reduce((sum, row) => sum + (parseInt(getProp(row, ['quantidade', 'qtd'])) || 0), 0);
+            document.getElementById('kpi-total-qtd').innerText = totalQtd;
+            const uniqueStores = [...new Set(data.map(r => getProp(r, ['loja'])))].filter(Boolean).length;
+            document.getElementById('kpi-lojas-ativas').innerText = uniqueStores;
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = "";
+            const displayData = [...data].reverse().slice(0, 15);
+
+            if(displayData.length === 0 || (displayData.length === 1 && !getProp(displayData[0], ['loja']))) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
+                return;
+            }
+
+            displayData.forEach(row => {
+                if(!getProp(row, ['loja'])) return;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${formatDisplayDate(getProp(row, ['datacoleta', 'data'])) || '-'}</td>
+                        <td><span class="badge bg-secondary">${getProp(row, ['loja']) || '-'}</span></td>
+                        <td>${getProp(row, ['usuario', 'operador']) || '-'}</td>
+                        <td class="font-monospace">${getProp(row, ['codigobarras', 'codigo']) || '-'}</td>
+                        <td class="text-danger fw-bold">${formatDisplayDate(getProp(row, ['validade', 'vencimento'])) || '-'}</td>
+                        <td>${getProp(row, ['quantidade', 'qtd']) || '0'}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderCharts(data) {
+            const storeCounts = {};
+            data.forEach(r => { 
+                let loja = getProp(r, ['loja']);
+                if(loja) storeCounts[loja] = (storeCounts[loja] || 0) + 1; 
+            });
+
+            const vencCounts = {};
+            data.forEach(r => {
+                const val = getProp(r, ['validade', 'vencimento']);
+                const mesAno = getMonthYearLabel(val);
+                if(mesAno) {
+                    let qtd = parseInt(getProp(r, ['quantidade', 'qtd'])) || 1;
+                    vencCounts[mesAno] = (vencCounts[mesAno] || 0) + qtd;
+                }
+            });
+
+            const sortedVencKeys = Object.keys(vencCounts).sort((a, b) => {
+                const ad = a.split('/'), bd = b.split('/');
+                return new Date(ad[1], ad[0]-1) - new Date(bd[1], bd[0]-1);
+            });
+
+            if(chartLojasInstance) chartLojasInstance.destroy();
+            if(chartVencInstance) chartVencInstance.destroy();
+
+            chartLojasInstance = new Chart(document.getElementById('chart-lojas'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(storeCounts),
+                    datasets: [{
+                        label: 'Registros Feitos',
+                        data: Object.values(storeCounts),
+                        backgroundColor: '#2563eb',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            chartVencInstance = new Chart(document.getElementById('chart-vencimentos'), {
+                type: 'line',
+                data: {
+                    labels: sortedVencKeys,
+                    datasets: [{
+                        label: 'Quantidade de Itens a Vencer',
+                        data: sortedVencKeys.map(k => vencCounts[k]),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
