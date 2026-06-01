@@ -53,3 +53,312 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Previsão de Perda: Próximos 6 Meses (R$)</h3>
+                    <p class="text-xs text-gray-400 mb-4">Baseado na data atual de vencimento dos produtos</p>
+                    <div class="relative h-72"><canvas id="chartProjecao6Meses"></canvas></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Desempenho por Loja: Qtd vs Prejuízo (R$)</h3>
+                    <p class="text-xs text-gray-400 mb-4">Visão comparativa de volume e custo por filial</p>
+                    <div class="relative h-72"><canvas id="chartLojaDetalhado"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Perda Financeira por Fornecedor (Top Maiores)</h3>
+                    <p class="text-xs text-gray-400 mb-4">Concentração de valores de quebra por fabricante</p>
+                    <div class="relative h-80"><canvas id="chartFornecedor"></canvas></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Nova URL de busca atualizada fornecida pelo usuário
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDt1XKb1ETsY7rxFzFHzSAcjxaL_cK1O8cC9l_aq3JCrqU8Walf_pVsuraoCxgfQQgXi2N8JEw2L0t/pub?gid=402499064&single=true&output=csv";
+        
+        let dadosGlobais = [];
+        let chartProjecaoInstance = null;
+        let chartLojaInstance = null;
+        let chartFornecedorInstance = null;
+
+        window.onload = function() {
+            carregarDados();
+        };
+
+        function carregarDados() {
+            document.getElementById("txtAtualizado").innerText = "🔄 Carregando dados da planilha...";
+            fetch(CSV_URL)
+                .then(response => response.text())
+                .then(textoCsv => {
+                    processarCsv(textoCsv);
+                    const agora = new Date();
+                    document.getElementById("txtAtualizado").innerText = `Atualizado em: ${agora.toLocaleTimeString('pt-BR')}`;
+                })
+                .catch(err => {
+                    console.error("Erro ao carregar os dados:", err);
+                    document.getElementById("txtAtualizado").innerText = "❌ Erro ao sincronizar.";
+                    alert("Não foi possível carregar os dados publicados da planilha. Verifique a publicação da Web.");
+                });
+        }
+
+        function processarCsv(texto) {
+            const linhas = texto.split(/\r?\n/);
+            if (linhas.length < 2) return;
+
+            // Mapeia os cabeçalhos em minúsculo e limpa espaços/aspas
+            const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+            
+            // Localiza os índices de forma dinâmica inteligente pelas colunas reais do ecossistema
+            const idxLoja = cabecalho.findIndex(c => c.includes('loja'));
+            const idxQtd = cabecalho.findIndex(c => c.includes('quantidade') || c.includes('qtd'));
+            const idxVal = cabecalho.findIndex(c => c.includes('validade') || c.includes('venc'));
+            const idxForn = cabecalho.findIndex(c => c.includes('fornecedor') || c.includes('fabricante'));
+            const idxPerda = cabecalho.findIndex(c => c.includes('perda') || c.includes('totalperda') || c.includes('custo'));
+
+            dadosGlobais = [];
+            const lojasSet = new Set();
+
+            for (let i = 1; i < linhas.length; i++) {
+                if (!linhas[i].trim()) continue;
+                
+                // Regex para quebrar colunas por vírgula mas respeitar valores monetários gravados entre aspas
+                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+                
+                let loja = idxLoja !== -1 ? colunas[idxLoja] : 'Não Informado';
+                let qtd = idxQtd !== -1 ? parseInt(colunas[idxQtd]) || 0 : 0;
+                let validade = idxVal !== -1 ? colunas[idxVal] : '';
+                let fornecedor = idxForn !== -1 && colunas[idxForn] ? colunas[idxForn] : 'NÃO CADASTRADO';
+                
+                // Tratamento numérico seguro do valor financeiro (Removendo pontos e ajustando vírgula decimal)
+                let perdaTexto = idxPerda !== -1 ? colunas[idxPerda] : '0';
+                let perda = parseFloat(perdaTexto.replace(/\./g, '').replace(',', '.')) || 0;
+
+                if (loja && loja !== 'Não Informado') {
+                    dadosGlobais.push({ loja, qtd, validade, fornecedor, perda });
+                    lojasSet.add(loja);
+                }
+            }
+
+            // Popula seletor de lojas na interface
+            const select = document.getElementById("filtroLoja");
+            select.innerHTML = '<option value="Todos">Todas as Lojas</option>';
+            Array.from(lojasSet).sort().forEach(loja => {
+                const opt = document.createElement("option");
+                opt.value = loja;
+                opt.textContent = loja;
+                select.appendChild(opt);
+            });
+
+            filtrarDados();
+        }
+
+        function filtrarDados() {
+            const lojaSelecionada = document.getElementById("filtroLoja").value;
+            
+            const dadosFiltrados = dadosGlobais.filter(d => {
+                return lojaSelecionada === "Todos" || d.loja === lojaSelecionada;
+            });
+
+            // Atualização dos Cards Superiores Dinâmicos
+            document.getElementById("cardTotalItens").textContent = dadosFiltrados.length;
+            
+            const totalQtd = dadosFiltrados.reduce((acc, curr) => acc + curr.qtd, 0);
+            document.getElementById("cardTotalEstoque").textContent = totalQtd.toLocaleString('pt-BR');
+
+            const totalFinanceiro = dadosFiltrados.reduce((acc, curr) => acc + curr.perda, 0);
+            document.getElementById("cardTotalValor").textContent = totalFinanceiro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            const lojasAtivas = new Set(dadosFiltrados.map(d => d.loja)).size;
+            document.getElementById("cardLojasAtivas").textContent = lojasAtivas;
+
+            renderizarGraficosVisoes(dadosFiltrados);
+        }
+
+        function renderizarGraficosVisoes(dados) {
+            
+            // --- VISÃO 1: PROJEÇÃO PRÓXIMOS 6 MESES POR TOTAL PERDA ---
+            const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const listaProxima = {};
+            
+            // Monta vetor fixo dos próximos 6 meses sequenciais baseados na data corrente
+            const hoje = new Date();
+            for (let k = 0; k < 6; k++) {
+                let dFutura = new Date(hoje.getFullYear(), hoje.getMonth() + k, 1);
+                let chaveMesAno = `${String(dFutura.getMonth() + 1).padStart(2, '0')}/${dFutura.getFullYear()}`;
+                listaProxima[chaveMesAno] = 0;
+            }
+
+            dados.forEach(d => {
+                if (d.validade) {
+                    let partes = [];
+                    if (d.validade.includes('/')) partes = d.validade.split('/');
+                    else if (d.validade.includes('-')) partes = d.validade.split('-').reverse(); // AAAA-MM-DD para DD/MM/AAAA
+
+                    if (partes.length >= 3) {
+                        const mVal = partes[1];
+                        const aVal = partes[2].substring(0, 4);
+                        const chave = `${mVal.padStart(2, '0')}/${aVal}`;
+                        
+                        // Se fizer parte dos próximos 6 meses mapeados, acumula o valor financeiro da perda
+                        if (listaProxima[chave] !== undefined) {
+                            listaProxima[chave] += d.perda;
+                        }
+                    }
+                }
+            });
+
+            const labelsProjecao = Object.keys(listaProxima).map(c => {
+                let [m, a] = c.split('/');
+                return `${mesesNomes[parseInt(m) - 1]}/${a.substring(2)}`;
+            });
+            const valoresProjecao = Object.values(listaProxima);
+
+
+            // --- VISÃO 2: COLETADO POR LOJA, QUANTIDADE E VALOR ---
+            const agrupadoLoja = {};
+            dados.forEach(d => {
+                if (!agrupadoLoja[d.loja]) {
+                    agrupadoLoja[d.loja] = { qtd: 0, valor: 0 };
+                }
+                agrupadoLoja[d.loja].qtd += d.qtd;
+                agrupadoLoja[d.loja].valor += d.perda;
+            });
+
+            const labelsLojas = Object.keys(agrupadoLoja);
+            const qtdsLojas = labelsLojas.map(l => agrupadoLoja[l].qtd);
+            const valoresLojas = labelsLojas.map(l => agrupadoLoja[l].valor);
+
+
+            // --- VISÃO 3: POR FORNECEDOR ---
+            const agrupadoForn = {};
+            dados.forEach(d => {
+                agrupadoForn[d.fornecedor] = (agrupadoForn[d.fornecedor] || 0) + d.perda;
+            });
+
+            // Ordena decrescente por prejuízo e pega os top 7 maiores
+            const fornecedoresOrdenados = Object.entries(agrupadoForn)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 7);
+
+            const labelsFornecedores = fornecedoresOrdenados.map(f => f[0]);
+            const valoresFornecedores = fornecedoresOrdenados.map(f => f[1]);
+
+
+            // --- PROCESSAMENTO FINAL DE RENDERIZAÇÃO NO CHART.JS ---
+            if (chartProjecaoInstance) chartProjecaoInstance.destroy();
+            if (chartLojaInstance) chartLojaInstance.destroy();
+            if (chartFornecedorInstance) chartFornecedorInstance.destroy();
+
+            // Render Gráfico 1: Linha de Projeção Financeira
+            const ctxProj = document.getElementById('chartProjecao6Meses').getContext('2d');
+            chartProjecaoInstance = new Chart(ctxProj, {
+                type: 'line',
+                data: {
+                    labels: labelsProjecao,
+                    datasets: [{
+                        label: 'Prejuízo Previsto',
+                        data: valoresProjecao,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#d97706'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' Perda: ' + context.raw.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Render Gráfico 2: Combo Barras de Quantidade vs Valor por Loja
+            const ctxLoja = document.getElementById('chartLojaDetalhado').getContext('2d');
+            chartLojaInstance = new Chart(ctxLoja, {
+                type: 'bar',
+                data: {
+                    labels: labelsLojas,
+                    datasets: [
+                        {
+                            label: 'Qtd Itens',
+                            data: qtdsLojas,
+                            backgroundColor: '#3b82f6',
+                            yAxisID: 'yQtd',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Valor Perda (R$)',
+                            data: valoresLojas,
+                            backgroundColor: '#ef4444',
+                            yAxisID: 'yValor',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        yQtd: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Unidades Físicas' }
+                        },
+                        yValor: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Custo Financeiro (R$)' },
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR'); }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Render Gráfico 3: Barras Horizontais por Fornecedor
+            const ctxForn = document.getElementById('chartFornecedor').getContext('2d');
+            chartFornecedorInstance = new Chart(ctxForn, {
+                type: 'bar',
+                data: {
+                    labels: labelsFornecedores,
+                    datasets: [{
+                        label: 'Total Perda Acumulada',
+                        data: valoresFornecedores,
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' Custo total: ' + context.raw.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
