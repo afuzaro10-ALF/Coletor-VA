@@ -1,65 +1,294 @@
-function salvarColeta() {
-    const btn = document.getElementById('btnSalvar');
-    const loja = document.getElementById('campoLoja').value;
-    const codigo = document.getElementById('campoCodigo').value.trim();
-    const validadeInput = document.getElementById('campoValidade').value;
-    const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coletor de Validades Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans antialiased text-gray-800 p-4 sm:p-6 flex items-center justify-center min-h-screen">
 
-    const item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
-    const descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
-    const fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
-    const linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
-    const familia = document.getElementById('txtFamilia').value;
-    const totalPerdaTexto = document.getElementById('txtTotalFinanceiro').value;
+    <!-- SEÇÃO DE LOGIN -->
+    <div id="secaoLogin" class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden p-6 space-y-6">
+        <div class="text-center">
+            <span class="text-4xl">🔒</span>
+            <h2 class="text-2xl font-black text-blue-600 mt-2">Acesso Restrito</h2>
+            <p class="text-sm text-gray-400 mt-1">Identifique-se para utilizar o coletor</p>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Usuário</label>
+                <input type="text" id="loginUsuario" placeholder="Digite seu usuário" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Senha</label>
+                <input type="password" id="loginSenha" placeholder="••••••••" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
+            </div>
+            <button onclick="autenticar()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md mt-2">Entrar no Sistema</button>
+        </div>
+    </div>
 
-    if (!codigo || !item) {
-        alert("Por favor, bipe um produto cadastrado.");
-        return;
-    }
-    if (quantidade <= 0) {
-        alert("Insira uma quantidade válida.");
-        return;
-    }
-    if (!validadeInput) {
-        alert("Selecione a data de validade.");
-        return;
-    }
+    <!-- SEÇÃO DO COLETOR -->
+    <div id="secaoColetor" class="w-full max-w-2xl bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hidden">
+        <div class="bg-blue-600 p-5 text-white flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold">Coletor de Validades</h1>
+                <p class="text-xs text-blue-100 mt-1">Mapeamento com busca de produto e custo financeiro</p>
+            </div>
+            <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
+        </div>
 
-    const [ano, mes, dia] = validadeInput.split('-');
-    const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
+        <div class="p-6 space-y-4">
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Loja</label>
+                <select id="campoLoja" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                    <option value="Barra">Barra</option>
+                    <option value="Barra Free">Barra Free</option>
+                    <option value="Botafogo">Botafogo</option>
+                    <option value="Caxias">Caxias</option>
+                    <option value="Copacabana">Copacabana</option>
+                    <option value="Ipanema">Ipanema</option>
+                    <option value="Itaipu">Itaipu</option>
+                    <option value="Jd Botanico">Jd Botanico</option>
+                    <option value="Maricá">Maricá</option>
+                    <option value="Niteroi">Niteroi</option>
+                    <option value="Recreio">Recreio</option>
+                    <option value="CD">CD</option>
+                </select>
+            </div>
 
-    // Montando a URL final com os parâmetros anexados para evitar bloqueio de CORS do Google
-    const params = new URLSearchParams({
-        loja: loja,
-        usuario: usuarioLogado,
-        codigoBarras: codigo,
-        validade: dataValidadeFormatada,
-        quantidade: quantidade,
-        item: item,
-        descricao: descricao,
-        fornecedor: fornecedor,
-        linha: linha,
-        familia: familia,
-        totalPerda: totalPerdaTexto
-    });
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras (Bipe aqui)</label>
+                <input type="text" id="campoCodigo" oninput="buscarProduto(this.value)" placeholder="Escaneie ou digite o código" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
+            </div>
 
-    btn.disabled = true;
-    btn.innerText = "⏳ Gravando na Planilha...";
+            <div class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
+                <span class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
+                
+                <div class="grid grid-cols-1 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-500">Item / Descrição</label>
+                        <input type="text" id="txtItemEDescricao" readonly placeholder="Aguardando bip..." class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
+                    </div>
+                </div>
 
-    // Enviando via GET (com parâmetros na URL) que é o método mais estável para o Apps Script sem CORS
-    fetch(`${WEB_APP_URL}?${params.toString()}`, {
-        method: "GET"
-    })
-    .then(response => {
-        alert(`✅ Processamento Concluído!\nItem: ${item}`);
-        resetarFormulario();
-    })
-    .catch(err => {
-        console.error(err);
-        alert("❌ Erro ao enviar os dados. Verifique a URL do script.");
-    })
-    .finally(() => {
-        btn.disabled = false;
-        btn.innerText = "💾 Salvar Coleta";
-    });
-}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs text-gray-500">Fornecedor / Fabricante</label>
+                        <input type="text" id="txtFornecedor" readonly placeholder="Aguardando bip..." class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Família</label>
+                        <input type="text" id="txtFamilia" readonly placeholder="..." class="w-full bg-transparent border-b border-gray-300 py-1 text-sm focus:outline-none text-gray-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs text-gray-500">Custo Unitário (R$)</label>
+                        <input type="text" id="txtCusto" readonly placeholder="0,00" class="w-full bg-transparent border-b border-gray-300 py-1 font-bold text-sm focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Total Perda Estimada (R$)</label>
+                        <input type="text" id="txtTotalFinanceiro" readonly placeholder="0,00" class="w-full bg-transparent border-b border-gray-300 py-1 font-black text-sm focus:outline-none text-emerald-600">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Quantidade</label>
+                    <input type="number" id="campoQtd" value="1" min="1" oninput="calcularTotalFinanceiro()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Data de Vencimento</label>
+                    <input type="date" id="campoValidade" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button id="btnSalvar" onclick="salvarColeta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center space-x-2">
+                    <span>💾 Salvar Coleta</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 💾 URL para leitura dos dados cadastrados
+        const CADASTRO_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Cadastro";
+        
+        // 🔗 ATENÇÃO: Substitua pelo link gerado na nova implantação do seu Google Apps Script
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
+        
+        let baseProdutos = {};
+        let usuarioLogado = "";
+
+        function autenticar() {
+            const usuario = document.getElementById("loginUsuario").value.trim();
+            const senha = document.getElementById("loginSenha").value.trim();
+
+            if (usuario === "admin" && senha === "123") {
+                usuarioLogado = usuario;
+                document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
+                document.getElementById("secaoLogin").classList.add("hidden");
+                document.getElementById("secaoColetor").classList.remove("hidden");
+                document.getElementById('campoCodigo').focus();
+                
+                inicializarBaseCadastro();
+            } else {
+                alert("Usuário ou senha incorretos!");
+            }
+        }
+
+        function inicializarBaseCadastro() {
+            fetch(CADASTRO_URL)
+                .then(response => response.text())
+                .then(text => {
+                    const linhas = text.split(/\r?\n/);
+                    if (linhas.length < 2) return;
+
+                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+                    const idxCod = cabecalho.indexOf('codigo');
+                    const idxItem = cabecalho.indexOf('item');
+                    const idxDesc = cabecalho.indexOf('descricao');
+                    const idxForn = cabecalho.indexOf('fornecedor');
+                    const idxLinha = cabecalho.indexOf('linha');
+                    const idxFam = cabecalho.indexOf('familia');
+                    const idxCusto = cabecalho.indexOf('custo');
+
+                    for (let i = 1; i < linhas.length; i++) {
+                        if (!linhas[i].trim()) continue;
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+                        
+                        const codigo = colunas[idxCod];
+                        if (codigo) {
+                            baseProdutos[codigo] = {
+                                item: colunas[idxItem] || '',
+                                descricao: colunas[idxDesc] || '',
+                                fornecedor: colunas[idxForn] || '',
+                                linha: colunas[idxLinha] || '',
+                                familia: colunas[idxFam] || '',
+                                custo: parseFloat(colunas[idxCusto].replace(',', '.')) || 0
+                            };
+                        }
+                    }
+                })
+                .catch(err => console.error("Erro ao ler aba Cadastro:", err));
+        }
+
+        function buscarProduto(codigo) {
+            codigo = codigo.trim();
+            const prod = baseProdutos[codigo];
+
+            if (prod) {
+                document.getElementById('txtItemEDescricao').value = prod.item + (prod.descricao ? " - " + prod.descricao : "");
+                document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
+                document.getElementById('txtFamilia').value = prod.familia;
+                document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                
+                document.getElementById('txtItemEDescricao').dataset.itemBruto = prod.item;
+                document.getElementById('txtItemEDescricao').dataset.descricaoBruta = prod.descricao;
+                document.getElementById('txtItemEDescricao').dataset.fornecedorReal = prod.fornecedor;
+                document.getElementById('txtItemEDescricao').dataset.linhaReal = prod.linha;
+                
+                calcularTotalFinanceiro();
+            } else {
+                document.getElementById('txtItemEDescricao').value = '';
+                document.getElementById('txtFornecedor').value = '';
+                document.getElementById('txtFamilia').value = '';
+                document.getElementById('txtCusto').value = '';
+                document.getElementById('txtTotalFinanceiro').value = '';
+            }
+        }
+
+        function calcularTotalFinanceiro() {
+            const custoTexto = document.getElementById('txtCusto').value;
+            const qtd = parseInt(document.getElementById('campoQtd').value) || 0;
+
+            if (custoTexto) {
+                const custoNum = parseFloat(custoTexto.replace('.', '').replace(',', '.'));
+                const total = custoNum * qtd;
+                document.getElementById('txtTotalFinanceiro').value = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            }
+        }
+
+        function salvarColeta() {
+            const btn = document.getElementById('btnSalvar');
+            const loja = document.getElementById('campoLoja').value;
+            const codigo = document.getElementById('campoCodigo').value.trim();
+            const validadeInput = document.getElementById('campoValidade').value;
+            const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
+
+            const item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
+            const descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
+            const fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
+            const linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
+            const familia = document.getElementById('txtFamilia').value;
+            const totalPerdaTexto = document.getElementById('txtTotalFinanceiro').value;
+
+            if (!codigo || !item) {
+                alert("Por favor, bipe um produto cadastrado.");
+                return;
+            }
+            if (quantidade <= 0) {
+                alert("Insira uma quantidade válida.");
+                return;
+            }
+            if (!validadeInput) {
+                alert("Selecione a data de validade.");
+                return;
+            }
+
+            const [ano, mes, dia] = validadeInput.split('-');
+            const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
+
+            // Parâmetros estruturados anexados diretamente na URL para evitar erros de CORS no Google
+            const params = new URLSearchParams({
+                loja: loja,
+                usuario: usuarioLogado,
+                codigoBarras: codigo,
+                validade: dataValidadeFormatada,
+                quantidade: quantidade,
+                item: item,
+                descricao: descricao,
+                fornecedor: fornecedor,
+                linha: linha,
+                familia: familia,
+                totalPerda: totalPerdaTexto
+            });
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Gravando na Planilha...";
+
+            // Requisição GET direta, a mais segura para integrações simples com Planilhas Google
+            fetch(`${WEB_APP_URL}?${params.toString()}`, {
+                method: "GET"
+            })
+            .then(() => {
+                alert(`✅ Processamento Concluído!\nItem: ${item}`);
+                resetarFormulario();
+            })
+            .catch(err => {
+                console.error(err);
+                alert("❌ Erro ao enviar os dados. Verifique a URL ou permissões do script.");
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerText = "💾 Salvar Coleta";
+            });
+        }
+
+        function resetarFormulario() {
+            document.getElementById('campoCodigo').value = '';
+            document.getElementById('campoQtd').value = '1';
+            document.getElementById('campoValidade').value = '';
+            buscarProduto('');
+            document.getElementById('campoCodigo').focus();
+        }
+    </script>
+</body>
+</html>
