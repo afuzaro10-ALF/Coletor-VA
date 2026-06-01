@@ -121,7 +121,7 @@
         // 💾 URL para leitura dos dados cadastrados
         const CADASTRO_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Cadastro";
         
-        // 🔗 ATENÇÃO: Substitua pelo link gerado na nova implantação do seu Google Apps Script
+        // 🔗 URL de envio para a sua planilha do Google
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
         
         let baseProdutos = {};
@@ -246,7 +246,7 @@
             const [ano, mes, dia] = validadeInput.split('-');
             const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
 
-            // Parâmetros estruturados anexados diretamente na URL para evitar erros de CORS no Google
+            // Parâmetros estruturados para envio via POST (Evita conflitos de CORS do navegador)
             const params = new URLSearchParams({
                 loja: loja,
                 usuario: usuarioLogado,
@@ -264,9 +264,14 @@
             btn.disabled = true;
             btn.innerText = "⏳ Gravando na Planilha...";
 
-            // Requisição GET direta, a mais segura para integrações simples com Planilhas Google
-            fetch(`${WEB_APP_URL}?${params.toString()}`, {
-                method: "GET"
+            // Requisição POST em modo 'no-cors' - força a entrega dos dados sem bloqueio do navegador
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: params.toString()
             })
             .then(() => {
                 alert(`✅ Processamento Concluído!\nItem: ${item}`);
@@ -274,7 +279,7 @@
             })
             .catch(err => {
                 console.error(err);
-                alert("❌ Erro ao enviar os dados. Verifique a URL ou permissões do script.");
+                alert("❌ Erro de conexão.");
             })
             .finally(() => {
                 btn.disabled = false;
