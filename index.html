@@ -6,10 +6,29 @@
     <title>Coletor de Validades Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 font-sans antialiased text-gray-800 p-4 sm:p-6">
+<body class="bg-gray-100 font-sans antialiased text-gray-800 p-4 sm:p-6 flex items-center justify-center min-h-screen">
 
-    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
-        <!-- Cabeçalho -->
+    <div id="secaoLogin" class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden p-6 space-y-6">
+        <div class="text-center">
+            <span class="text-4xl">🔒</span>
+            <h2 class="text-2xl font-black text-blue-600 mt-2">Acesso Restrito</h2>
+            <p class="text-sm text-gray-400 mt-1">Identifique-se para utilizar o coletor</p>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Usuário</label>
+                <input type="text" id="loginUsuario" placeholder="Digite seu usuário" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Senha</label>
+                <input type="password" id="loginSenha" placeholder="••••••••" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
+            </div>
+            <button onclick="autenticar()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md mt-2">Entrar no Sistema</button>
+        </div>
+    </div>
+
+    <div id="secaoColetor" class="w-full max-w-2xl bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hidden">
         <div class="bg-blue-600 p-5 text-white flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold">Coletor de Validades</h1>
@@ -18,10 +37,8 @@
             <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
         </div>
 
-        <!-- Formulário -->
         <div class="p-6 space-y-4">
             
-            <!-- Loja -->
             <div>
                 <label class="block text-sm font-semibold text-gray-600 mb-1">Loja</label>
                 <select id="campoLoja" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
@@ -32,13 +49,11 @@
                 </select>
             </div>
 
-            <!-- Código de Barras -->
             <div>
                 <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras (Bipe aqui)</label>
                 <input type="text" id="campoCodigo" oninput="buscarProduto(this.value)" placeholder="Escaneie ou digite o código" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
             </div>
 
-            <!-- Dados preenchidos automaticamente da base personalizada -->
             <div class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
                 <span class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro</span>
                 
@@ -69,7 +84,6 @@
                 </div>
             </div>
 
-            <!-- Dados da Coleta Manual -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Quantidade</label>
@@ -81,7 +95,6 @@
                 </div>
             </div>
 
-            <!-- Botão Salvar -->
             <div class="pt-2">
                 <button onclick="salvarColeta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md">💾 Salvar Coleta</button>
             </div>
@@ -90,21 +103,39 @@
     </div>
 
     <script>
-        // Endpoint do Google Sheets mirando dinamicamente na aba "Cadastro"
         const CADASTRO_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Cadastro";
-        
         let baseProdutos = {};
 
-        // Carrega a base assim que o app inicia
-        window.onload = function() {
+        // Função de Autenticação Básica
+        function autenticar() {
+            const usuario = document.getElementById("loginUsuario").value.trim();
+            const senha = document.getElementById("loginSenha").value.trim();
+
+            if (usuario === "admin" && senha === "123") {
+                // Altera o layout removendo a centralização do login
+                document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
+                // Esconde a tela de login e exibe o coletor
+                document.getElementById("secaoLogin").classList.add("hidden");
+                document.getElementById("secaoColetor").classList.remove("hidden");
+                
+                // Dá foco imediato no campo de código de barras para agilizar o bipe
+                document.getElementById('campoCodigo').focus();
+                
+                // Carrega a base de dados em background
+                inicializarBase();
+            } else {
+                alert("Usuário ou senha incorretos!");
+            }
+        }
+
+        function inicializarBase() {
             fetch(CADASTRO_URL)
                 .then(response => response.text())
                 .then(text => {
                     const linhas = text.split(/\r?\n/);
                     if (linhas.length < 2) return;
 
-                    // Mapeamento dinâmico baseado nos cabeçalhos exatos informados
-                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+                    const cabecalho = lines[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
                     const idxCod = cabecalho.indexOf('codigo');
                     const idxItem = cabecalho.indexOf('item');
                     const idxForn = cabecalho.indexOf('fornecedor');
@@ -118,7 +149,6 @@
                         
                         const codigo = colunas[idxCod];
                         if (codigo) {
-                            // Concatena fornecedor e linha para uma visualização limpa na tela
                             const fornecedorCompleto = (colunas[idxForn] || '') + (colunas[idxLinha] ? ' - ' + colunas[idxLinha] : '');
                             
                             baseProdutos[codigo] = {
@@ -129,12 +159,10 @@
                             };
                         }
                     }
-                    console.log("Base remapeada com sucesso!");
                 })
                 .catch(err => console.error("Erro na leitura da aba Cadastro:", err));
-        };
+        }
 
-        // Mecanismo de busca instantânea pelo código de barras
         function buscarProduto(codigo) {
             codigo = codigo.trim();
             const prod = baseProdutos[codigo];
@@ -146,7 +174,6 @@
                 document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 calcularTotalFinanceiro();
             } else {
-                // Reseta os campos se o código não for encontrado
                 document.getElementById('txtItem').value = '';
                 document.getElementById('txtFornecedor').value = '';
                 document.getElementById('txtFamilia').value = '';
@@ -167,10 +194,7 @@
         }
 
         function salvarColeta() {
-            // Integração com o seu script de envio atual
             alert("Coleta processada! Produto: " + document.getElementById('txtItem').value);
-            
-            // Limpa o formulário para o próximo produto do processo
             document.getElementById('campoCodigo').value = '';
             buscarProduto('');
             document.getElementById('campoCodigo').focus();
