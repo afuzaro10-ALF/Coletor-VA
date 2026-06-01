@@ -168,7 +168,6 @@
                             };
                         }
                     }
-                    console.log("Base de cadastros indexada com sucesso.");
                 })
                 .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
@@ -245,7 +244,7 @@
                 usuario: usuarioLogado,
                 codigoBarras: codigo,
                 validade: dataValidadeFormatada,
-                quantidade: quantity = quantidade,
+                quantidade: quantidade,
                 item: item,
                 descricao: descricao,
                 fornecedor: fornecedor,
@@ -254,11 +253,14 @@
                 totalPerda: totalPerdaTexto
             };
 
-            console.log("Dados prontos enviados para gravação: ", payloadColeta);
-            
-            alert(`Sucesso! Gravando dados de Coleta:\nItem: ${payloadColeta.item}\nDescrição: ${payloadColeta.descricao}\nTotal Perda: R$ ${payloadColeta.totalPerda}`);
-
-            resetarFormulario();
+            // INTEGRAÇÃO NATIVA COM O SEU FORMULÁRIO DE ENVIO DA PLANILHA
+            if (typeof enviarParaPlanilhaAtiva === "function") {
+                enviarParaPlanilhaAtiva(payloadColeta);
+            } else {
+                console.log("Dados estruturados prontos para a API: ", payloadColeta);
+                alert(`Sucesso local!\nItem: ${payloadColeta.item}\nPerda: R$ ${payloadColeta.totalPerda}`);
+                resetarFormulario();
+            }
         }
 
         function resetarFormulario() {
