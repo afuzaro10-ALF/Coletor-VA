@@ -118,7 +118,7 @@
     <script>
         const CADASTRO_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Cadastro";
         
-        // 🔴 INSIRA SUA URL DO GOOGLE APPS SCRIPT GERADA NO PASSO 1 AQUI DENTRO:
+        // 🔗 Sua URL de Execução do Apps Script
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
         
         let baseProdutos = {};
@@ -243,38 +243,36 @@
             const [ano, mes, dia] = validadeInput.split('-');
             const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
 
-            const payloadColeta = {
-                loja: loja,
-                usuario: usuarioLogado,
-                codigoBarras: codigo,
-                validade: dataValidadeFormatada,
-                quantidade: quantidade, // Enviado de forma correta e limpa
-                item: item,
-                descricao: descricao,
-                fornecedor: fornecedor,
-                linha: linha,
-                familia: familia,
-                totalPerda: totalPerdaTexto
-            };
+            // Mudança crucial: formatando como URLSearchParams em vez de JSON stringifiedizado
+            const formData = new URLSearchParams();
+            formData.append('loja', loja);
+            formData.append('usuario', usuarioLogado);
+            formData.append('codigoBarras', codigo);
+            formData.append('validade', dataValidadeFormatada);
+            formData.append('quantidade', quantidade);
+            formData.append('item', item);
+            formData.append('descricao', descricao);
+            formData.append('fornecedor', fornecedor);
+            formData.append('linha', linha);
+            formData.append('familia', familia);
+            formData.append('totalPerda', totalPerdaTexto);
 
-            // Trava o botão para evitar cliques duplicados
             btn.disabled = true;
             btn.innerText = "⏳ Gravando na Planilha...";
 
-            // DISPARO EFETIVO VIA POST PARA O APPS SCRIPT
             fetch(WEB_APP_URL, {
                 method: "POST",
-                mode: "no-cors", // Garante o envio sem problemas de CORS entre domínios
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payloadColeta)
+                mode: "no-cors", 
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: formData.toString()
             })
             .then(() => {
-                alert(`✅ Coleta Salva com Sucesso!\nItem: ${payloadColeta.item}\nDescrição: ${payloadColeta.descricao}`);
+                alert(`✅ Coleta Enviada!\nItem: ${item}\nDescrição: ${descricao}`);
                 resetarFormulario();
             })
             .catch(err => {
                 console.error(err);
-                alert("❌ Falha na conexão de rede. Verifique seu sinal.");
+                alert("❌ Erro ao tentar se conectar ao servidor.");
             })
             .finally(() => {
                 btn.disabled = false;
