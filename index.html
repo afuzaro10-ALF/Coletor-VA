@@ -75,4 +75,216 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div>
                         <label class="block text-xs text-gray-500">Fornecedor / Fabricante</label>
-                        <input type="text" id="txtFornecedor" readonly placeholder="Aguardando bip..." class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline
+                        <input type="text" id="txtFornecedor" readonly placeholder="Aguardando bip..." class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Família</label>
+                        <input type="text" id="txtFamilia" readonly placeholder="..." class="w-full bg-transparent border-b border-gray-300 py-1 text-sm focus:outline-none text-gray-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs text-gray-500">Custo Unitário (R$)</label>
+                        <input type="text" id="txtCusto" readonly placeholder="0,00" class="w-full bg-transparent border-b border-gray-300 py-1 font-bold text-sm focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Total Perda Estimada (R$)</label>
+                        <input type="text" id="txtTotalFinanceiro" readonly placeholder="0,00" class="w-full bg-transparent border-b border-gray-300 py-1 font-black text-sm focus:outline-none text-emerald-600">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Quantidade</label>
+                    <input type="number" id="campoQtd" value="1" min="1" oninput="calcularTotalFinanceiro()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Data de Vencimento</label>
+                    <input type="date" id="campoValidade" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button id="btnSalvar" onclick="salvarColeta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center space-x-2">
+                    <span>💾 Salvar Coleta</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const CADASTRO_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Cadastro";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
+        
+        let baseProdutos = {};
+        let usuarioLogado = "";
+
+        function autenticar() {
+            const usuario = document.getElementById("loginUsuario").value.trim();
+            const senha = document.getElementById("loginSenha").value.trim();
+
+            if (usuario === "admin" && senha === "123") {
+                usuarioLogado = usuario;
+                document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
+                document.getElementById("secaoLogin").classList.add("hidden");
+                document.getElementById("secaoColetor").classList.remove("hidden");
+                document.getElementById('campoCodigo').focus();
+                
+                inicializarBaseCadastro();
+            } else {
+                alert("Usuário ou senha incorretos!");
+            }
+        }
+
+        function inicializarBaseCadastro() {
+            fetch(CADASTRO_URL)
+                .then(response => response.text())
+                .then(text => {
+                    const linhas = text.split(/\r?\n/);
+                    if (linhas.length < 2) return;
+
+                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+                    const idxCod = cabecalho.indexOf('codigo');
+                    const idxItem = cabecalho.indexOf('item');
+                    const idxDesc = cabecalho.indexOf('descricao');
+                    const idxForn = cabecalho.indexOf('fornecedor');
+                    const idxLinha = cabecalho.indexOf('linha');
+                    const idxFam = cabecalho.indexOf('familia');
+                    const idxCusto = cabecalho.indexOf('custo');
+
+                    for (let i = 1; i < linhas.length; i++) {
+                        if (!linhas[i].trim()) continue;
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+                        
+                        const codigo = colunas[idxCod];
+                        if (codigo) {
+                            baseProdutos[codigo] = {
+                                item: colunas[idxItem] || '',
+                                descricao: colunas[idxDesc] || '',
+                                fornecedor: colunas[idxForn] || '',
+                                linha: colunas[idxLinha] || '',
+                                familia: colunas[idxFam] || '',
+                                custo: parseFloat(colunas[idxCusto].replace(',', '.')) || 0
+                            };
+                        }
+                    }
+                })
+                .catch(err => console.error("Erro ao ler aba Cadastro:", err));
+        }
+
+        function buscarProduto(codigo) {
+            codigo = codigo.trim();
+            const prod = baseProdutos[codigo];
+
+            if (prod) {
+                document.getElementById('txtItemEDescricao').value = prod.item + (prod.descricao ? " - " + prod.descricao : "");
+                document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
+                document.getElementById('txtFamilia').value = prod.familia;
+                document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                
+                document.getElementById('txtItemEDescricao').dataset.itemBruto = prod.item;
+                document.getElementById('txtItemEDescricao').dataset.descricaoBruta = prod.descricao;
+                document.getElementById('txtItemEDescricao').dataset.fornecedorReal = prod.fornecedor;
+                document.getElementById('txtItemEDescricao').dataset.linhaReal = prod.linha;
+                
+                calcularTotalFinanceiro();
+            } else {
+                document.getElementById('txtItemEDescricao').value = '';
+                document.getElementById('txtFornecedor').value = '';
+                document.getElementById('txtFamilia').value = '';
+                document.getElementById('txtCusto').value = '';
+                document.getElementById('txtTotalFinanceiro').value = '';
+            }
+        }
+
+        function calcularTotalFinanceiro() {
+            const custoTexto = document.getElementById('txtCusto').value;
+            const qtd = parseInt(document.getElementById('campoQtd').value) || 0;
+
+            if (custoTexto) {
+                const custoNum = parseFloat(custoTexto.replace('.', '').replace(',', '.'));
+                const total = custoNum * qtd;
+                document.getElementById('txtTotalFinanceiro').value = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            }
+        }
+
+        function salvarColeta() {
+            const btn = document.getElementById('btnSalvar');
+            const loja = document.getElementById('campoLoja').value;
+            const codigo = document.getElementById('campoCodigo').value.trim();
+            const validadeInput = document.getElementById('campoValidade').value;
+            const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
+
+            const item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
+            const descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
+            const fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
+            const linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
+            const familia = document.getElementById('txtFamilia').value;
+            const totalPerdaTexto = document.getElementById('txtTotalFinanceiro').value;
+
+            if (!codigo || !item) {
+                alert("Por favor, bipe um produto cadastrado.");
+                return;
+            }
+            if (quantidade <= 0) {
+                alert("Insira uma quantidade válida.");
+                return;
+            }
+            if (!validadeInput) {
+                alert("Selecione a data de validade.");
+                return;
+            }
+
+            const [ano, mes, dia] = validadeInput.split('-');
+            const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
+
+            const params = new URLSearchParams({
+                loja: loja,
+                usuario: usuarioLogado,
+                codigoBarras: codigo,
+                validade: dataValidadeFormatada,
+                quantidade: quantidade,
+                item: item,
+                descricao: descricao,
+                fornecedor: fornecedor,
+                linha: linha,
+                familia: familia,
+                totalPerda: totalPerdaTexto
+            });
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Gravando na Planilha...";
+
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: params.toString()
+            })
+            .then(() => {
+                alert(`✅ Processamento Concluído!\nItem: ${item}`);
+                resetarFormulario();
+            })
+            .catch(err => {
+                console.error(err);
+                alert("❌ Erro crítico de rede.");
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerText = "💾 Salvar Coleta";
+            });
+        }
+
+        function resetarFormulario() {
+            document.getElementById('campoCodigo').value = '';
+            document.getElementById('campoQtd').value = '1';
+            document.getElementById('campoValidade').value = '';
+            buscarProduto('');
+            document.getElementById('campoCodigo').focus();
+        }
+    </script>
+</body>
+</html>
