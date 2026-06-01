@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coletor de Validade</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            background: var(--surface);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--primary);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #64748b;
+        }
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+
+        #reader {
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .logout-lnk {
+            color: #ef4444;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .status-msg {
+            text-align: center;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 6px;
+            display: none;
+            font-weight: 600;
+        }
+        .success { background-color: #bbf7d0; color: #166534; }
+        .error { background-color: #fecaca; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div id="screen-login" class="screen active">
+            <h2>Acesso ao Coletor</h2>
+            <div class="form-group">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" placeholder="Digite seu usuário">
+            </div>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" placeholder="Digite sua senha">
+            </div>
+            <button onclick="handleLogin()">Entrar</button>
+            <div id="login-error" class="status-msg error">Usuário ou senha incorretos!</div>
+        </div>
+
+        <div id="screen-store" class="screen">
+            <div class="nav-header">
+                <span id="user-display"></span>
+                <a href="#" class="logout-lnk" onclick="handleLogout()">Sair</a>
+            </div>
+            <h2>Identificação</h2>
+            <div class="form-group">
+                <label for="store-select">Selecione a Loja</label>
+                <select id="store-select">
+                    <option value="">-- Escolha uma filial --</option>
+                    <option value="Barra">Barra</option>
+                    <option value="Barra Free">Barra Free</option>
+                    <option value="Botafogo">Botafogo</option>
+                    <option value="Copacabana">Copacabana</option>
+                    <option value="Frei Caneca">Frei Caneca</option>
+                    <option value="Ipanema">Ipanema</option>
+                    <option value="Itaipu">Itaipu</option>
+                    <option value="Jd Botanico">Jd Botanico</option>
+                    <option value="Maricá">Maricá</option>
+                    <option value="Recreio">Recreio</option>
+                </select>
+            </div>
+            <button onclick="confirmStore()">Avançar para Coleta</button>
+            
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0 10px 0;">
+            
+            <button class="btn-secondary" style="background-color: #10b981; margin-top: 0;" onclick="window.location.href='dashboard.html'">📊 Visualizar Dashboard</button>
+        </div>
+
+        <div id="screen-scan" class="screen">
+            <div class="nav-header">
+                <span id="store-display" style="font-weight: bold;"></span>
+                <a href="#" class="logout-lnk" onclick="changeStore()">Trocar Loja</a>
+            </div>
+            <h2>Escanear Item</h2>
+            
+            <div id="reader"></div>
+            
+            <div class="form-group">
+                <label for="barcode-manual">Código de Barras (Manual)</label>
+                <input type="number" id="barcode-manual" placeholder="Digite ou escaneie o código">
+            </div>
+            <button onclick="goToForm()">Avançar Manualmente</button>
+            
+            <button class="btn-secondary" style="background-color: #ef4444; margin-top: 15px;" onclick="handleLogout()">Finalizar Coleta / Sair</button>
+            
+            <div id="save-success" class="status-msg success">Item salvo com sucesso!</div>
+        </div>
+
+        <div id="screen-form" class="screen">
+            <h2>Dados do Item</h2>
+            <div class="form-group">
+                <label for="captured-barcode">Código do Item</label>
+                <input type="text" id="captured-barcode" readonly style="background-color: #f1f5f9;">
+            </div>
+            <div class="form-group">
+                <label for="expiry-date">Data de Validade</label>
+                <input type="date" id="expiry-date" required>
+            </div>
+            <div class="form-group">
+                <label for="quantity">Quantidade</label>
+                <input type="number" id="quantity" value="1" min="1" required>
+            </div>
+            <button onclick="saveData()">Salvar e Próximo</button>
+            <button class="btn-secondary" onclick="backToScan()">Cancelar</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Configurações Globais
+        let currentStore = "";
+        let currentUser = "";
+        let html5QrcodeScanner = null;
+
+        // Navegação entre telas
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (screenId === 'screen-scan') {
+                startScanner();
+            } else {
+                stopScanner();
+            }
+        }
+
+        // 1. Controle de Login
+        function handleLogin() {
+            const userIn = document.getElementById('username').value;
+            const passIn = document.getElementById('password').value;
+            const errorMsg = document.getElementById('login-error');
+
+            if(userIn.toLowerCase() === 'admin' && passIn === '123') {
+                currentUser = userIn;
+                errorMsg.style.display = 'none';
+                document.getElementById('user-display').innerText = `Olá, ${currentUser}`;
+                showScreen('screen-store');
+            } else {
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        function handleLogout() {
+            currentUser = "";
+            currentStore = "";
+            document.getElementById('username').value = "";
+            document.getElementById('password').value = "";
+            document.getElementById('store-select').value = "";
+            showScreen('screen-login');
+        }
+
+        // 2. Seleção de Loja
+        function confirmStore() {
+            const select = document.getElementById('store-select');
+            if(!select.value) {
+                alert("Por favor, selecione uma loja para continuar.");
+                return;
+            }
+            currentStore = select.value;
+            document.getElementById('store-display').innerText = `Loja: ${currentStore}`;
+            showScreen('screen-scan');
+        }
+
+        // Se voltar para trocar de loja, o botão do painel reaparece como opção
+        function changeStore() {
+            showScreen('screen-store');
+        }
+
+        // 3. Controle do Scanner
+        function startScanner() {
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5Qrcode("reader");
+            }
+            
+            const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                config,
+                onScanSuccess
+            ).catch(err => {
+                console.log("Aviso: Câmera indisponível. Use a entrada manual se estiver em ambiente local.");
+            });
+        }
+
+        function stopScanner() {
+            if (html5QrcodeScanner && html5QrcodeScanner.isScanning) {
+                html5QrcodeScanner.stop().then(() => {
+                    console.log("Scanner parado.");
+                }).catch(err => console.error(err));
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            document.getElementById('captured-barcode').value = decodedText;
+            showScreen('screen-form');
+        }
+
+        // Preenchimento manual
+        function goToForm() {
+            const manualBarcode = document.getElementById('barcode-manual').value;
+            if(!manualBarcode) {
+                alert("Escaneie ou digite um código de barras.");
+                return;
+            }
+            document.getElementById('captured-barcode').value = manualBarcode;
+            showScreen('screen-form');
+        }
+
+        function backToScan() {
+            document.getElementById('barcode-manual').value = "";
+            showScreen('screen-scan');
+        }
+
+        // 4. Armazenamento e Envio de Dados
+        function saveData() {
+            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec"; 
+
+            const barcode = document.getElementById('captured-barcode').value;
+            const expiryInput = document.getElementById('expiry-date').value;
+            const quantity = document.getElementById('quantity').value;
+
+            if(!expiryInput || !quantity) {
+                alert("Por favor, preencha todos os campos!");
+                return;
+            }
+
+            const parts = expiryInput.split('-');
+            const formattedExpiry = `${parts[2]}/${parts[1]}/${parts[0]}`;
+
+            const timestamp = new Date().toLocaleString('pt-BR');
+
+            const newItem = {
+                loja: currentStore,
+                usuario: currentUser,
+                codigoBarras: barcode,
+                validade: formattedExpiry,
+                qtd: quantity,
+                dataColeta: timestamp
+            };
+
+            let dataset = JSON.parse(localStorage.getItem('coletas_validade')) || [];
+            dataset.push(newItem);
+            localStorage.setItem('coletas_validade', JSON.stringify(dataset));
+
+            if (SCRIPT_URL) {
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newItem)
+                })
+                .then(() => console.log("Dados enviados para o Sheets."))
+                .catch(err => console.error("Erro Sheets:", err));
+            }
+
+            const successAlert = document.getElementById('save-success');
+            successAlert.style.display = 'block';
+            setTimeout(() => successAlert.style.display = 'none', 2000);
+
+            document.getElementById('barcode-manual').value = "";
+            document.getElementById('expiry-date').value = "";
+            document.getElementById('quantity').value = "1";
+            
+            showScreen('screen-scan');
+        }
+    </script>
+</body>
+</html>
