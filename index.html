@@ -8,7 +8,6 @@
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800 p-4 sm:p-6 flex items-center justify-center min-h-screen">
 
-    <!-- SEÇÃO 1: TELA DE LOGIN -->
     <div id="secaoLogin" class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden p-6 space-y-6">
         <div class="text-center">
             <span class="text-4xl">🔒</span>
@@ -29,9 +28,7 @@
         </div>
     </div>
 
-    <!-- SEÇÃO 2: TELA DO COLETOR -->
     <div id="secaoColetor" class="w-full max-w-2xl bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hidden">
-        <!-- Cabeçalho -->
         <div class="bg-blue-600 p-5 text-white flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold">Coletor de Validades</h1>
@@ -40,29 +37,31 @@
             <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
         </div>
 
-        <!-- Formulário -->
         <div class="p-6 space-y-4">
             
-            <!-- Loja -->
             <div>
                 <label class="block text-sm font-semibold text-gray-600 mb-1">Loja</label>
                 <select id="campoLoja" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                     <option value="Barra">Barra</option>
+                    <option value="Barra Free">Barra Free</option>
                     <option value="Botafogo">Botafogo</option>
-                    <option value="Ipanema">Ipanema</option>
-                    <option value="Recreio">Recreio</option>
-                    <option value="Frei Caneca">Frei Caneca</option>
+                    <option value="Caxias">Caxias</option>
                     <option value="Copacabana">Copacabana</option>
+                    <option value="Ipanema">Ipanema</option>
+                    <option value="Itaipu">Itaipu</option>
+                    <option value="Jd Botanico">Jd Botanico</option>
+                    <option value="Maricá">Maricá</option>
+                    <option value="Niteroi">Niteroi</option>
+                    <option value="Recreio">Recreio</option>
+                    <option value="CD">CD</option>
                 </select>
             </div>
 
-            <!-- Código de Barras -->
             <div>
                 <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras (Bipe aqui)</label>
                 <input type="text" id="campoCodigo" oninput="buscarProduto(this.value)" placeholder="Escaneie ou digite o código" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
             </div>
 
-            <!-- Dados do Cadastro carregados em tempo real (CORRIGIDO) -->
             <div class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
                 <span class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
                 
@@ -96,184 +95,10 @@
                 </div>
             </div>
 
-            <!-- Dados da Coleta Operacional -->
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Quantidade</label>
                     <input type="number" id="campoQtd" value="1" min="1" oninput="calcularTotalFinanceiro()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-600 mb-1">Data de Vencimento</label>
-                    <input type="date" id="campoValidade" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
-                </div>
-            </div>
-
-            <!-- Botão Salvar -->
-            <div class="pt-2">
-                <button onclick="salvarColeta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md">💾 Salvar Coleta</button>
-            </div>
-
-        </div>
-    </div>
-
-    <script>
-        const CADASTRO_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Cadastro";
-        
-        let baseProdutos = {};
-        let usuarioLogado = "";
-
-        function autenticar() {
-            const usuario = document.getElementById("loginUsuario").value.trim();
-            const senha = document.getElementById("loginSenha").value.trim();
-
-            if (usuario === "admin" && senha === "123") {
-                usuarioLogado = usuario;
-                document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
-                document.getElementById("secaoLogin").classList.add("hidden");
-                document.getElementById("secaoColetor").classList.remove("hidden");
-                document.getElementById('campoCodigo').focus();
-                
-                inicializarBaseCadastro();
-            } else {
-                alert("Usuário ou senha incorretos!");
-            }
-        }
-
-        function inicializarBaseCadastro() {
-            fetch(CADASTRO_URL)
-                .then(response => response.text())
-                .then(text => {
-                    const linhas = text.split(/\r?\n/);
-                    if (linhas.length < 2) return;
-
-                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
-                    const idxCod = cabecalho.indexOf('codigo');
-                    const idxItem = cabecalho.indexOf('item');
-                    const idxDesc = cabecalho.indexOf('descricao');
-                    const idxForn = cabecalho.indexOf('fornecedor');
-                    const idxLinha = cabecalho.indexOf('linha');
-                    const idxFam = cabecalho.indexOf('familia');
-                    const idxCusto = cabecalho.indexOf('custo');
-
-                    for (let i = 1; i < linhas.length; i++) {
-                        if (!linhas[i].trim()) continue;
-                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
-                        
-                        const codigo = colunas[idxCod];
-                        if (codigo) {
-                            baseProdutos[codigo] = {
-                                item: colunas[idxItem] || '',
-                                descricao: colunas[idxDesc] || '',
-                                fornecedor: colunas[idxForn] || '',
-                                linha: colunas[idxLinha] || '',
-                                familia: colunas[idxFam] || '',
-                                custo: parseFloat(colunas[idxCusto].replace(',', '.')) || 0
-                            };
-                        }
-                    }
-                    console.log("Base de cadastros indexada com sucesso.");
-                })
-                .catch(err => console.error("Erro ao ler aba Cadastro:", err));
-        }
-
-        function buscarProduto(codigo) {
-            codigo = codigo.trim();
-            const prod = baseProdutos[codigo];
-
-            if (prod) {
-                // Junta Item e Descrição em uma única linha visual confortável
-                document.getElementById('txtItemEDescricao').value = prod.item + (prod.descricao ? " - " + prod.descricao : "");
-                document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
-                document.getElementById('txtFamilia').value = prod.familia;
-                document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-                
-                // Preserva os dados separados de forma isolada nos metadados (para enviar limpo pra planilha)
-                document.getElementById('txtItemEDescricao').dataset.itemBruto = prod.item;
-                document.getElementById('txtItemEDescricao').dataset.descricaoBruta = prod.descricao;
-                document.getElementById('txtItemEDescricao').dataset.fornecedorReal = prod.fornecedor;
-                document.getElementById('txtItemEDescricao').dataset.linhaReal = prod.linha;
-                
-                calcularTotalFinanceiro();
-            } else {
-                document.getElementById('txtItemEDescricao').value = '';
-                document.getElementById('txtFornecedor').value = '';
-                document.getElementById('txtFamilia').value = '';
-                document.getElementById('txtCusto').value = '';
-                document.getElementById('txtTotalFinanceiro').value = '';
-            }
-        }
-
-        function calcularTotalFinanceiro() {
-            const custoTexto = document.getElementById('txtCusto').value;
-            const qtd = parseInt(document.getElementById('campoQtd').value) || 0;
-
-            if (custoTexto) {
-                const custoNum = parseFloat(custoTexto.replace('.', '').replace(',', '.'));
-                const total = custoNum * qtd;
-                document.getElementById('txtTotalFinanceiro').value = total.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            }
-        }
-
-        function salvarColeta() {
-            const dataAtual = new Date().toLocaleDateString('pt-BR');
-            const loja = document.getElementById('campoLoja').value;
-            const codigo = document.getElementById('campoCodigo').value.trim();
-            const validadeInput = document.getElementById('campoValidade').value;
-            const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
-
-            // Extrai os valores originais e limpos direto dos metadados salvos
-            const item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
-            const descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
-            const fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
-            const linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
-            const familia = document.getElementById('txtFamilia').value;
-            const totalPerdaTexto = document.getElementById('txtTotalFinanceiro').value;
-
-            if (!codigo || !item) {
-                alert("Por favor, bipar um produto cadastrado.");
-                return;
-            }
-            if (quantidade <= 0) {
-                alert("Insira uma quantidade válida.");
-                return;
-            }
-            if (!validadeInput) {
-                alert("Selecione a data de validade.");
-                return;
-            }
-
-            const [ano, mes, dia] = validadeInput.split('-');
-            const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
-
-            const payloadColeta = {
-                dataColeta: dataAtual,
-                loja: loja,
-                usuario: usuarioLogado,
-                codigoBarras: codigo,
-                validade: dataValidadeFormatada,
-                quantidade: quantidade,
-                item: item,
-                descricao: descricao,
-                fornecedor: fornecedor,
-                linha: linha,
-                familia: familia,
-                totalPerda: totalPerdaTexto
-            };
-
-            console.log("Dados prontos enviados para gravação: ", payloadColeta);
-            
-            alert(`Sucesso! Gravando dados de Coleta:\nItem: ${payloadColeta.item}\nDescrição: ${payloadColeta.descricao}\nTotal Perda: R$ ${payloadColeta.totalPerda}`);
-
-            resetarFormulario();
-        }
-
-        function resetarFormulario() {
-            document.getElementById('campoCodigo').value = '';
-            document.getElementById('campoQtd').value = '1';
-            document.getElementById('campoValidade').value = '';
-            buscarProduto('');
-            document.getElementById('campoCodigo').focus();
-        }
-    </script>
-</body>
-</html>
+                    <label class="block text-sm font-semibold text-gray-60
