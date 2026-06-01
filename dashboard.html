@@ -22,191 +22,34 @@
         </header>
 
         <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <label for="filtroLoja" class="block text-sm font-semibold text-gray-600 mb-2">Filtrar por Loja</label>
-                <select id="filtroLoja" onchange="filtrarDados()" class="w-full sm:w-64 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    <option value="Todos">Todas as Lojas</option>
-                </select>
+            
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <label for="filtroLoja" class="block text-sm font-semibold text-gray-600 mb-1">Filtrar por Loja</label>
+                    <select id="filtroLoja" onchange="filtrarDados()" class="w-full sm:w-64 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium">
+                        <option value="Todos">Todas as Lojas</option>
+                    </select>
+                </div>
+                <div id="txtAtualizado" class="text-xs text-gray-400 font-medium self-end sm:self-auto">Aguardando dados...</div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 flex flex-col justify-between">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de Itens Coletados</span>
-                    <span id="cardTotalItens" class="text-3xl font-black text-gray-800 mt-2">0</span>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-500 flex flex-col justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total R$ Coletado</span>
+                    <span id="cardTotalValor" class="text-2xl font-black text-emerald-600 mt-1">R$ 0,00</span>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-amber-500 flex flex-col justify-between">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Quantidade Total em Estoque</span>
-                    <span id="cardTotalEstoque" class="text-3xl font-black text-gray-800 mt-2">0</span>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500 flex flex-col justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de Itens (Tipos)</span>
+                    <span id="cardTotalItens" class="text-2xl font-black text-gray-800 mt-1">0</span>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500 flex flex-col justify-between">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas no Período</span>
-                    <span id="cardLojasAtivas" class="text-3xl font-black text-gray-800 mt-2">0</span>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-amber-500 flex flex-col justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Quantidade Unidades</span>
+                    <span id="cardTotalEstoque" class="text-2xl font-black text-gray-800 mt-1">0</span>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-purple-500 flex flex-col justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas</span>
+                    <span id="cardLojasAtivas" class="text-2xl font-black text-gray-800 mt-1">0</span>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Volumetria de Coletas por Loja</h3>
-                    <div class="relative h-64"><canvas id="chartLoja"></canvas></div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Cronograma de Vencimentos (Por Mês/Ano)</h3>
-                    <div class="relative h-64"><canvas id="chartVencimento"></canvas></div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
-        // URL da API que evita o erro de segurança CORS do navegador
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv";
-        
-        let dadosGlobais = [];
-        let graficoLojaInstance = null;
-        let graficoVencimentoInstance = null;
-
-        window.onload = function() {
-            carregarDados();
-        };
-
-        function carregarDados() {
-            fetch(CSV_URL)
-                .then(response => response.text())
-                .then(textoCsv => {
-                    processarCsv(textoCsv);
-                })
-                .catch(err => {
-                    console.error("Erro ao carregar os dados:", err);
-                    alert("Não foi possível carregar os dados da planilha.");
-                });
-        }
-
-        function processarCsv(texto) {
-            // Divide as linhas tratando as aspas que o Google Sheets coloca
-            const linhas = texto.split(/\r?\n/);
-            if (linhas.length < 2) return;
-
-            // Mapeia o cabeçalho limpando as aspas
-            const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
-            
-            // Descobre as posições das colunas dinamicamente por aproximação de nome
-            const idxLoja = cabecalho.findIndex(c => c.includes('loja'));
-            const idxQtd = cabecalho.findIndex(c => c.includes('qtd') || c.includes('quant') || c.includes('estoque'));
-            const idxVal = cabecalho.findIndex(c => c.includes('val') || c.includes('venc') || c.includes('data'));
-
-            dadosGlobais = [];
-            const lojasSet = new Set();
-
-            for (let i = 1; i < linhas.length; i++) {
-                if (!linhas[i].trim()) continue;
-                
-                // Divide as colunas respeitando vírgulas dentro de aspas se houver
-                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
-                
-                let loja = idxLoja !== -1 ? colunas[idxLoja] : 'Não Informado';
-                let qtd = idxQtd !== -1 ? parseInt(colunas[idxQtd]) || 1 : 1;
-                let validade = idxVal !== -1 ? colunas[idxVal] : '';
-
-                if (loja && loja !== 'Não Informado') {
-                    dadosGlobais.push({ loja, qtd, validade });
-                    lojasSet.add(loja);
-                }
-            }
-
-            // Popula o filtro de lojas na tela
-            const select = document.getElementById("filtroLoja");
-            select.innerHTML = '<option value="Todos">Todas as Lojas</option>';
-            Array.from(lojasSet).sort().forEach(loja => {
-                const opt = document.createElement("option");
-                opt.value = loja;
-                opt.textContent = loja;
-                select.appendChild(opt);
-            });
-
-            filtrarDados();
-        }
-
-        function filtrarDados() {
-            const lojaSelecionada = document.getElementById("filtroLoja").value;
-            
-            const dadosFiltrados = dadosGlobais.filter(d => {
-                return lojaSelecionada === "Todos" || d.loja === lojaSelecionada;
-            });
-
-            // Atualiza os Cards com cálculos reais
-            document.getElementById("cardTotalItens").textContent = dadosFiltrados.length;
-            
-            const totalEstoque = dadosFiltrados.reduce((acc, curr) => acc + curr.qtd, 0);
-            document.getElementById("cardTotalEstoque").textContent = totalEstoque;
-
-            const lojasAtivas = new Set(dadosFiltrados.map(d => d.loja)).size;
-            document.getElementById("cardLojasAtivas").textContent = lojasAtivas;
-
-            renderizarGraficos(dadosFiltrados);
-        }
-
-        function renderizarGraficos(dados) {
-            // 1. Agrupamento por Loja
-            const contagemLoja = {};
-            dados.forEach(d => {
-                contagemLoja[d.loja] = (contagemLoja[d.loja] || 0) + 1;
-            });
-
-            // 2. Agrupamento por Mês/Ano de Validade
-            const contagemVencimento = {};
-            dados.forEach(d => {
-                if (d.validade) {
-                    // Tenta capturar o formato DD/MM/AAAA ou AAAA-MM-DD
-                    let mesAno = "Ignorado/Sem Data";
-                    if (d.validade.includes('/')) {
-                        const partes = d.validade.split('/');
-                        if (partes.length >= 2) mesAno = partes[1] + '/' + (partes[2] ? partes[2].substring(0,4) : '');
-                    } else if (d.validade.includes('-')) {
-                        const partes = d.validade.split('-');
-                        if (partes.length >= 2) mesAno = partes[1] + '/' + partes[0];
-                    }
-                    contagemVencimento[mesAno] = (contagemVencimento[mesAno] || 0) + d.qtd;
-                }
-            });
-
-            // Destrói os gráficos antigos antes de recriar (evita sobreposição)
-            if (graficoLojaInstance) graficoLojaInstance.destroy();
-            if (graficoVencimentoInstance) graficoVencimentoInstance.destroy();
-
-            // Gráfico de Lojas
-            const ctxLoja = document.getElementById('chartLoja').getContext('2d');
-            graficoLojaInstance = new Chart(ctxLoja, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(contagemLoja),
-                    datasets: [{
-                        label: 'Quantidade de Coletas',
-                        data: Object.values(contagemLoja),
-                        backgroundColor: '#3b82f6',
-                        borderRadius: 6
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // Gráfico de Vencimentos
-            const ctxVenc = document.getElementById('chartVencimento').getContext('2d');
-            graficoVencimentoInstance = new Chart(ctxVenc, {
-                type: 'line',
-                data: {
-                    labels: Object.keys(contagemVencimento),
-                    datasets: [{
-                        label: 'Produtos Vencendo',
-                        data: Object.values(contagemVencimento),
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-    </script>
-</body>
-</html>
