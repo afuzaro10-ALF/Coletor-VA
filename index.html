@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coletor de Validades Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800 p-4 sm:p-6 flex items-center justify-center min-h-screen">
 
@@ -58,8 +59,17 @@
             </div>
 
             <div>
-                <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras (Bipe aqui)</label>
-                <input type="text" id="campoCodigo" onkeydown="verificarEnterScanner(event)" oninput="verificarTamanhoScanner(this.value)" placeholder="Escaneie ou digite o código" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="campoCodigo" onkeydown="verificarEnterScanner(event)" oninput="verificarTamanhoScanner(this.value)" placeholder="Digite ou use a câmera ao lado" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
+                    <button onclick="alternarCamera()" type="button" class="px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold flex items-center justify-center space-x-1 whitespace-nowrap shadow">
+                        📷 <span id="txtBtnCamera">Ligar Câmera</span>
+                    </button>
+                </div>
+                
+                <div id="leitorCameraContainer" class="hidden mt-3 p-2 bg-black rounded-xl overflow-hidden relative border border-gray-700 shadow-inner">
+                    <div id="reader" class="w-full"></div>
+                </div>
             </div>
 
             <div class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
@@ -121,6 +131,7 @@
         
         let baseProdutos = {};
         let usuarioLogado = "";
+        let html5QrCodeScanner = null;
 
         function autenticar() {
             const usuario = document.getElementById("loginUsuario").value.trim();
@@ -175,15 +186,80 @@
                 .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
 
-        // Se o scanner enviar um "Enter" no final do bip, dispara a busca imediatamente
+        // --- SISTEMA DO SCANNER VIA CÂMERA ---
+        function alternarCamera() {
+            const container = document.getElementById('leitorCameraContainer');
+            const txtBtn = document.getElementById('txtBtnCamera');
+
+            // Se a câmera já estiver rodando, desliga ela
+            if (html5QrCodeScanner) {
+                desligarCamera();
+                return;
+            }
+
+            // Exibe o container da câmera
+            container.classList.remove('hidden');
+            txtBtn.innerText = "Desligar";
+
+            html5QrCodeScanner = new Html5Qrcode("reader");
+            
+            // Configurações do leitor para focar em códigos de barras de produtos (EAN_13, EAN_8, etc.)
+            const config = { 
+                fps: 15, 
+                qrbox: (width, height) => {
+                    return { width: width * 0.85, height: height * 0.45 }; // Formato retangular ideal para barras
+                },
+                formatsToSupport: [ 
+                    Html5QrcodeSupportedFormats.EAN_13, 
+                    Html5QrcodeSupportedFormats.EAN_8, 
+                    Html5QrcodeSupportedFormats.CODE_128, 
+                    Html5QrcodeSupportedFormats.QR_CODE 
+                ]
+            };
+
+            // Inicia usando a câmera traseira do celular ('environment')
+            html5QrCodeScanner.start(
+                { facingMode: "environment" }, 
+                config, 
+                (decodedText) => {
+                    // Quando ler com sucesso:
+                    document.getElementById('campoCodigo').value = decodedText;
+                    buscarProduto(decodedText);
+                    desligarCamera(); // Fecha a câmera automaticamente após o bip
+                },
+                (errorMessage) => {
+                    // Silencioso: Ignora erros de leitura enquanto foca
+                }
+            ).catch(err => {
+                console.error("Erro ao abrir câmera: ", err);
+                alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+                desligarCamera();
+            });
+        }
+
+        function desligarCamera() {
+            const container = document.getElementById('leitorCameraContainer');
+            const txtBtn = document.getElementById('txtBtnCamera');
+            
+            if (html5QrCodeScanner) {
+                html5QrCodeScanner.stop().then(() => {
+                    html5QrCodeScanner = null;
+                    container.classList.add('hidden');
+                    txtBtn.innerText = "Ligar Câmera";
+                }).catch(err => console.error(err));
+            } else {
+                container.classList.add('hidden');
+                txtBtn.innerText = "Ligar Câmera";
+            }
+        }
+
         function verificarEnterScanner(event) {
             if (event.key === 'Enter') {
-                event.preventDefault(); // Evita comportamento estranho de submit
+                event.preventDefault();
                 buscarProduto(event.target.value);
             }
         }
 
-        // Se o scanner for configurado sem "Enter", busca quando atingir o tamanho padrão de mercado (13 ou 14 dígitos)
         function verificarTamanhoScanner(valor) {
             const codigoLimpo = valor.trim();
             if (codigoLimpo.length >= 13) {
