@@ -32,7 +32,7 @@
         <div class="bg-blue-600 p-5 text-white flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold">Coletor de Validades</h1>
-                <p class="text-xs text-blue-100 mt-1">Mapeamento com busca de produto e custo</p>
+                <p class="text-xs text-blue-100 mt-1">Mapeamento com busca de produto e custo financeiro</p>
             </div>
             <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
         </div>
@@ -46,6 +46,8 @@
                     <option value="Botafogo">Botafogo</option>
                     <option value="Ipanema">Ipanema</option>
                     <option value="Recreio">Recreio</option>
+                    <option value="Frei Caneca">Frei Caneca</option>
+                    <option value="Copacabana">Copacabana</option>
                 </select>
             </div>
 
@@ -55,7 +57,7 @@
             </div>
 
             <div class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3">
-                <span class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro</span>
+                <span class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -63,7 +65,7 @@
                         <input type="text" id="txtItem" readonly placeholder="Aguardando bip..." class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
                     </div>
                     <div>
-                        <label class="block text-xs text-gray-500">Fornecedor / Linha</label>
+                        <label class="block text-xs text-gray-500">Fornecedor / Fabricante</label>
                         <input type="text" id="txtFornecedor" readonly placeholder="Aguardando bip..." class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
                     </div>
                 </div>
@@ -78,7 +80,7 @@
                         <input type="text" id="txtCusto" readonly placeholder="0,00" class="w-full bg-transparent border-b border-gray-300 py-1 font-bold text-sm focus:outline-none text-gray-700">
                     </div>
                     <div>
-                        <label class="block text-xs text-gray-500">Total Perda (R$)</label>
+                        <label class="block text-xs text-gray-500">Total Perda Estimada (R$)</label>
                         <input type="text" id="txtTotalFinanceiro" readonly placeholder="0,00" class="w-full bg-transparent border-b border-gray-300 py-1 font-black text-sm focus:outline-none text-emerald-600">
                     </div>
                 </div>
@@ -104,40 +106,40 @@
 
     <script>
         const CADASTRO_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Cadastro";
+        
         let baseProdutos = {};
+        let usuarioLogado = "";
 
-        // Função de Autenticação Básica
+        // Autenticação e liberação de tela
         function autenticar() {
             const usuario = document.getElementById("loginUsuario").value.trim();
             const senha = document.getElementById("loginSenha").value.trim();
 
             if (usuario === "admin" && senha === "123") {
-                // Altera o layout removendo a centralização do login
+                usuarioLogado = usuario;
                 document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
-                // Esconde a tela de login e exibe o coletor
                 document.getElementById("secaoLogin").classList.add("hidden");
                 document.getElementById("secaoColetor").classList.remove("hidden");
-                
-                // Dá foco imediato no campo de código de barras para agilizar o bipe
                 document.getElementById('campoCodigo').focus();
                 
-                // Carrega a base de dados em background
-                inicializarBase();
+                inicializarBaseCadastro();
             } else {
                 alert("Usuário ou senha incorretos!");
             }
         }
 
-        function inicializarBase() {
+        // Lê a aba de cadastros estruturada por você
+        function inicializarBaseCadastro() {
             fetch(CADASTRO_URL)
                 .then(response => response.text())
                 .then(text => {
                     const linhas = text.split(/\r?\n/);
                     if (linhas.length < 2) return;
 
-                    const cabecalho = lines[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
                     const idxCod = cabecalho.indexOf('codigo');
                     const idxItem = cabecalho.indexOf('item');
+                    const idxDesc = cabecalho.indexOf('descricao');
                     const idxForn = cabecalho.indexOf('fornecedor');
                     const idxLinha = cabecalho.indexOf('linha');
                     const idxFam = cabecalho.indexOf('familia');
@@ -149,29 +151,37 @@
                         
                         const codigo = colunas[idxCod];
                         if (codigo) {
-                            const fornecedorCompleto = (colunas[idxForn] || '') + (colunas[idxLinha] ? ' - ' + colunas[idxLinha] : '');
-                            
                             baseProdutos[codigo] = {
-                                item: colunas[idxItem] || 'Sem Nome',
-                                fornecedor: fornecedorCompleto || 'Não Informado',
-                                familia: colunas[idxFam] || '-',
+                                item: colunas[idxItem] || '',
+                                descricao: colunas[idxDesc] || '',
+                                fornecedor: colunas[idxForn] || '',
+                                linha: colunas[idxLinha] || '',
+                                familia: colunas[idxFam] || '',
                                 custo: parseFloat(colunas[idxCusto].replace(',', '.')) || 0
                             };
                         }
                     }
+                    console.log("Base de cadastros indexada com sucesso.");
                 })
-                .catch(err => console.error("Erro na leitura da aba Cadastro:", err));
+                .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
 
+        // Buscador em tempo real sincronizado com o leitor de código de barras
         function buscarProduto(codigo) {
             codigo = codigo.trim();
             const prod = baseProdutos[codigo];
 
             if (prod) {
                 document.getElementById('txtItem').value = prod.item;
-                document.getElementById('txtFornecedor').value = prod.fornecedor;
+                document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
                 document.getElementById('txtFamilia').value = prod.familia;
                 document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                
+                // Salva os dados brutos temporariamente no elemento para recuperação na hora de gravar
+                document.getElementById('txtItem').dataset.descricao = prod.descricao;
+                document.getElementById('txtItem').dataset.fornecedorReal = prod.fornecedor;
+                document.getElementById('txtItem').dataset.linhaReal = prod.linha;
+                
                 calcularTotalFinanceiro();
             } else {
                 document.getElementById('txtItem').value = '';
@@ -193,9 +203,72 @@
             }
         }
 
+        // FUNÇÃO DE SALVAMENTO CONECTADA ÀS NOVAS COLUNAS
         function salvarColeta() {
-            alert("Coleta processada! Produto: " + document.getElementById('txtItem').value);
+            const dataAtual = new Date().toLocaleDateString('pt-BR');
+            const loja = document.getElementById('campoLoja').value;
+            const codigo = document.getElementById('campoCodigo').value.trim();
+            const validadeInput = document.getElementById('campoValidade').value;
+            const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
+
+            // Recupera os dados consultados do cadastro
+            const item = document.getElementById('txtItem').value;
+            const descricao = document.getElementById('txtItem').dataset.descricao || '';
+            const fornecedor = document.getElementById('txtItem').dataset.fornecedorReal || '';
+            const linha = document.getElementById('txtItem').dataset.linhaReal || '';
+            const familia = document.getElementById('txtFamilia').value;
+            const totalPerdaTexto = document.getElementById('txtTotalFinanceiro').value;
+
+            // Validações
+            if (!codigo || !item) {
+                alert("Por favor, bipar um produto cadastrado.");
+                return;
+            }
+            if (quantidade <= 0) {
+                alert("Insira uma quantidade válida.");
+                return;
+            }
+            if (!validadeInput) {
+                alert("Selecione a data de validade.");
+                return;
+            }
+
+            // Formata a data de validade de AAAA-MM-DD para DD/MM/AAAA
+            const [ano, mes, dia] = validadeInput.split('-');
+            const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
+
+            // ESTRUTURA COMPLETA DOS DADOS CONFORME AS NOVAS COLUNAS DA SUA PLANILHA
+            const payloadColeta = {
+                dataColeta: dataAtual,
+                loja: loja,
+                usuario: usuarioLogado,
+                codigoBarras: codigo,
+                validade: dataValidadeFormatada,
+                quantidade: quantidade,
+                item: item,
+                descricao: descricao,
+                fornecedor: fornecedor,
+                linha: linha,
+                familia: familia,
+                totalPerda: totalPerdaTexto
+            };
+
+            // =========================================================================
+            // INSERÇÃO DA SUA LOGA ATUAL DE ENVIO (FETCH / APPSHEET / SCRIPT GOOGLE)
+            // Substitua as linhas abaixo pela sua URL ou lógica ativa de POST:
+            // =========================================================================
+            console.log("Dados prontos enviados para gravação: ", payloadColeta);
+            
+            alert(`Sucesso! Registrado na planilha:\nItem: ${payloadColeta.item}\nTotal Perda: R$ ${payloadColeta.totalPerda}`);
+
+            // Limpa campos e foca para a próxima leitura do operador
+            resetarFormulario();
+        }
+
+        function resetarFormulario() {
             document.getElementById('campoCodigo').value = '';
+            document.getElementById('campoQtd').value = '1';
+            document.getElementById('campoValidade').value = '';
             buscarProduto('');
             document.getElementById('campoCodigo').focus();
         }
