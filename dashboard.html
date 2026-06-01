@@ -3,260 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Controle - Validades</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Painel de Controle de Validades</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <style>
-        body { background-color: #f1f5f9; color: #1e293b; font-family: 'Segoe UI', system-ui, sans-serif; }
-        .card-kpi { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .chart-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 350px; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 font-sans antialiased text-gray-800">
 
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0 text-primary fw-bold">📊 Painel de Controle de Validades</h1>
-            <div>
-                <button class="btn btn-secondary btn-sm me-2" onclick="window.location.href='index.html'">📱 Voltar ao Coletor</button>
-                <button class="btn btn-primary btn-sm" onclick="fetchData()">🔄 Atualizar Dados</button>
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">📊</span>
+                <h1 class="text-xl font-bold text-blue-600">Painel de Controle de Validades</h1>
             </div>
-        </div>
+            <div class="flex gap-2">
+                <button onclick="window.location.href='index.html'" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg text-sm transition shadow-sm">Voltar ao Coletor</button>
+                <button onclick="carregarDados()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition shadow-sm flex items-center gap-1">🔄 Atualizar Dados</button>
+            </div>
+        </header>
 
-        <div class="card card-kpi p-3 mb-4 bg-white">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold small text-muted">Filtrar por Loja</label>
-                    <select id="filter-store" class="form-select" onchange="applyFilters()">
-                        <option value="ALL">Todas as Lojas</option>
-                    </select>
-                </div>
+        <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <label for="filtroLoja" class="block text-sm font-semibold text-gray-600 mb-2">Filtrar por Loja</label>
+                <select id="filtroLoja" onchange="filtrarDados()" class="w-full sm:w-64 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <option value="Todos">Todas as Lojas</option>
+                </select>
             </div>
-        </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="card card-kpi bg-white p-4 border-start border-primary border-4">
-                    <div class="small text-muted fw-bold text-uppercase">Total de Itens Coletados</div>
-                    <div id="kpi-total-itens" class="h2 fw-bold mt-2">0</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 flex flex-col justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de Itens Coletados</span>
+                    <span id="cardTotalItens" class="text-3xl font-black text-gray-800 mt-2">0</span>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-amber-500 flex flex-col justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Quantidade Total em Estoque</span>
+                    <span id="cardTotalEstoque" class="text-3xl font-black text-gray-800 mt-2">0</span>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500 flex flex-col justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas no Período</span>
+                    <span id="cardLojasAtivas" class="text-3xl font-black text-gray-800 mt-2">0</span>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card card-kpi bg-white p-4 border-start border-warning border-4">
-                    <div class="small text-muted fw-bold text-uppercase">Quantidade Total em Estoque</div>
-                    <div id="kpi-total-qtd" class="h2 fw-bold mt-2">0</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card card-kpi bg-white p-4 border-start border-success border-4">
-                    <div class="small text-muted fw-bold text-uppercase">Lojas Ativas no Período</div>
-                    <div id="kpi-lojas-ativas" class="h2 fw-bold mt-2">0</div>
-                </div>
-            </div>
-        </div>
 
-        <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <h5 class="fw-bold mb-3 small text-muted text-uppercase">Volumetria de Coletas por Loja</h5>
-                    <canvas id="chart-lojas"></canvas>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Volumetria de Coletas por Loja</h3>
+                    <div class="relative h-64"><canvas id="chartLoja"></canvas></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Cronograma de Vencimentos (Por Mês/Ano)</h3>
+                    <div class="relative h-64"><canvas id="chartVencimento"></canvas></div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <h5 class="fw-bold mb-3 small text-muted text-uppercase">Cronograma de Vencimentos (Por Mês/Ano)</h5>
-                    <canvas id="chart-vencimentos"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="card card-kpi bg-white p-4">
-            <h5 class="fw-bold mb-3 small text-muted text-uppercase">Últimos Itens Coletados</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Data Coleta</th>
-                            <th>Loja</th>
-                            <th>Operador</th>
-                            <th>Código de Barras</th>
-                            <th>Vencimento</th>
-                            <th>Qtd</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                        <tr><td colspan="6" class="text-center text-muted">Carregando dados em tempo real...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        </main>
     </div>
 
     <script>
-        // Link direto da API do Google Sheets
-        const SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Página1";
+        // URL da API que evita o erro de segurança CORS do navegador
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv";
+        
+        let dadosGlobais = [];
+        let graficoLojaInstance = null;
+        let graficoVencimentoInstance = null;
 
-        let rawRows = [];
-        let chartLojasInstance = null;
-        let chartVencInstance = null;
+        window.onload = function() {
+            carregarDados();
+        };
 
-        function getProp(obj, matches) {
-            for (let key in obj) {
-                let normalizedKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
-                if (matches.includes(normalizedKey)) {
-                    return obj[key];
-                }
-            }
-            return "";
+        function carregarDados() {
+            fetch(CSV_URL)
+                .then(response => response.text())
+                .then(textoCsv => {
+                    processarCsv(textoCsv);
+                })
+                .catch(err => {
+                    console.error("Erro ao carregar os dados:", err);
+                    alert("Não foi possível carregar os dados da planilha.");
+                });
         }
 
-        function formatDisplayDate(dateStr) {
-            if (!dateStr) return "-";
-            dateStr = dateStr.trim();
-            if (dateStr.includes('-') && dateStr.indexOf('-') === 4) {
-                const parts = dateStr.split('-');
-                return `${parts[2].substring(0,2)}/${parts[1]}/${parts[0]}`;
-            }
-            return dateStr;
-        }
+        function processarCsv(texto) {
+            // Divide as linhas tratando as aspas que o Google Sheets coloca
+            const linhas = texto.split(/\r?\n/);
+            if (linhas.length < 2) return;
 
-        function getMonthYearLabel(dateStr) {
-            if (!dateStr) return null;
-            dateStr = dateStr.trim();
-            if (dateStr.includes('-') && dateStr.indexOf('-') === 4) {
-                const parts = dateStr.split('-');
-                return `${parts[1]}/${parts[0]}`;
-            }
-            if (dateStr.includes('/')) {
-                const parts = dateStr.split('/');
-                if (parts.length >= 3) {
-                    return `${parts[1]}/${parts[2].substring(0,4)}`;
-                }
-            }
-            return null;
-        }
-
-        function fetchData() {
-            Papa.parse(SHEETS_CSV_URL + "&nocache=" + new Date().getTime(), {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    rawRows = results.data;
-                    populateStoreFilter();
-                    applyFilters();
-                },
-                error: function(err) {
-                    console.error(err);
-                    document.getElementById('table-body').innerHTML = `<tr><td colspan="6" class="text-center text-danger">Erro de conexão com o banco de dados online.</td></tr>`;
-                }
-            });
-        }
-
-        function populateStoreFilter() {
-            const select = document.getElementById('filter-store');
-            const currentVal = select.value;
-            const uniqueStores = [...new Set(rawRows.map(r => getProp(r, ['loja'])))].filter(Boolean).sort();
+            // Mapeia o cabeçalho limpando as aspas
+            const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
             
-            select.innerHTML = '<option value="ALL">Todas as Lojas</option>';
-            uniqueStores.forEach(store => {
-                select.innerHTML += `<option value="${store}">${store}</option>`;
-            });
-            select.value = currentVal;
-        }
+            // Descobre as posições das colunas dinamicamente por aproximação de nome
+            const idxLoja = cabecalho.findIndex(c => c.includes('loja'));
+            const idxQtd = cabecalho.findIndex(c => c.includes('qtd') || c.includes('quant') || c.includes('estoque'));
+            const idxVal = cabecalho.findIndex(c => c.includes('val') || c.includes('venc') || c.includes('data'));
 
-        function applyFilters() {
-            const selectedStore = document.getElementById('filter-store').value;
-            const filteredData = rawRows.filter(row => {
-                let storeVal = getProp(row, ['loja']);
-                return selectedStore === "ALL" || storeVal === selectedStore;
-            });
+            dadosGlobais = [];
+            const lojasSet = new Set();
 
-            updateKPIs(filteredData);
-            renderTable(filteredData);
-            renderCharts(filteredData);
-        }
+            for (let i = 1; i < linhas.length; i++) {
+                if (!linhas[i].trim()) continue;
+                
+                // Divide as colunas respeitando vírgulas dentro de aspas se houver
+                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+                
+                let loja = idxLoja !== -1 ? colunas[idxLoja] : 'Não Informado';
+                let qtd = idxQtd !== -1 ? parseInt(colunas[idxQtd]) || 1 : 1;
+                let validade = idxVal !== -1 ? colunas[idxVal] : '';
 
-        function updateKPIs(data) {
-            document.getElementById('kpi-total-itens').innerText = data.length;
-            const totalQtd = data.reduce((sum, row) => sum + (parseInt(getProp(row, ['quantidade', 'qtd'])) || 0), 0);
-            document.getElementById('kpi-total-qtd').innerText = totalQtd;
-            const uniqueStores = [...new Set(data.map(r => getProp(r, ['loja'])))].filter(Boolean).length;
-            document.getElementById('kpi-lojas-ativas').innerText = uniqueStores;
-        }
-
-        function renderTable(data) {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = "";
-            const displayData = [...data].reverse().slice(0, 15);
-
-            if(displayData.length === 0 || (displayData.length === 1 && !getProp(displayData[0], ['loja']))) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
-                return;
+                if (loja && loja !== 'Não Informado') {
+                    dadosGlobais.push({ loja, qtd, validade });
+                    lojasSet.add(loja);
+                }
             }
 
-            displayData.forEach(row => {
-                if(!getProp(row, ['loja'])) return;
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${formatDisplayDate(getProp(row, ['datacoleta', 'data'])) || '-'}</td>
-                        <td><span class="badge bg-secondary">${getProp(row, ['loja']) || '-'}</span></td>
-                        <td>${getProp(row, ['usuario', 'operador']) || '-'}</td>
-                        <td class="font-monospace">${getProp(row, ['codigobarras', 'codigo']) || '-'}</td>
-                        <td class="text-danger fw-bold">${formatDisplayDate(getProp(row, ['validade', 'vencimento'])) || '-'}</td>
-                        <td>${getProp(row, ['quantidade', 'qtd']) || '0'}</td>
-                    </tr>
-                `;
+            // Popula o filtro de lojas na tela
+            const select = document.getElementById("filtroLoja");
+            select.innerHTML = '<option value="Todos">Todas as Lojas</option>';
+            Array.from(lojasSet).sort().forEach(loja => {
+                const opt = document.createElement("option");
+                opt.value = loja;
+                opt.textContent = loja;
+                select.appendChild(opt);
             });
+
+            filtrarDados();
         }
 
-        function renderCharts(data) {
-            const storeCounts = {};
-            data.forEach(r => { 
-                let loja = getProp(r, ['loja']);
-                if(loja) storeCounts[loja] = (storeCounts[loja] || 0) + 1; 
+        function filtrarDados() {
+            const lojaSelecionada = document.getElementById("filtroLoja").value;
+            
+            const dadosFiltrados = dadosGlobais.filter(d => {
+                return lojaSelecionada === "Todos" || d.loja === lojaSelecionada;
             });
 
-            const vencCounts = {};
-            data.forEach(r => {
-                const val = getProp(r, ['validade', 'vencimento']);
-                const mesAno = getMonthYearLabel(val);
-                if(mesAno) {
-                    let qtd = parseInt(getProp(r, ['quantidade', 'qtd'])) || 1;
-                    vencCounts[mesAno] = (vencCounts[mesAno] || 0) + qtd;
+            // Atualiza os Cards com cálculos reais
+            document.getElementById("cardTotalItens").textContent = dadosFiltrados.length;
+            
+            const totalEstoque = dadosFiltrados.reduce((acc, curr) => acc + curr.qtd, 0);
+            document.getElementById("cardTotalEstoque").textContent = totalEstoque;
+
+            const lojasAtivas = new Set(dadosFiltrados.map(d => d.loja)).size;
+            document.getElementById("cardLojasAtivas").textContent = lojasAtivas;
+
+            renderizarGraficos(dadosFiltrados);
+        }
+
+        function renderizarGraficos(dados) {
+            // 1. Agrupamento por Loja
+            const contagemLoja = {};
+            dados.forEach(d => {
+                contagemLoja[d.loja] = (contagemLoja[d.loja] || 0) + 1;
+            });
+
+            // 2. Agrupamento por Mês/Ano de Validade
+            const contagemVencimento = {};
+            dados.forEach(d => {
+                if (d.validade) {
+                    // Tenta capturar o formato DD/MM/AAAA ou AAAA-MM-DD
+                    let mesAno = "Ignorado/Sem Data";
+                    if (d.validade.includes('/')) {
+                        const partes = d.validade.split('/');
+                        if (partes.length >= 2) mesAno = partes[1] + '/' + (partes[2] ? partes[2].substring(0,4) : '');
+                    } else if (d.validade.includes('-')) {
+                        const partes = d.validade.split('-');
+                        if (partes.length >= 2) mesAno = partes[1] + '/' + partes[0];
+                    }
+                    contagemVencimento[mesAno] = (contagemVencimento[mesAno] || 0) + d.qtd;
                 }
             });
 
-            const sortedVencKeys = Object.keys(vencCounts).sort((a, b) => {
-                const ad = a.split('/'), bd = b.split('/');
-                return new Date(ad[1], ad[0]-1) - new Date(bd[1], bd[0]-1);
-            });
+            // Destrói os gráficos antigos antes de recriar (evita sobreposição)
+            if (graficoLojaInstance) graficoLojaInstance.destroy();
+            if (graficoVencimentoInstance) graficoVencimentoInstance.destroy();
 
-            if(chartLojasInstance) chartLojasInstance.destroy();
-            if(chartVencInstance) chartVencInstance.destroy();
-
-            chartLojasInstance = new Chart(document.getElementById('chart-lojas'), {
+            // Gráfico de Lojas
+            const ctxLoja = document.getElementById('chartLoja').getContext('2d');
+            graficoLojaInstance = new Chart(ctxLoja, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(storeCounts),
+                    labels: Object.keys(contagemLoja),
                     datasets: [{
-                        label: 'Registros Feitos',
-                        data: Object.values(storeCounts),
-                        backgroundColor: '#2563eb',
+                        label: 'Quantidade de Coletas',
+                        data: Object.values(contagemLoja),
+                        backgroundColor: '#3b82f6',
                         borderRadius: 6
                     }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            chartVencInstance = new Chart(document.getElementById('chart-vencimentos'), {
+            // Gráfico de Vencimentos
+            const ctxVenc = document.getElementById('chartVencimento').getContext('2d');
+            graficoVencimentoInstance = new Chart(ctxVenc, {
                 type: 'line',
                 data: {
-                    labels: sortedVencKeys,
+                    labels: Object.keys(contagemVencimento),
                     datasets: [{
-                        label: 'Quantidade de Itens a Vencer',
-                        data: sortedVencKeys.map(k => vencCounts[k]),
+                        label: 'Produtos Vencendo',
+                        data: Object.values(contagemVencimento),
                         borderColor: '#f59e0b',
                         backgroundColor: 'rgba(245, 158, 11, 0.1)',
                         fill: true,
@@ -266,8 +207,6 @@
                 options: { responsive: true, maintainAspectRatio: false }
             });
         }
-
-        window.onload = fetchData;
     </script>
 </body>
 </html>
