@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Pro - Controle de Validades</title>
-    <!-- CDN Estável do Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- CDN do Chart.js para os Gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Biblioteca para Exportação de Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         .custom-scroll::-webkit-scrollbar { width: 6px; }
@@ -18,7 +15,6 @@
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
 
-    <!-- CABEÇALHO -->
     <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Validades</h1>
@@ -44,16 +40,13 @@
         </div>
     </div>
 
-    <!-- LOADER / MENSAGENS DE ERRO -->
     <div id="loader" class="text-center py-20 max-w-7xl mx-auto bg-gray-800 rounded-2xl border border-gray-700 p-6 shadow-xl">
         <div id="loaderIcon" class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
         <p id="loaderTexto" class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL (DASHBOARD) -->
     <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
         
-        <!-- CARDS DE INDICADORES (KPIS) -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Mapeado R$</span>
@@ -62,7 +55,7 @@
             
             <div onclick="alternarFiltroCard('vencimento', 'urgencia')" id="cardUrgencia" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200">
                 <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (≤ 45d)</span>
+                    <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (&le; 45d)</span>
                     <span id="dotUrg" class="h-2 w-2 rounded-full bg-transparent"></span>
                 </div>
                 <span id="kpiUrgencia" class="text-xl font-black text-red-400 mt-2">0 itens</span>
@@ -95,7 +88,6 @@
             </div>
         </div>
 
-        <!-- SEÇÃO DE GRÁFICOS -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
                 <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
@@ -112,7 +104,6 @@
             </div>
         </div>
 
-        <!-- GRÁFICOS SETORIAIS ADICIONAIS -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
@@ -137,12 +128,11 @@
             </div>
         </div>
 
-        <!-- TABELA DETALHADA -->
         <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
                     <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Visão analítica com plano de ação real baseado nas datas do coletor</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Visão analítica com plano de ação real baseado das datas do coletor</p>
                 </div>
                 <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
                     <button id="btnExportarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition duration-200 shadow-md border border-emerald-500/30">
@@ -151,7 +141,7 @@
                     <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold whitespace-nowrap"></span>
                 </div>
             </div>
-            <div class="overflow-x-auto max-h-[550px] overflow-y-auto">
+            <div class="overflow-x-auto max-h-[550px] overflow-y-auto custom-scroll">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-gray-900 text-gray-400 font-bold border-b border-gray-700">
@@ -164,7 +154,6 @@
                             <th class="p-3 w-16 text-center">Qtd</th>
                             <th class="p-3 w-28 text-right">Total Perda</th>
                         </tr>
-                        <!-- FILTROS DO CABEÇALHO DA TABELA -->
                         <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-20">
                             <th class="p-2">
                                 <div class="flex gap-1">
@@ -183,9 +172,9 @@
                             <th class="p-2">
                                 <select id="thFiltroStatus" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
                                     <option value="">Todos os Status</option>
-                                    <option value="Tratar item com Urgência">🚨 Urgência (≤ 45d)</option>
-                                    <option value="Tratar item">⚠️ Tratar (≤ 90d)</option>
-                                    <option value="Acompanhar Tratativas">📅 Acompanhar (≤ 180d)</option>
+                                    <option value="Tratar item com Urgência">🚨 Urgência (&le; 45d)</option>
+                                    <option value="Tratar item">⚠️ Tratar (&le; 90d)</option>
+                                    <option value="Acompanhar Tratativas">📅 Acompanhar (&le; 180d)</option>
                                     <option value="Item Mapeado">🔍 Mapeado (&gt; 180d)</option>
                                 </select>
                             </th>
@@ -243,14 +232,13 @@
         </div>
     </div>
 
-    <!-- LOGIC BI CORE JAVASCRIPT -->
     <script>
         const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
 
         let dadosBrutos = [];
-        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
+        let filtrosAtivos = { vencimento: null, loja: null, fornecedor: null, linha: null, familiaGrafico: null };
         let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
-        let chartCronograma = null, chartLojas = null, chartFornecedores = null, chartLinhas = null, chartFamilias = null;
+        let instanciaCronograma = null, instanciaLojas = null, instanciaFornecedores = null, instanciaLinhas = null, instanciaFamilias = null;
 
         window.onload = function() {
             carregarDadosDaPlanilha();
@@ -482,7 +470,7 @@
             const opcoes = wrapper.querySelectorAll(".opcao-item");
             opcoes.forEach(opcao => {
                 const texto = opcao.getAttribute("data-valor");
-                if (texto.includes(busca)) opcao.classList.remove("hidden");
+                if (!texto || texto.includes(busca)) opcao.classList.remove("hidden");
                 else opcao.classList.add("hidden");
             });
         }
@@ -507,20 +495,47 @@
             renderizarDashboard();
         }
 
-        function obterDadosFiltradosGerais() {
+        function alternarFiltroCard(tipo, valor) {
+            if (filtrosAtivos[tipo] === valor) {
+                filtrosAtivos[tipo] = null;
+            } else {
+                filtrosAtivos[tipo] = valor;
+            }
+            renderizarDashboard();
+        }
+
+        function limparTodosFiltros() {
+            filtrosAtivos = { vencimento: null, loja: null, fornecedor: null, linha: null, familiaGrafico: null };
+            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
+            
+            document.getElementById("filtroLojaSuperior").value = "";
+            document.getElementById("thFiltroMes").value = "";
+            document.getElementById("thFiltroAno").value = "";
+            document.getElementById("thFiltroStatus").value = "";
+            
+            document.getElementById("dropdown-loja").querySelector(".label").innerText = "Selecione...";
+            document.getElementById("dropdown-codigo").querySelector(".label").innerText = "Selecione...";
+            document.getElementById("dropdown-item").querySelector(".label").innerText = "Todos os Itens";
+            document.getElementById("dropdown-family").querySelector(".label").innerText = "Selecione...";
+
+            renderizarDashboard();
+        }
+
+        function obterDadosFiltrados() {
             return dadosBrutos.filter(item => {
-                if (filtrosAtivos.vencimento) {
-                    if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
-                    const mesesDiferenca = item.diasRestantes / 30.41;
-                    if (filtrosAtivos.vencimento === '3meses' && mesesDiferenca > 3) return false;
-                    if (filtrosAtivos.vencimento === '6meses' && mesesDiferenca > 6) return false;
-                }
+                // Filtros Globais/Cards/Gráficos
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
-                if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
                 if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
                 if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
                 if (filtrosAtivos.familiaGrafico && item.familia !== filtrosAtivos.familiaGrafico) return false;
+                
+                if (filtrosAtivos.vencimento) {
+                    if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
+                    if (filtrosAtivos.vencimento === '3meses' && item.diasRestantes > 90) return false;
+                    if (filtrosAtivos.vencimento === '6meses' && item.diasRestantes > 180) return false;
+                }
 
+                // Filtros da Tabela
                 if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
                 if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
                 if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
@@ -534,295 +549,238 @@
         }
 
         function renderizarDashboard() {
-            const dadosFiltrados = obterDadosFiltradosGerais();
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
+            const dadosFiltrados = obterDadosFiltrados();
 
-            let somaFinanceira = 0, somaUnidades = 0, total3Meses = 0, total6Meses = 0, totalUrgentes = 0;
-            let setLojas = new Set();
+            // Gerenciar Visibilidade do Botão "Limpar Filtros"
+            const temFiltroAtivo = Object.values(filtrosAtivos).some(v => v !== null) || Object.values(filtrosCabecalhoTabela).some(v => v !== "");
+            document.getElementById("btnLimparFiltros").classList.toggle("hidden", !temFiltroAtivo);
+
+            // Atualizar Destaque Visual dos Cards
+            document.getElementById("cardUrgencia").style.borderColor = filtrosAtivos.vencimento === 'urgencia' ? '#ef4444' : '#374151';
+            document.getElementById("card3Meses").style.borderColor = filtrosAtivos.vencimento === '3meses' ? '#f59e0b' : '#374151';
+            document.getElementById("card6Meses").style.borderColor = filtrosAtivos.vencimento === '6meses' ? '#f97316' : '#374151';
+
+            // Atualizar Labels das Legendas de Filtro nos Gráficos
+            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `Filtro: ${filtrosAtivos.fornecedor}` : "";
+            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `Filtro: ${filtrosAtivos.linha}` : "";
+            document.getElementById("lblFiltroFamilia").innerText = filtrosAtivos.familiaGrafico ? `Filtro: ${filtrosAtivos.familiaGrafico}` : "";
+
+            // Calcular KPIs
+            let totalRs = 0, qtdUrgencia = 0, total3m = 0, total6m = 0, totalItens = 0;
+            const lojasAtivasUnicas = new Set();
 
             dadosFiltrados.forEach(item => {
-                somaUnidades += item.quantidade;
-                if(item.loja) setLojas.add(item.loja);
-                somaFinanceira += item.totalPerda;
-
-                if (item.diasRestantes <= 45) totalUrgentes++;
-                if (item.diasRestantes / 30.41 <= 3) total3Meses += item.totalPerda;
-                if (item.diasRestantes / 30.41 <= 6) total6Meses += item.totalPerda;
+                totalRs += item.totalPerda;
+                totalItens += item.quantidade;
+                lojasAtivasUnicas.add(item.loja);
+                if (item.diasRestantes <= 45) qtdUrgencia++;
+                if (item.diasRestantes <= 90) total3m += item.totalPerda;
+                if (item.diasRestantes <= 180) total6m += item.totalPerda;
             });
 
-            document.getElementById("kpiTotalRs").innerText = somaFinanceira.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiUrgencia").innerText = totalUrgentes + (totalUrgentes === 1 ? " item" : " itens");
-            document.getElementById("kpi3Meses").innerText = total3Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpi6Meses").innerText = total6Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiUnidades").innerText = somaUnidades.toLocaleString('pt-BR');
-            document.getElementById("kpiLojas").innerText = setLojas.size;
+            document.getElementById("kpiTotalRs").innerText = totalRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpiUrgencia").innerText = `${qtdUrgencia} itens`;
+            document.getElementById("kpi3Meses").innerText = total3m.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpi6Meses").innerText = total6m.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpiUnidades").innerText = totalItens.toLocaleString('pt-BR');
+            document.getElementById("kpiLojas").innerText = lojasAtivasUnicas.size;
 
-            document.getElementById("filtroLojaSuperior").value = filtrosAtivos.loja || "";
+            // Renderizar Componentes
+            construirGraficos(dadosFiltrados);
+            construirTabela(dadosFiltrados);
+        }
 
-            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `(filtrado: ${filtrosAtivos.fornecedor})` : "";
-            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `(filtrado: ${filtrosAtivos.linha})` : "";
-            document.getElementById("lblFiltroFamilia").innerText = filtrosAtivos.familiaGrafico ? `(filtrado: ${filtrosAtivos.familiaGrafico})` : "";
+        function construirTabela(dados) {
+            const tbody = document.getElementById("corpoTabelaPerdas");
+            tbody.innerHTML = "";
+            document.getElementById("txtContagemLinhas").innerText = `${dados.length} registros`;
 
-            const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras ||
-                                   filtrosAtivos.fornecedor || filtrosAtivos.linha || filtrosAtivos.familiaGrafico ||
-                                   filtrosCabecalhoTabela.mes || filtrosCabecalhoTabela.ano || filtrosCabecalhoTabela.status ||
-                                   filtrosCabecalhoTabela.loja || filtrosCabecalhoTabela.codigo || filtrosCabecalhoTabela.item || filtrosCabecalhoTabela.family;
-            
-            document.getElementById("btnLimparFiltros").className = temFiltroAtivo 
-                ? "px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500" : "hidden";
+            dados.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-gray-700/30 transition text-gray-300 border-b border-gray-800";
+                tr.innerHTML = `
+                    <td class="p-3 font-medium">${item.validadeTexto}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.classeBadge}">${item.statusAcao}</span></td>
+                    <td class="p-3 font-semibold text-gray-400">${item.loja}</td>
+                    <td class="p-3 text-gray-500">${item.codigo}</td>
+                    <td class="p-3 font-medium text-gray-200">
+                        <div>${item.item}</div>
+                        <div class="text-[10px] text-gray-500 truncate max-w-xs">${item.descricao}</div>
+                    </td>
+                    <td class="p-3 text-gray-400">${item.familia}</td>
+                    <td class="p-3 text-center font-bold">${item.quantidade}</td>
+                    <td class="p-3 text-right font-bold text-emerald-400">${item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
-            // Atualiza estados visuais dos Cards de Categoria
-            ajustarEstilosCardsKpi();
+        function destruirGraficoSeExiste(instancia) {
+            if (instancia) instancia.destroy();
+        }
 
-            // AGRUPAMENTO CHAVE: Linha do tempo calculada de forma segura e responsiva
-            const agruparLojas = {}, agruparForn = {}, agruparLinhas = {}, agruparFamilias = {}, agruparCronograma = {};
-            const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            
-            for(let i=0; i<12; i++) {
-                let m = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
-                agruparCronograma[mesesNomes[m.getMonth()] + "/" + String(m.getFullYear()).substring(2)] = 0;
-            }
+        function construirGraficos(dados) {
+            // Agrupadores comuns de dados
+            const dadosCronograma = {}, dadosLojas = {}, dadosFornecedores = {}, dadosLinhas = {}, dadosFamilias = {};
 
-            dadosFiltrados.forEach(item => {
-                agruparLojas[item.loja] = (agruparLojas[item.loja] || 0) + item.totalPerda;
-                agruparForn[item.fornecedor] = (agruparForn[item.fornecedor] || 0) + item.totalPerda;
-                agruparLinhas[item.linha] = (agruparLinhas[item.linha] || 0) + item.totalPerda;
-                agruparFamilias[item.familia] = (agruparFamilias[item.familia] || 0) + item.totalPerda;
+            dados.forEach(item => {
+                // 1. Cronograma por Mês/Ano
+                const chaveMesAno = `${item.mes}/${item.ano}`;
+                if (item.mes && item.ano) {
+                    dadosCronograma[chaveMesAno] = (dadosCronograma[chaveMesAno] || 0) + item.totalPerda;
+                }
+                // 2. Lojas
+                dadosLojas[item.loja] = (dadosLojas[item.loja] || 0) + item.totalPerda;
+                // 3. Fornecedores
+                dadosFornecedores[item.fornecedor] = (dadosFornecedores[item.fornecedor] || 0) + item.totalPerda;
+                // 4. Linhas
+                dadosLinhas[item.linha] = (dadosLinhas[item.linha] || 0) + item.totalPerda;
+                // 5. Famílias
+                dadosFamilias[item.familia] = (dadosFamilias[item.familia] || 0) + item.totalPerda;
+            });
 
-                if (item.validade) {
-                    let chaveMes = mesesNomes[item.validade.getMonth()] + "/" + String(item.validade.getFullYear()).substring(2);
-                    if (agruparCronograma[chaveMes] !== undefined) agruparCronograma[chaveMes] += item.totalPerda;
+            const configComumGeral = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+                    y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } }
+                }
+            };
+
+            // ---- GRÁFICO 1: CRONOGRAMA (LINHA) ----
+            destruirGraficoSeExiste(instanciaCronograma);
+            const labelsCrono = Object.keys(dadosCronograma).sort((a,b) => {
+                const partA = a.split('/'), partB = b.split('/');
+                return new Date(partA[1], partA[0]-1) - new Date(partB[1], partB[0]-1);
+            });
+            instanciaCronograma = new Chart(document.getElementById("chartCronograma"), {
+                type: 'line',
+                data: {
+                    labels: labelsCrono,
+                    datasets: [{
+                        data: labelsCrono.map(l => dadosCronograma[l]),
+                        borderColor: '#60a5fa', backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                        borderWidth: 3, fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: configComumGeral
+            });
+
+            // ---- GRÁFICO 2: LOJAS (BARRAS HORIZONTAL) ----
+            destruirGraficoSeExiste(instanciaLojas);
+            const ordLojas = Object.keys(dadosLojas).sort((a,b) => dadosLojas[b] - dadosLojas[a]);
+            instanciaLojas = new Chart(document.getElementById("chartLojas"), {
+                type: 'bar',
+                data: {
+                    labels: ordLojas,
+                    datasets: [{ data: ordLojas.map(l => dadosLojas[l]), backgroundColor: '#34d399', borderRadius: 6 }]
+                },
+                options: {
+                    ...configComumGeral,
+                    indexAxis: 'y'
                 }
             });
 
-            // Montagem Dinâmica de todos os gráficos na Tela
-            montarGraficoCronograma(agruparCronograma);
-            montarGraficoLojas(agruparLojas);
-            
-            montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, 'fornecedor', (instance) => chartFornecedores = instance);
-            montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, 'linha', (instance) => chartLinhas = instance);
-            montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, 'familiaGrafico', (instance) => chartFamilias = instance);
-
-            montarTabelaEspecifica(dadosFiltrados);
-        }
-
-        function ajustarEstilosCardsKpi() {
-            document.getElementById("cardUrgencia").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200";
-            document.getElementById("card3Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200";
-            document.getElementById("card6Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200";
-            document.getElementById("dotUrg").className = "h-2 w-2 rounded-full bg-transparent";
-            document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-transparent";
-            document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-transparent";
-
-            if (filtrosAtivos.vencimento === 'urgencia') {
-                document.getElementById("cardUrgencia").className = "bg-red-950/20 p-4 rounded-xl border border-red-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
-                document.getElementById("dotUrg").className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
-            } else if (filtrosAtivos.vencimento === '3meses') {
-                document.getElementById("card3Meses").className = "bg-amber-950/20 p-4 rounded-xl border border-amber-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
-                document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-amber-500 animate-pulse";
-            } else if (filtrosAtivos.vencimento === '6meses') {
-                document.getElementById("card6Meses").className = "bg-orange-950/20 p-4 rounded-xl border border-orange-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
-                document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-orange-500 animate-pulse";
-            }
-        }
-
-        // MONTAGEM DO GRÁFICO DE LINHA DO TEMPO TOTALMENTE DINÂMICO
-        function montarGraficoCronograma(objetoDados) {
-            if(chartCronograma) chartCronograma.destroy();
-            chartCronograma = new Chart(document.getElementById("chartCronograma"), {
-                type: 'line',
+            // ---- GRÁFICO 3: TOP FORNECEDORES (BARRAS VERTICAL) ----
+            destruirGraficoSeExiste(instanciaFornecedores);
+            const ordForn = Object.keys(dadosFornecedores).sort((a,b) => dadosFornecedores[b] - dadosFornecedores[a]).slice(0, 7);
+            instanciaFornecedores = new Chart(document.getElementById("chartFornecedores"), {
+                type: 'bar',
                 data: {
-                    labels: Object.keys(objetoDados),
+                    labels: ordForn,
+                    datasets: [{ data: ordForn.map(f => dadosFornecedores[f]), backgroundColor: '#60a5fa', borderRadius: 4 }]
+                },
+                options: {
+                    ...configComumGeral,
+                    onClick: (e, elementos) => {
+                        if (elementos.length > 0) {
+                            const index = elementos[0].index;
+                            const fornecedorClick = ordForn[index];
+                            filtrosAtivos.fornecedor = filtrosAtivos.fornecedor === fornecedorClick ? null : fornecedorClick;
+                            renderizarDashboard();
+                        }
+                    }
+                }
+            });
+
+            // ---- GRÁFICO 4: QUEBRA POR LINHA (ROSCA) ----
+            destruirGraficoSeExiste(instanciaLinhas);
+            const ordLinhas = Object.keys(dadosLinhas).sort((a,b) => dadosLinhas[b] - dadosLinhas[a]).slice(0, 6);
+            instanciaLinhas = new Chart(document.getElementById("chartLinhas"), {
+                type: 'doughnut',
+                data: {
+                    labels: ordLinhas,
                     datasets: [{
-                        label: 'Valor Perda Estimada (R$)', 
-                        data: Object.values(objetoDados),
-                        borderColor: '#3b82f6', 
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3, 
-                        fill: true, 
-                        tension: 0.3
+                        data: ordLinhas.map(l => dadosLinhas[l]),
+                        backgroundColor: ['#f43f5e','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899'],
+                        borderWidth: 1, borderColor: '#1f2937'
                     }]
                 },
                 options: {
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { 
-                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, 
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af' } } 
-                    }
-                }
-            });
-        }
-
-        function montarGraficoLojas(objetoDados) {
-            if(chartLojas) chartLojas.destroy();
-            const labels = Object.keys(objetoDados);
-            const valores = Object.values(objetoDados);
-            const coresBarras = labels.map(loja => loja === filtrosAtivos.loja ? '#eab308' : '#10b981');
-
-            chartLojas = new Chart(document.getElementById("chartLojas"), {
-                type: 'bar',
-                data: {
-                    labels: labels, datasets: [{ data: valores, backgroundColor: coresBarras, borderRadius: 6 }]
-                },
-                options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } },
-                    onClick: (evt, elementos) => {
+                    plugins: { legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', boxWidth: 10, font: { size: 9 } } } },
+                    onClick: (e, elementos) => {
                         if (elementos.length > 0) {
                             const index = elementos[0].index;
-                            const lojaClicada = labels[index];
-                            filtrosAtivos.loja = (filtrosAtivos.loja === lojaClicada) ? null : lojaClicada;
+                            const linhaClick = ordLinhas[index];
+                            filtrosAtivos.linha = filtrosAtivos.linha === linhaClick ? null : linhaClick;
                             renderizarDashboard();
                         }
                     }
                 }
             });
-        }
 
-        function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, chaveFiltro, setInstanciaCallback) {
-            if(instanciaGrafico) instanciaGrafico.destroy();
-            
-            const itensOrdenados = Object.entries(objetoDados).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            const labels = itensOrdenados.map(i => i[0]);
-            const valores = itensOrdenados.map(i => i[1]);
-            const paletaCores = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
-            
-            const coresFinais = labels.map((label, idx) => {
-                const filtroCorrente = filtrosAtivos[chaveFiltro];
-                if (filtroCorrente) {
-                    return label === filtroCorrente ? paletaCores[idx % paletaCores.length] : 'rgba(75, 85, 99, 0.2)';
-                }
-                return paletaCores[idx % paletaCores.length];
-            });
-
-            const novaInstancia = new Chart(document.getElementById(idElemento), {
-                type: tipo,
+            // ---- GRÁFICO 5: ANÁLISE POR FAMÍLIA (BARRAS HORIZONTAL) ----
+            destruirGraficoSeExiste(instanciaFamilias);
+            const ordFam = Object.keys(dadosFamilias).sort((a,b) => dadosFamilias[b] - dadosFamilias[a]).slice(0, 5);
+            instanciaFamilias = new Chart(document.getElementById("chartFamilias"), {
+                type: 'bar',
                 data: {
-                    labels: labels.length ? labels : ["Sem Lançamentos"],
-                    datasets: [{ data: valores.length ? valores : [0], backgroundColor: coresFinais, borderWidth: 1, borderColor: '#1f2937' }]
+                    labels: ordFam,
+                    datasets: [{ data: ordFam.map(f => dadosFamilias[f]), backgroundColor: '#fbbf24', borderRadius: 4 }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: tipo === 'bar' ? 'none' : 'right', labels: { color: '#9ca3af', boxWidth: 12, font: { size: 10 } } } },
-                    scales: tipo === 'bar' ? { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } } : {},
-                    onClick: (evt, elementos) => {
-                        if (elementos.length > 0 && labels.length > 0) {
+                    ...configComumGeral,
+                    indexAxis: 'y',
+                    onClick: (e, elementos) => {
+                        if (elementos.length > 0) {
                             const index = elementos[0].index;
-                            const itemClicado = labels[index];
-                            filtrosAtivos[chaveFiltro] = (filtrosAtivos[chaveFiltro] === itemClicado) ? null : itemClicado;
+                            const famClick = ordFam[index];
+                            filtrosAtivos.familiaGrafico = filtrosAtivos.familiaGrafico === famClick ? null : famClick;
                             renderizarDashboard();
                         }
                     }
                 }
             });
-            setInstanciaCallback(novaInstancia);
-        }
-
-        // TRATAMENTO PREVENTIVO EXTRA: Evita erros ao processar strings que contenham aspas
-        function montarTabelaEspecifica(dadosFiltrados) {
-            const tabelaCorpo = document.getElementById("corpoTabelaPerdas");
-            tabelaCorpo.innerHTML = "";
-
-            const itensOrdenados = [...dadosFiltrados].sort((a,b) => (a.validade || 0) - (b.validade || 0));
-            document.getElementById("txtContagemLinhas").innerText = `${itensOrdenados.length} listados`;
-
-            itensOrdenados.forEach(item => {
-                const tr = document.createElement("tr");
-                tr.className = filtrosAtivos.codigoBarras === item.codigo 
-                    ? "bg-blue-600/30 font-bold border-l-4 border-blue-500 hover:bg-blue-600/40 cursor-pointer transition"
-                    : "hover:bg-gray-700/50 cursor-pointer transition";
-                
-                tr.onclick = () => alternarFiltroTabela(item.codigo);
-
-                // Variáveis protegidas contra quebra de tokens no interpretador HTML
-                const vTxt = String(item.validadeTexto);
-                const clsBdg = String(item.classeBadge);
-                const stAt = String(item.statusAcao);
-                const lj = String(item.loja);
-                const cd = String(item.codigo);
-                const itm = String(item.item);
-                const dsc = String(item.descricao);
-                const fml = String(item.familia);
-                const qtd = String(item.quantidade);
-                const tPrd = item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-300">${vTxt}</td>
-                    <td class="p-3">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold block text-center uppercase tracking-wider ${clsBdg}">
-                            ${stAt}
-                        </span>
-                    </td>
-                    <td class="p-3"><span class="px-1.5 py-0.5 bg-gray-700 rounded text-gray-300 font-medium">${lj}</span></td>
-                    <td class="p-3 font-mono text-gray-400">${cd}</td>
-                    <td class="p-3 font-medium text-gray-100">${itm} <span class="text-gray-500 block text-[10px] font-normal">${dsc}</span></td>
-                    <td class="p-3 text-gray-400">${fml}</td>
-                    <td class="p-3 text-center font-bold text-gray-300">${qtd}</td>
-                    <td class="p-3 text-right font-black text-emerald-400">${tPrd}</td>
-                `;
-                tabelaCorpo.appendChild(tr);
-            });
-        }
-
-        function alternarFiltroCard(tipo, valor) {
-            filtrosAtivos[tipo] = (filtrosAtivos[tipo] === valor) ? null : valor;
-            renderizarDashboard();
-        }
-
-        function alternarFiltroTabela(codigo) {
-            filtrosAtivos.codigoBarras = (filtrosAtivos.codigoBarras === codigo) ? null : codigo;
-            renderizarDashboard();
-        }
-
-        function limparTodosFiltros() {
-            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
-            document.getElementById("thFiltroMes").value = "";
-            document.getElementById("thFiltroAno").value = "";
-            document.getElementById("thFiltroStatus").value = "";
-            
-            document.querySelector("#dropdown-loja .label").innerText = "Selecione...";
-            document.querySelector("#dropdown-codigo .label").innerText = "Selecione...";
-            document.querySelector("#dropdown-item .label").innerText = "Todos os Itens";
-            document.querySelector("#dropdown-family .label").innerText = "Selecione...";
-            
-            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
-            document.getElementById("filtroLojaSuperior").value = "";
-            fecharTodosDropdownisCustomizados();
-            renderizarDashboard();
         }
 
         function exportarParaExcel() {
-            const tabelaHTML = document.querySelector('table');
-            if (!tabelaHTML) return;
+            const dadosFiltrados = obterDadosFiltrados();
+            if (dadosFiltrados.length === 0) {
+                alert("Não existem dados para exportar com os filtros atuais.");
+                return;
+            }
 
-            const clone = tabelaHTML.cloneNode(true);
-            const linhaFiltros = clone.querySelector('thead tr:nth-child(2)');
-            if (linhaFiltros) linhaFiltros.remove();
+            const mapeadoMala = dadosFiltrados.map(i => ({
+                'Data Vencimento': i.validadeTexto,
+                'Status Ação': i.statusAcao,
+                'Loja / Filial': i.loja,
+                'Código de Barras': i.codigo,
+                'Descrição do Item': i.item,
+                'Especificação': i.descricao,
+                'Fornecedor': i.fornecedor,
+                'Linha': i.linha,
+                'Família': i.familia,
+                'Quantidade': i.quantidade,
+                'Valor Perda (R$)': i.totalPerda
+            }));
 
-            clone.querySelectorAll('tr').forEach((row, index) => {
-                if (index === 0) return;
-                const celulaStatus = row.cells[1];
-                if (celulaStatus) {
-                    const badge = celulaStatus.querySelector('span');
-                    if (badge) celulaStatus.innerText = badge.innerText.replace(/[🚨⚠️📅🔍]/g, '').trim();
-                }
-                const celulaItem = row.cells[4];
-                if (celulaItem) {
-                    const subtexto = celulaItem.querySelector('span');
-                    if (subtexto) {
-                        const textoPrincipal = celulaItem.childNodes[0].textContent.trim();
-                        celulaItem.innerText = `${textoPrincipal} (${subtexto.innerText.trim()})`;
-                    }
-                }
-            });
-
-            const wb = XLSX.utils.table_to_book(clone, { sheet: "Validades Analítico" });
-            const dataHoje = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
-            XLSX.writeFile(wb, `Painel_Validades_${dataHoje}.xlsx`);
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(mapeadoMala);
+            XLSX.utils.book_append_sheet(wb, ws, "Validades_Filtradas");
+            XLSX.writeFile(wb, `Relatorio_Validades_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
     </script>
 </body>
