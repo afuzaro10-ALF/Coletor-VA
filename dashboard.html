@@ -3,362 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Controle de Validades</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Dashboard Pro - Controle de Validades</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-100 font-sans antialiased text-gray-800">
+<body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
 
-    <div class="min-h-screen flex flex-col">
-        <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <span class="text-2xl">📊</span>
-                <h1 class="text-xl font-bold text-blue-600">Painel de Controle de Validades</h1>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="window.location.href='index.html'" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg text-sm transition shadow-sm">Voltar ao Coletor</button>
-                <button onclick="carregarDados()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition shadow-sm flex items-center gap-1">🔄 Atualizar Dados</button>
-            </div>
-        </header>
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Quebras &amp; Validades</h1>
+            <p class="text-xs text-gray-400 mt-1">Dados consolidados em tempo real via Google Sheets</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="limparTodosFiltros()" id="btnLimparFiltros" class="hidden px-3 py-2 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white rounded-xl text-xs font-bold transition border border-red-500/30">
+                ❌ Limpar Filtros Ativos
+            </button>
+            <button onclick="window.location.href='index.html'" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-xs font-bold text-white transition shadow-md">
+                ⬅️ Abrir Coletor (Scanner)
+            </button>
+        </div>
+    </div>
 
-        <main class="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+    <div id="loader" class="text-center py-20">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
+        <p class="text-gray-400 font-medium">Processando dados e montando inteligência de BI...</p>
+    </div>
+
+    <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Perda R$</span>
+                <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
+            </div>
             
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div onclick="alternarFiltroCard('vencimento', '3meses')" id="card3Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200">
+                <div class="flex justify-between items-start">
+                    <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Vence &le; 3 Meses</span>
+                    <span id="dot3m" class="h-2 w-2 rounded-full bg-transparent"></span>
+                </div>
+                <span id="kpi3Meses" class="text-xl font-black text-amber-300 mt-2">R$ 0,00</span>
+            </div>
+
+            <div onclick="alternarFiltroCard('vencimento', '6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
+                <div class="flex justify-between items-start">
+                    <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Vence &le; 6 Meses</span>
+                    <span id="dot6m" class="h-2 w-2 rounded-full bg-transparent"></span>
+                </div>
+                <span id="kpi6Meses" class="text-xl font-black text-orange-300 mt-2">R$ 0,00</span>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cód. Barras Uniq</span>
+                <span id="kpiCodBarras" class="text-xl font-black text-blue-400 mt-2">0</span>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qtd Total Itens</span>
+                <span id="kpiUnidades" class="text-xl font-black text-purple-400 mt-2">0</span>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas</span>
+                <span id="kpiLojas" class="text-xl font-black text-gray-200 mt-2">0</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
+                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento (6 Meses)</h3>
+                <div class="h-64 relative">
+                    <canvas id="chartCronograma"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
+                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Mapeamento Financeiro (R$) por Loja / Filial</h3>
+                <div class="h-64 relative">
+                    <canvas id="chartLojas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Top Fornecedores (R$)</h3>
+                <div class="h-56 relative"><canvas id="chartFornecedores"></canvas></div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Quebra por Linha (R$)</h3>
+                <div class="h-56 relative"><canvas id="chartLinhas"></canvas></div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Análise por Família (R$)</h3>
+                <div class="h-56 relative"><canvas id="chartFamilias"></canvas></div>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
+            <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
-                    <label for="filtroLoja" class="block text-sm font-semibold text-gray-600 mb-1">Filtrar por Loja</label>
-                    <select id="filtroLoja" onchange="filtrarDados()" class="w-full sm:w-64 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium">
-                        <option value="Todos">Todas as Lojas</option>
-                    </select>
+                    <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada (Ordenado por Vencimento mais Próximo)</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Clique em uma linha para focar o dashboard exclusivamente no produto selecionado</p>
                 </div>
-                <div id="txtAtualizado" class="text-xs text-gray-400 font-medium self-end sm:self-auto">Aguardando dados...</div>
+                <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold"></span>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-500 flex flex-col justify-between">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total R$ Coletado</span>
-                    <span id="cardTotalValor" class="text-2xl font-black text-emerald-600 mt-1">R$ 0,00</span>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500 flex flex-col justify-between">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de Itens (Tipos)</span>
-                    <span id="cardTotalItens" class="text-2xl font-black text-gray-800 mt-1">0</span>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-amber-500 flex flex-col justify-between">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Quantidade Unidades</span>
-                    <span id="cardTotalEstoque" class="text-2xl font-black text-gray-800 mt-1">0</span>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-purple-500 flex flex-col justify-between">
-                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas</span>
-                    <span id="cardLojasAtivas" class="text-2xl font-black text-gray-800 mt-1">0</span>
-                </div>
+            <div class="overflow-x-auto max-h-96 overflow-y-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-gray-900/60 text-gray-400 border-b border-gray-700 font-bold sticky top-0">
+                            <th class="p-3">Vencimento</th>
+                            <th class="p-3">Loja</th>
+                            <th class="p-3">Código</th>
+                            <th class="p-3">Item / Descrição</th>
+                            <th class="p-3">Família</th>
+                            <th class="p-3 text-center">Qtd</th>
+                            <th class="p-3 text-right">Total Perda</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabelaPerdas" class="divide-y divide-gray-700/50">
+                        </tbody>
+                </table>
             </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Previsão de Perda: Próximos 6 Meses (R$)</h3>
-                    <p class="text-xs text-gray-400 mb-4">Baseado na data atual de vencimento dos produtos</p>
-                    <div class="relative h-72"><canvas id="chartProjecao6Meses"></canvas></div>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Desempenho por Loja: Qtd vs Prejuízo (R$)</h3>
-                    <p class="text-xs text-gray-400 mb-4">Visão comparativa de volume e custo por filial</p>
-                    <div class="relative h-72"><canvas id="chartLojaDetalhado"></canvas></div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Perda Financeira por Fornecedor (Top Maiores)</h3>
-                    <p class="text-xs text-gray-400 mb-4">Concentração de valores de quebra por fabricante</p>
-                    <div class="relative h-80"><canvas id="chartFornecedor"></canvas></div>
-                </div>
-            </div>
-        </main>
+        </div>
     </div>
 
     <script>
-        // Nova URL de busca atualizada fornecida pelo usuário
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDt1XKb1ETsY7rxFzFHzSAcjxaL_cK1O8cC9l_aq3JCrqU8Walf_pVsuraoCxgfQQgXi2N8JEw2L0t/pub?gid=402499064&single=true&output=csv";
-        
-        let dadosGlobais = [];
-        let chartProjecaoInstance = null;
-        let chartLojaInstance = null;
-        let chartFornecedorInstance = null;
+        // URL de exportação em CSV da sua planilha (Aba Coletas)
+        const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
 
-        window.onload = function() {
-            carregarDados();
+        let dadosBrutos = [];
+        
+        // Objeto global que controla os filtros ativos no Dashboard (Engenharia de BI)
+        let filtrosAtivos = {
+            vencimento: null, // Pode ser '3meses' ou '6meses'
+            loja: null,
+            codigoBarras: null
         };
 
-        function carregarDados() {
-            document.getElementById("txtAtualizado").innerText = "🔄 Carregando dados da planilha...";
-            fetch(CSV_URL)
-                .then(response => response.text())
-                .then(textoCsv => {
-                    processarCsv(textoCsv);
-                    const agora = new Date();
-                    document.getElementById("txtAtualizado").innerText = `Atualizado em: ${agora.toLocaleTimeString('pt-BR')}`;
+        // Instâncias globais dos gráficos para podermos dar .destroy() ou .update() ao filtrar
+        let chartCronograma, chartLojas, chartFornecedores, chartLinhas, chartFamilias;
+
+        window.onload = function() {
+            carregarDadosDaPlanilha();
+        };
+
+        function carregarDadosDaPlanilha() {
+            fetch(URL_COLETAS)
+                .then(res => res.text())
+                .then(csv => {
+                    processarCsvBruto(csv);
+                    document.getElementById("loader").classList.add("hidden");
+                    document.getElementById("conteudoDash").classList.remove("hidden");
+                    renderizarDashboard();
                 })
                 .catch(err => {
-                    console.error("Erro ao carregar os dados:", err);
-                    document.getElementById("txtAtualizado").innerText = "❌ Erro ao sincronizar.";
-                    alert("Não foi possível carregar os dados publicados da planilha. Verifique a publicação da Web.");
+                    console.error(err);
+                    alert("Erro ao sincronizar dados com a nuvem do Google Sheets.");
                 });
         }
 
-        function processarCsv(texto) {
-            const linhas = texto.split(/\r?\n/);
+        function processarCsvBruto(text) {
+            const linhas = text.split(/\r?\n/);
             if (linhas.length < 2) return;
 
-            // Mapeia os cabeçalhos em minúsculo e limpa espaços/aspas
-            const cabecalho = linhas[0].split(',').map(c => c.replace(/^"|"$/g, '').trim().toLowerCase());
+            // Mapeamento dinâmico dos cabeçalhos da aba Coletas
+            const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
             
-            // Localiza os índices de forma dinâmica inteligente pelas colunas reais do ecossistema
-            const idxLoja = cabecalho.findIndex(c => c.includes('loja'));
-            const idxQtd = cabecalho.findIndex(c => c.includes('quantidade') || c.includes('qtd'));
-            const idxVal = cabecalho.findIndex(c => c.includes('validade') || c.includes('venc'));
-            const idxForn = cabecalho.findIndex(c => c.includes('fornecedor') || c.includes('fabricante'));
-            const idxPerda = cabecalho.findIndex(c => c.includes('perda') || c.includes('totalperda') || c.includes('custo'));
+            const idxLoja = cabecalho.indexOf('loja');
+            const idxCod = cabecalho.indexOf('código de barras');
+            const idxItem = cabecalho.indexOf('item/produto');
+            const idxDesc = cabecalho.indexOf('descrição');
+            const idxForn = cabecalho.indexOf('fornecedor');
+            const idxLinha = cabecalho.indexOf('linha');
+            const idxFam = cabecalho.indexOf('família');
+            const idxQtd = cabecalho.indexOf('quantidade');
+            const idxValidade = cabecalho.indexOf('data de vencimento');
+            const idxTotalPerda = cabecalho.indexOf('total perda (r$)');
 
-            dadosGlobais = [];
-            const lojasSet = new Set();
+            dadosBrutos = [];
 
             for (let i = 1; i < linhas.length; i++) {
-                if (!linhas[i].trim()) continue;
-                
-                // Regex para quebrar colunas por vírgula mas respeitar valores monetários gravados entre aspas
-                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
-                
-                let loja = idxLoja !== -1 ? colunas[idxLoja] : 'Não Informado';
-                let qtd = idxQtd !== -1 ? parseInt(colunas[idxQtd]) || 0 : 0;
-                let validade = idxVal !== -1 ? colunas[idxVal] : '';
-                let fornecedor = idxForn !== -1 && colunas[idxForn] ? colunas[idxForn] : 'NÃO CADASTRADO';
-                
-                // Tratamento numérico seguro do valor financeiro (Removendo pontos e ajustando vírgula decimal)
-                let perdaTexto = idxPerda !== -1 ? colunas[idxPerda] : '0';
-                let perda = parseFloat(perdaTexto.replace(/\./g, '').replace(',', '.')) || 0;
-
-                if (loja && loja !== 'Não Informado') {
-                    dadosGlobais.push({ loja, qtd, validade, fornecedor, perda });
-                    lojasSet.add(loja);
-                }
-            }
-
-            // Popula seletor de lojas na interface
-            const select = document.getElementById("filtroLoja");
-            select.innerHTML = '<option value="Todos">Todas as Lojas</option>';
-            Array.from(lojasSet).sort().forEach(loja => {
-                const opt = document.createElement("option");
-                opt.value = loja;
-                opt.textContent = loja;
-                select.appendChild(opt);
-            });
-
-            filtrarDados();
-        }
-
-        function filtrarDados() {
-            const lojaSelecionada = document.getElementById("filtroLoja").value;
-            
-            const dadosFiltrados = dadosGlobais.filter(d => {
-                return lojaSelecionada === "Todos" || d.loja === lojaSelecionada;
-            });
-
-            // Atualização dos Cards Superiores Dinâmicos
-            document.getElementById("cardTotalItens").textContent = dadosFiltrados.length;
-            
-            const totalQtd = dadosFiltrados.reduce((acc, curr) => acc + curr.qtd, 0);
-            document.getElementById("cardTotalEstoque").textContent = totalQtd.toLocaleString('pt-BR');
-
-            const totalFinanceiro = dadosFiltrados.reduce((acc, curr) => acc + curr.perda, 0);
-            document.getElementById("cardTotalValor").textContent = totalFinanceiro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-            const lojasAtivas = new Set(dadosFiltrados.map(d => d.loja)).size;
-            document.getElementById("cardLojasAtivas").textContent = lojasAtivas;
-
-            renderizarGraficosVisoes(dadosFiltrados);
-        }
-
-        function renderizarGraficosVisoes(dados) {
-            
-            // --- VISÃO 1: PROJEÇÃO PRÓXIMOS 6 MESES POR TOTAL PERDA ---
-            const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            const listaProxima = {};
-            
-            // Monta vetor fixo dos próximos 6 meses sequenciais baseados na data corrente
-            const hoje = new Date();
-            for (let k = 0; k < 6; k++) {
-                let dFutura = new Date(hoje.getFullYear(), hoje.getMonth() + k, 1);
-                let chaveMesAno = `${String(dFutura.getMonth() + 1).padStart(2, '0')}/${dFutura.getFullYear()}`;
-                listaProxima[chaveMesAno] = 0;
-            }
-
-            dados.forEach(d => {
-                if (d.validade) {
-                    let partes = [];
-                    if (d.validade.includes('/')) partes = d.validade.split('/');
-                    else if (d.validade.includes('-')) partes = d.validade.split('-').reverse(); // AAAA-MM-DD para DD/MM/AAAA
-
-                    if (partes.length >= 3) {
-                        const mVal = partes[1];
-                        const aVal = partes[2].substring(0, 4);
-                        const chave = `${mVal.padStart(2, '0')}/${aVal}`;
-                        
-                        // Se fizer parte dos próximos 6 meses mapeados, acumula o valor financeiro da perda
-                        if (listaProxima[chave] !== undefined) {
-                            listaProxima[chave] += d.perda;
-                        }
-                    }
-                }
-            });
-
-            const labelsProjecao = Object.keys(listaProxima).map(c => {
-                let [m, a] = c.split('/');
-                return `${mesesNomes[parseInt(m) - 1]}/${a.substring(2)}`;
-            });
-            const valoresProjecao = Object.values(listaProxima);
-
-
-            // --- VISÃO 2: COLETADO POR LOJA, QUANTIDADE E VALOR ---
-            const agrupadoLoja = {};
-            dados.forEach(d => {
-                if (!agrupadoLoja[d.loja]) {
-                    agrupadoLoja[d.loja] = { qtd: 0, valor: 0 };
-                }
-                agrupadoLoja[d.loja].qtd += d.qtd;
-                agrupadoLoja[d.loja].valor += d.perda;
-            });
-
-            const labelsLojas = Object.keys(agrupadoLoja);
-            const qtdsLojas = labelsLojas.map(l => agrupadoLoja[l].qtd);
-            const valoresLojas = labelsLojas.map(l => agrupadoLoja[l].valor);
-
-
-            // --- VISÃO 3: POR FORNECEDOR ---
-            const agrupadoForn = {};
-            dados.forEach(d => {
-                agrupadoForn[d.fornecedor] = (agrupadoForn[d.fornecedor] || 0) + d.perda;
-            });
-
-            // Ordena decrescente por prejuízo e pega os top 7 maiores
-            const fornecedoresOrdenados = Object.entries(agrupadoForn)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 7);
-
-            const labelsFornecedores = fornecedoresOrdenados.map(f => f[0]);
-            const valoresFornecedores = fornecedoresOrdenados.map(f => f[1]);
-
-
-            // --- PROCESSAMENTO FINAL DE RENDERIZAÇÃO NO CHART.JS ---
-            if (chartProjecaoInstance) chartProjecaoInstance.destroy();
-            if (chartLojaInstance) chartLojaInstance.destroy();
-            if (chartFornecedorInstance) chartFornecedorInstance.destroy();
-
-            // Render Gráfico 1: Linha de Projeção Financeira
-            const ctxProj = document.getElementById('chartProjecao6Meses').getContext('2d');
-            chartProjecaoInstance = new Chart(ctxProj, {
-                type: 'line',
-                data: {
-                    labels: labelsProjecao,
-                    datasets: [{
-                        label: 'Prejuízo Previsto',
-                        data: valoresProjecao,
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        fill: true,
-                        tension: 0.3,
-                        borderWidth: 3,
-                        pointBackgroundColor: '#d97706'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ' Perda: ' + context.raw.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Render Gráfico 2: Combo Barras de Quantidade vs Valor por Loja
-            const ctxLoja = document.getElementById('chartLojaDetalhado').getContext('2d');
-            chartLojaInstance = new Chart(ctxLoja, {
-                type: 'bar',
-                data: {
-                    labels: labelsLojas,
-                    datasets: [
-                        {
-                            label: 'Qtd Itens',
-                            data: qtdsLojas,
-                            backgroundColor: '#3b82f6',
-                            yAxisID: 'yQtd',
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'Valor Perda (R$)',
-                            data: valoresLojas,
-                            backgroundColor: '#ef4444',
-                            yAxisID: 'yValor',
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        yQtd: {
-                            type: 'linear',
-                            position: 'left',
-                            title: { display: true, text: 'Unidades Físicas' }
-                        },
-                        yValor: {
-                            type: 'linear',
-                            position: 'right',
-                            title: { display: true, text: 'Custo Financeiro (R$)' },
-                            grid: { drawOnChartArea: false },
-                            ticks: {
-                                callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR'); }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Render Gráfico 3: Barras Horizontais por Fornecedor
-            const ctxForn = document.getElementById('chartFornecedor').getContext('2d');
-            chartFornecedorInstance = new Chart(ctxForn, {
-                type: 'bar',
-                data: {
-                    labels: labelsFornecedores,
-                    datasets: [{
-                        label: 'Total Perda Acumulada',
-                        data: valoresFornecedores,
-                        backgroundColor: '#8b5cf6',
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ' Custo total: ' + context.raw.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    </script>
-</body>
-</html>
+                if (!linhas
