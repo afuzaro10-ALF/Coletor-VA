@@ -114,7 +114,7 @@
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
                     <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Filtre as linhas utilizando os campos de busca abaixo</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Utilize os filtros suspensos abaixo para segmentar a visão</p>
                 </div>
                 <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold"></span>
             </div>
@@ -122,20 +122,57 @@
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-gray-900 text-gray-400 font-bold border-b border-gray-700">
-                            <th class="p-3">Vencimento</th>
-                            <th class="p-3">Loja</th>
-                            <th class="p-3">Código</th>
+                            <th class="p-3 w-40">Vencimento</th>
+                            <th class="p-3 w-36">Loja</th>
+                            <th class="p-3 w-36">Código</th>
                             <th class="p-3">Item / Descrição</th>
-                            <th class="p-3">Família</th>
-                            <th class="p-3 text-center">Qtd</th>
-                            <th class="p-3 text-right">Total Perda</th>
+                            <th class="p-3 w-44">Família</th>
+                            <th class="p-3 w-16 text-center">Qtd</th>
+                            <th class="p-3 w-28 text-right">Total Perda</th>
                         </tr>
                         <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-10">
-                            <th class="p-2"><input type="text" id="thFiltroVencimento" oninput="executarFiltrosTabela()" placeholder="🔍 Data..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
-                            <th class="p-2"><input type="text" id="thFiltroLoja" oninput="executarFiltrosTabela()" placeholder="🔍 Loja..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
-                            <th class="p-2"><input type="text" id="thFiltroCodigo" oninput="executarFiltrosTabela()" placeholder="🔍 Código..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
-                            <th class="p-2"><input type="text" id="thFiltroItem" oninput="executarFiltrosTabela()" placeholder="🔍 Descrição..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
-                            <th class="p-2"><input type="text" id="thFiltroFamilia" oninput="executarFiltrosTabela()" placeholder="🔍 Família..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
+                            <th class="p-2">
+                                <div class="flex gap-1">
+                                    <select id="thFiltroMes" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
+                                        <option value="">Mês</option>
+                                        <option value="01">Jan</option>
+                                        <option value="02">Fev</option>
+                                        <option value="03">Mar</option>
+                                        <option value="04">Abr</option>
+                                        <option value="05">Mai</option>
+                                        <option value="06">Jun</option>
+                                        <option value="07">Jul</option>
+                                        <option value="08">Ago</option>
+                                        <option value="09">Set</option>
+                                        <option value="10">Out</option>
+                                        <option value="11">Nov</option>
+                                        <option value="12">Dez</option>
+                                    </select>
+                                    <select id="thFiltroAno" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
+                                        <option value="">Ano</option>
+                                    </select>
+                                </div>
+                            </th>
+                            <th class="p-2">
+                                <select id="thFiltroLoja" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </th>
+                            <th class="p-2">
+                                <select id="thFiltroCodigo" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </th>
+                            <th class="p-2">
+                                <select id="thFiltroItem" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </th>
+                            <th class="p-2">
+                                <select id="thFiltroFamilia" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
+                                    <option value="">Selecione...</option>
+                                </select>
+                            </th>
                             <th class="p-2"></th>
                             <th class="p-2"></th>
                         </tr>
@@ -152,7 +189,7 @@
 
         let dadosBrutos = [];
         let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null };
-        let filtrosCabecalhoTabela = { vencimento: "", loja: "", codigo: "", item: "", familia: "" };
+        let filtrosCabecalhoTabela = { mes: "", ano: "", loja: "", codigo: "", item: "", familia: "" };
         
         let chartCronograma, chartLojas, chartFornecedores, chartLinhas, chartFamilias;
 
@@ -176,6 +213,7 @@
                     }
                     processarCsvBruto(csv);
                     popularSeletorLojas();
+                    popularFiltrosSuspensosTabela();
                     document.getElementById("loader").classList.add("hidden");
                     document.getElementById("conteudoDash").classList.remove("hidden");
                     renderizarDashboard();
@@ -190,9 +228,7 @@
 
         function tratarNumeroBrasil(texto) {
             if (!texto) return 0;
-            // Limpa aspas extras que vêm do CSV do Google
             let limpo = texto.replace(/^["']|["']$/g, '').trim();
-            // Substitui a vírgula decimal por ponto para conversão correta do JS
             limpo = limpo.replace(/\./g, '').replace(',', '.');
             let n = parseFloat(limpo);
             return isNaN(n) ? 0 : n;
@@ -228,13 +264,10 @@
             const idxTotalPerda = encontrarIndexColuna(cabecalho, ['total perda (r$)', 'total perda', 'perda', 'valor']);
 
             dadosBrutos = [];
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
 
             for (let i = 1; i < linhas.length; i++) {
                 if (!linhas[i].trim()) continue;
                 
-                // Regex para separar por vírgulas respeitando células com aspas
                 const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
                 let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
@@ -242,17 +275,24 @@
                 
                 let dataValidadeObj = null;
                 let dataTexto = (idxValidade !== -1 && colunas[idxValidade]) ? colunas[idxValidade].trim() : "";
+                let mesTexto = "";
+                let anoTexto = "";
 
                 if (dataTexto) {
+                    let partes = [];
                     if (dataTexto.includes("/")) {
-                        const partes = dataTexto.split("/");
+                        partes = dataTexto.split("/");
                         if (partes.length === 3) {
                             dataValidadeObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+                            mesTexto = partes[1].padStart(2, '0');
+                            anoTexto = partes[2];
                         }
                     } else if (dataTexto.includes("-")) {
-                        const partes = dataTexto.split("-");
+                        partes = dataTexto.split("-");
                         if (partes.length === 3) {
                             dataValidadeObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+                            mesTexto = partes[1].padStart(2, '0');
+                            anoTexto = partes[0];
                         }
                     }
                 }
@@ -261,12 +301,10 @@
                     dataValidadeObj = null;
                 }
 
-                // Carrega todos os registros válidos sem podar o mês corrente por fuso horário
                 if (dataValidadeObj) {
-                    let codChave = idxCod !== -1 ? colunas[idxCod] : "S/C";
                     dadosBrutos.push({
                         loja: idxLoja !== -1 ? (colunas[idxLoja] || "Não Identificada") : "Não Identificada",
-                        codigo: codChave,
+                        codigo: idxCod !== -1 ? colunas[idxCod] : "S/C",
                         item: idxItem !== -1 ? (colunas[idxItem] || "Item Sem Nome") : "Item Sem Nome",
                         descricao: idxDesc !== -1 ? (colunas[idxDesc] || "") : "",
                         fornecedor: idxForn !== -1 ? (colunas[idxForn] || "Sem Fornecedor") : "Sem Fornecedor",
@@ -275,6 +313,8 @@
                         quantidade: qtdNum,
                         validade: dataValidadeObj,
                         validadeTexto: dataTexto || "Sem Data",
+                        mes: mesTexto,
+                        ano: anoTexto,
                         totalPerda: perdaNum
                     });
                 }
@@ -283,7 +323,6 @@
 
         function popularSeletorLojas() {
             const seletor = document.getElementById("filtroLojaSuperior");
-            // Remove duplicados e reconstrói as opções dinamicamente
             while(seletor.options.length > 1) seletor.remove(1);
             
             const lojasUnicas = [...new Set(dadosBrutos.map(item => item.loja))].sort();
@@ -295,17 +334,57 @@
             });
         }
 
+        // Preenche os selects da tabela dinamicamente com base nos dados brutos
+        function popularFiltrosSuspensosTabela() {
+            const anos = [...new Set(dadosBrutos.map(i => i.ano))].filter(Boolean).sort();
+            const lojas = [...new Set(dadosBrutos.map(i => i.loja))].filter(Boolean).sort();
+            const codigos = [...new Set(dadosBrutos.map(i => i.codigo))].filter(Boolean).sort();
+            const familias = [...new Set(dadosBrutos.map(i => i.familia))].filter(Boolean).sort();
+            
+            // Itens combinando código e nome para exibição limpa no dropdown
+            const itens = [...new Map(dadosBrutos.map(i => [i.item, i])).values()]
+                            .sort((a,b) => a.item.localeCompare(b.item));
+
+            alimentarSelect("thFiltroAno", anos);
+            alimentarSelect("thFiltroLoja", lojas);
+            alimentarSelect("thFiltroCodigo", codigos);
+            alimentarSelect("thFiltroFamilia", familias);
+            
+            // Alimentação customizada para o Nome do Item
+            const selectItem = document.getElementById("thFiltroItem");
+            selectItem.innerHTML = '<option value="">Todos os Itens</option>';
+            itens.forEach(i => {
+                const opt = document.createElement("option");
+                opt.value = i.item.toLowerCase();
+                opt.innerText = i.item;
+                selectItem.appendChild(opt);
+            });
+        }
+
+        function alimentarSelect(idElemento, listaValores) {
+            const select = document.getElementById(idElemento);
+            const textoPadrao = select.options[0].text;
+            select.innerHTML = `<option value="">${textoPadrao}</option>`;
+            listaValores.forEach(val => {
+                const opt = document.createElement("option");
+                opt.value = val.toLowerCase();
+                opt.innerText = val;
+                select.appendChild(opt);
+            });
+        }
+
         function alterarFiltroLojaSuperior(lojaSelecionada) {
             filtrosAtivos.loja = lojaSelecionada || null;
             renderizarDashboard();
         }
 
         function executarFiltrosTabela() {
-            filtrosCabecalhoTabela.vencimento = document.getElementById("thFiltroVencimento").value.toLowerCase();
-            filtrosCabecalhoTabela.loja = document.getElementById("thFiltroLoja").value.toLowerCase();
-            filtrosCabecalhoTabela.codigo = document.getElementById("thFiltroCodigo").value.toLowerCase();
-            filtrosCabecalhoTabela.item = document.getElementById("thFiltroItem").value.toLowerCase();
-            filtrosCabecalhoTabela.familia = document.getElementById("thFiltroFamilia").value.toLowerCase();
+            filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
+            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
+            filtrosCabecalhoTabela.loja = document.getElementById("thFiltroLoja").value;
+            filtrosCabecalhoTabela.codigo = document.getElementById("thFiltroCodigo").value;
+            filtrosCabecalhoTabela.item = document.getElementById("thFiltroItem").value;
+            filtrosCabecalhoTabela.familia = document.getElementById("thFiltroFamilia").value;
             
             montarTabelaEspecifica();
         }
@@ -365,10 +444,8 @@
                 : "hidden";
 
             const agruparLojas = {}, agruparForn = {}, agruparLinhas = {}, agruparFamilias = {}, agruparCronograma = {};
-            
             const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
             
-            // Inicia o cronograma com os próximos 12 meses zerados para garantir estrutura visual limpa
             for(let i=0; i<12; i++) {
                 let m = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
                 agruparCronograma[mesesNomes[m.getMonth()] + "/" + String(m.getFullYear()).substring(2)] = 0;
@@ -403,11 +480,13 @@
             tabelaCorpo.innerHTML = "";
 
             const dadosFiltradosNaTabela = dadosIniciais.filter(item => {
-                if (filtrosCabecalhoTabela.vencimento && !item.validadeTexto.toLowerCase().includes(filtrosCabecalhoTabela.vencimento)) return false;
-                if (filtrosCabecalhoTabela.loja && !item.loja.toLowerCase().includes(filtrosCabecalhoTabela.loja)) return false;
-                if (filtrosCabecalhoTabela.codigo && !item.codigo.toLowerCase().includes(filtrosCabecalhoTabela.codigo)) return false;
-                if (filtrosCabecalhoTabela.item && !item.item.toLowerCase().includes(filtrosCabecalhoTabela.item) && !item.descricao.toLowerCase().includes(filtrosCabecalhoTabela.item)) return false;
-                if (filtrosCabecalhoTabela.familia && !item.familia.toLowerCase().includes(filtrosCabecalhoTabela.familia)) return false;
+                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
+                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
+                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
+                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
+                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
+                if (filtrosCabecalhoTabela.family && item.familia.toLowerCase() !== filtrosCabecalhoTabela.familia) return false; // Compatibilidade com chamadas legadas
+                if (filtrosCabecalhoTabela.familia && item.familia.toLowerCase() !== filtrosCabecalhoTabela.familia) return false;
                 return true;
             });
 
@@ -470,12 +549,13 @@
             filtrosAtivos.loja = null;
             filtrosAtivos.codigoBarras = null;
             
-            document.getElementById("thFiltroVencimento").value = "";
+            document.getElementById("thFiltroMes").value = "";
+            document.getElementById("thFiltroAno").value = "";
             document.getElementById("thFiltroLoja").value = "";
             document.getElementById("thFiltroCodigo").value = "";
             document.getElementById("thFiltroItem").value = "";
             document.getElementById("thFiltroFamilia").value = "";
-            filtrosCabecalhoTabela = { vencimento: "", loja: "", codigo: "", item: "", familia: "" };
+            filtrosCabecalhoTabela = { mes: "", ano: "", loja: "", codigo: "", item: "", familia: "" };
 
             document.getElementById("filtroLojaSuperior").value = "";
 
