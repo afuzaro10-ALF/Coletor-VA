@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Pro - Controle de Validades</title>
-    <!-- ALTERADO: Utilizando a CDN estável e correta do Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- BIBLIOTECA PARA EXPORTAR EXCEL -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         .custom-scroll::-webkit-scrollbar { width: 6px; }
@@ -17,7 +15,6 @@
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
 
-    <!-- CABEÇALHO -->
     <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Validades</h1>
@@ -43,16 +40,13 @@
         </div>
     </div>
 
-    <!-- LOADER / MENSAGENS DE ERRO -->
-    <div id="loader" class="text-center py-20 max-w-7xl mx-auto bg-gray-800 rounded-2xl border border-gray-700 p-6 shadow-xl">
-        <div id="loaderIcon" class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
-        <p id="loaderTexto" class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
+    <div id="loader" class="text-center py-20">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
+        <p class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
         
-        <!-- CARDS DE INDICADORES (KPIS) -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Perda R$</span>
@@ -94,7 +88,6 @@
             </div>
         </div>
 
-        <!-- GRÁFICOS PRINCIPAIS -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
                 <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
@@ -111,32 +104,21 @@
             </div>
         </div>
 
-        <!-- ANÁLISES SETORIAIS -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Top Fornecedores (R$)</span>
-                    <span id="lblFiltroForn" class="text-[10px] text-blue-400 lowercase italic"></span>
-                </h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Top Fornecedores (R$)</h3>
                 <div class="h-56 relative"><canvas id="chartFornecedores"></canvas></div>
             </div>
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Quebra por Linha (R$)</span>
-                    <span id="lblFiltroLinha" class="text-[10px] text-emerald-400 lowercase italic"></span>
-                </h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Quebra por Linha (R$)</h3>
                 <div class="h-56 relative"><canvas id="chartLinhas"></canvas></div>
             </div>
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Análise por Família (R$)</span>
-                    <span id="lblFiltroFamilia" class="text-[10px] text-amber-400 lowercase italic"></span>
-                </h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Análise por Família (R$)</h3>
                 <div class="h-56 relative"><canvas id="chartFamilias"></canvas></div>
             </div>
         </div>
 
-        <!-- TABELA ANALÍTICA -->
         <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
@@ -257,8 +239,9 @@
         const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
 
         let dadosBrutos = [];
-        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
+        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null };
         let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", familia: "" };
+        
         let chartCronograma, chartLojas, chartFornecedores, chartLinhas, chartFamilias;
 
         window.onload = function() {
@@ -268,6 +251,8 @@
                     fecharTodosDropdownisCustomizados();
                 }
             });
+
+            // Ativa o evento do botão de exportação
             document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
         };
 
@@ -279,7 +264,9 @@
                 })
                 .then(csv => {
                     if (csv.includes("<!DOCTYPE") || csv.includes("login") || csv.length < 50) {
-                        exibirMensagemErro("⚠️ Permissão necessária: A planilha precisa estar configurada como 'Qualquer pessoa com o link pode ler'.");
+                        document.getElementById("loader").innerHTML = `
+                            <p class="text-red-500 font-bold text-lg">⚠️ Falha na permissão da Planilha</p>
+                        `;
                         return;
                     }
                     processarCsvBruto(csv);
@@ -290,16 +277,8 @@
                     renderizarDashboard();
                 })
                 .catch(err => {
-                    exibirMensagemErro("❌ Falha de Conexão: Não foi possível acessar os dados da planilha do Google. Verifique o link ou sua internet.");
+                    document.getElementById("loader").innerHTML = `<p class="text-red-500 font-bold text-lg">❌ Erro de Conexão</p>`;
                 });
-        }
-
-        // TRATAMENTO DE ERRO MELHORADO: Não quebra o visual da página
-        function exibirMensagemErro(mensagem) {
-            document.getElementById("loaderIcon").classList.add("hidden");
-            const txtErro = document.getElementById("loaderTexto");
-            txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
-            txtErro.innerText = mensaje;
         }
 
         function tratarNumeroBrasil(texto) {
@@ -342,7 +321,7 @@
             for (let i = 1; i < linhas.length; i++) {
                 if (!linhas[i].trim()) continue;
                 
-                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                const colunas = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
                 let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
                 let perdaNum = idxTotalPerda !== -1 ? tratarNumeroBrasil(colunas[idxTotalPerda]) : 0;
@@ -374,6 +353,7 @@
                 if (dataValidadeObj && isNaN(dataValidadeObj.getTime())) dataValidadeObj = null;
 
                 if (dataValidadeObj && dataValidadeObj >= hojeCorte) {
+                    
                     const diffTempo = dataValidadeObj.getTime() - hojeCorte.getTime();
                     const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
                     
@@ -444,7 +424,7 @@
             construirOpcoesDropdownCustom("dropdown-loja", lojas, "loja", "Selecione...");
             construirOpcoesDropdownCustom("dropdown-codigo", codigos, "codigo", "Selecione...");
             construirOpcoesDropdownCustom("dropdown-item", itens, "item", "Todos os Itens");
-            construirOpcoesDropdownCustom("dropdown-family", familias, "family", "Selecione...");
+            construirOpcoesDropdownCustom("dropdown-family", familias, "familia", "Selecione...");
         }
 
         function construirOpcoesDropdownCustom(idDropdown, arrayValores, chaveFiltro, labelPadrao) {
@@ -530,9 +510,6 @@
                 }
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
                 if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
-                if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
-                if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
-                if (filtrosAtivos.familiaGrafico && item.familia !== filtrosAtivos.familiaGrafico) return false;
 
                 if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
                 if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
@@ -573,12 +550,7 @@
 
             document.getElementById("filtroLojaSuperior").value = filtrosAtivos.loja || "";
 
-            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `(filtrado: ${filtrosAtivos.fornecedor})` : "";
-            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `(filtrado: ${filtrosAtivos.linha})` : "";
-            document.getElementById("lblFiltroFamilia").innerText = filtrosAtivos.familiaGrafico ? `(filtrado: ${filtrosAtivos.familiaGrafico})` : "";
-
             const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras ||
-                                   filtrosAtivos.fornecedor || filtrosAtivos.linha || filtrosAtivos.familiaGrafico ||
                                    filtrosCabecalhoTabela.mes || filtrosCabecalhoTabela.ano || filtrosCabecalhoTabela.status ||
                                    filtrosCabecalhoTabela.loja || filtrosCabecalhoTabela.codigo || filtrosCabecalhoTabela.item || filtrosCabecalhoTabela.family;
             
@@ -625,10 +597,9 @@
 
             montarGraficoCronograma(agruparCronograma);
             montarGraficoLojas(agruparLojas);
-            
-            montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, 'fornecedor', (instance) => chartFornecedores = instance);
-            montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, 'linha', (instance) => chartLinhas = instance);
-            montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, 'familiaGrafico', (instance) => chartFamilias = instance);
+            montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, (instance) => chartFornecedores = instance);
+            montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, (instance) => chartLinhas = instance);
+            montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, (instance) => chartFamilias = instance);
 
             montarTabelaEspecifica(dadosFiltrados);
         }
@@ -681,7 +652,7 @@
         }
 
         function limparTodosFiltros() {
-            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
+            filtrosAtivos.vencimento = null; filtrosAtivos.loja = null; filtrosAtivos.codigoBarras = null;
             document.getElementById("thFiltroMes").value = "";
             document.getElementById("thFiltroAno").value = "";
             document.getElementById("thFiltroStatus").value = "";
@@ -697,6 +668,7 @@
             renderizarDashboard();
         }
 
+        // LÓGICA DE EXPORTAÇÃO EXCEL ATUALIZADA
         function exportarParaExcel() {
             const tabelaHTML = document.querySelector('table');
             if (!tabelaHTML) {
@@ -704,19 +676,25 @@
                 return;
             }
 
+            // Clona a estrutura para realizar uma higienização estrutural dos dados
             const clone = tabelaHTML.cloneNode(true);
+            
+            // Remove a linha de seletores/filtros para não poluir o cabeçalho do arquivo final
             const linhaFiltros = clone.querySelector('thead tr:nth-child(2)');
             if (linhaFiltros) linhaFiltros.remove();
 
+            // Percorre as linhas removendo elementos visuais HTML (Badges e Descrições secundárias)
             clone.querySelectorAll('tr').forEach((row, index) => {
-                if (index === 0) return;
+                if (index === 0) return; // Mantém os títulos das colunas intactos
 
+                // Higieniza a coluna de Status Ação (índice 1) extraindo apenas o texto do Badge
                 const celulaStatus = row.cells[1];
                 if (celulaStatus) {
                     const badge = celulaStatus.querySelector('span');
                     if (badge) celulaStatus.innerText = badge.innerText.replace(/[🚨⚠️📅🔍]/g, '').trim();
                 }
 
+                // Higieniza a coluna de Descrição do Item (índice 4) para separar Título de Subtítulo estruturalmente
                 const celulaItem = row.cells[4];
                 if (celulaItem) {
                     const subtexto = celulaItem.querySelector('span');
@@ -727,7 +705,10 @@
                 }
             });
 
+            // Converte o clone higienizado em estrutura Workbook
             const wb = XLSX.utils.table_to_book(clone, { sheet: "Validades Analítico" });
+            
+            // Define o nome do arquivo usando a data atual corrigida
             const dataHoje = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
             XLSX.writeFile(wb, `Painel_Validades_${dataHoje}.xlsx`);
         }
@@ -779,22 +760,11 @@
             });
         }
 
-        function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, chaveFiltro, setInstanciaCallback) {
+        function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, setInstanciaCallback) {
             if(instanciaGrafico) instanciaGrafico.destroy();
-            
             const itensOrdenados = Object.entries(objetoDados).sort((a,b) => b[1] - a[1]).slice(0, 5);
             const labels = itensOrdenados.map(i => i[0]);
             const valores = itensOrdenados.map(i => i[1]);
-
-            const paletaCores = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
-            
-            const coresFinais = labels.map((label, idx) => {
-                const filtroCorrente = filtrosAtivos[chaveFiltro];
-                if (filtroCorrente) {
-                    return label === filtroCorrente ? paletaCores[idx % paletaCores.length] : 'rgba(75, 85, 99, 0.2)';
-                }
-                return paletaCores[idx % paletaCores.length];
-            });
 
             const novaInstancia = new Chart(document.getElementById(idElemento), {
                 type: tipo,
@@ -802,34 +772,16 @@
                     labels: labels.length ? labels : ["Sem Lançamentos"],
                     datasets: [{
                         data: valores.length ? valores : [0],
-                        backgroundColor: coresFinais,
-                        borderWidth: 1, 
-                        borderColor: '#1f2937'
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                        borderWidth: 1, borderColor: '#1f2937'
                     }]
                 },
                 options: {
-                    responsive: true, 
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { 
-                        legend: { 
-                            position: tipo === 'bar' ? 'none' : 'right', 
-                            labels: { color: '#9ca3af', boxWidth: 12, font: { size: 10 } } 
-                        } 
+                        legend: { position: tipo === 'bar' ? 'none' : 'right', labels: { color: '#9ca3af', boxWidth: 12, font: { size: 10 } } } 
                     },
-                    scales: tipo === 'bar' ? { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } } : {},
-                    onClick: (evt, elementos) => {
-                        if (elementos.length > 0 && labels.length > 0) {
-                            const index = elementos[0].index;
-                            const itemClicado = labels[index];
-                            
-                            if (filtrosAtivos[chaveFiltro] === itemClicado) {
-                                filtrosAtivos[chaveFiltro] = null;
-                            } else {
-                                filtrosAtivos[chaveFiltro] = itemClicado;
-                            }
-                            renderizarDashboard();
-                        }
-                    }
+                    scales: tipo === 'bar' ? { y: { ticks: { color: '#9ca3af' } }, x: { ticks: { color: '#9ca3af' } } } : {}
                 }
             });
             setInstanciaCallback(novaInstancia);
