@@ -106,15 +106,24 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Top Fornecedores (R$)</h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
+                    <span>Top Fornecedores (R$)</span>
+                    <span id="lblFiltroForn" class="text-[10px] text-blue-400 lowercase italic"></span>
+                </h3>
                 <div class="h-56 relative"><canvas id="chartFornecedores"></canvas></div>
             </div>
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Quebra por Linha (R$)</h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
+                    <span>Quebra por Linha (R$)</span>
+                    <span id="lblFiltroLinha" class="text-[10px] text-emerald-400 lowercase italic"></span>
+                </h3>
                 <div class="h-56 relative"><canvas id="chartLinhas"></canvas></div>
             </div>
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Análise por Família (R$)</h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
+                    <span>Análise por Família (R$)</span>
+                    <span id="lblFiltroFamilia" class="text-[10px] text-amber-400 lowercase italic"></span>
+                </h3>
                 <div class="h-56 relative"><canvas id="chartFamilias"></canvas></div>
             </div>
         </div>
@@ -239,7 +248,17 @@
         const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
 
         let dadosBrutos = [];
-        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null };
+        
+        // NOVO: Adicionado suporte a filtros de Fornecedor, Linha e Família via cliques nos gráficos
+        let filtrosAtivos = { 
+            vencimento: null, 
+            loja: null, 
+            codigoBarras: null,
+            fornecedor: null,
+            linha: null,
+            familiaGrafico: null
+        };
+        
         let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", familia: "" };
         
         let chartCronograma, chartLojas, chartFornecedores, chartLinhas, chartFamilias;
@@ -252,7 +271,6 @@
                 }
             });
 
-            // Ativa o evento do botão de exportação
             document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
         };
 
@@ -321,7 +339,7 @@
             for (let i = 1; i < linhas.length; i++) {
                 if (!linhas[i].trim()) continue;
                 
-                const colunas = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
                 let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
                 let perdaNum = idxTotalPerda !== -1 ? tratarNumeroBrasil(colunas[idxTotalPerda]) : 0;
@@ -424,7 +442,7 @@
             construirOpcoesDropdownCustom("dropdown-loja", lojas, "loja", "Selecione...");
             construirOpcoesDropdownCustom("dropdown-codigo", codigos, "codigo", "Selecione...");
             construirOpcoesDropdownCustom("dropdown-item", itens, "item", "Todos os Itens");
-            construirOpcoesDropdownCustom("dropdown-family", familias, "familia", "Selecione...");
+            construirOpcoesDropdownCustom("dropdown-family", familias, "family", "Selecione...");
         }
 
         function construirOpcoesDropdownCustom(idDropdown, arrayValores, chaveFiltro, labelPadrao) {
@@ -490,7 +508,7 @@
             renderizarDashboard();
         }
 
-        function ejecutarFiltrosTabela() {
+        function executarFiltrosTabela() {
             filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
             filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
             filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
@@ -510,6 +528,11 @@
                 }
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
                 if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
+                
+                // NOVO: Condicionais para os novos filtros setoriais dos gráficos
+                if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
+                if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
+                if (filtrosAtivos.familiaGrafico && item.familia !== filtrosAtivos.familiaGrafico) return false;
 
                 if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
                 if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
@@ -550,7 +573,13 @@
 
             document.getElementById("filtroLojaSuperior").value = filtrosAtivos.loja || "";
 
+            // Atualiza os indicadores de texto acima dos gráficos setoriais
+            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `(filtrado: ${filtrosAtivos.fornecedor})` : "";
+            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `(filtrado: ${filtrosAtivos.linha})` : "";
+            document.getElementById("lblFiltroFamilia").innerText = filtrosAtivos.familiaGrafico ? `(filtrado: ${filtrosAtivos.familiaGrafico})` : "";
+
             const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras ||
+                                   filtrosAtivos.fornecedor || filtrosAtivos.linha || filtrosAtivos.familiaGrafico ||
                                    filtrosCabecalhoTabela.mes || filtrosCabecalhoTabela.ano || filtrosCabecalhoTabela.status ||
                                    filtrosCabecalhoTabela.loja || filtrosCabecalhoTabela.codigo || filtrosCabecalhoTabela.item || filtrosCabecalhoTabela.family;
             
@@ -597,9 +626,11 @@
 
             montarGraficoCronograma(agruparCronograma);
             montarGraficoLojas(agruparLojas);
-            montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, (instance) => chartFornecedores = instance);
-            montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, (instance) => chartLinhas = instance);
-            montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, (instance) => chartFamilias = instance);
+            
+            // ATUALIZAÇÃO: Agora passamos a chave do filtro ativo correspondente para cada um dos 3 gráficos abaixo
+            montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, 'fornecedor', (instance) => chartFornecedores = instance);
+            montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, 'linha', (instance) => chartLinhas = instance);
+            montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, 'familiaGrafico', (instance) => chartFamilias = instance);
 
             montarTabelaEspecifica(dadosFiltrados);
         }
@@ -652,7 +683,8 @@
         }
 
         function limparTodosFiltros() {
-            filtrosAtivos.vencimento = null; filtrosAtivos.loja = null; filtrosAtivos.codigoBarras = null;
+            // NOVO: Resetando também os 3 novos filtros setoriais dos gráficos
+            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
             document.getElementById("thFiltroMes").value = "";
             document.getElementById("thFiltroAno").value = "";
             document.getElementById("thFiltroStatus").value = "";
@@ -668,7 +700,6 @@
             renderizarDashboard();
         }
 
-        // LÓGICA DE EXPORTAÇÃO EXCEL ATUALIZADA
         function exportarParaExcel() {
             const tabelaHTML = document.querySelector('table');
             if (!tabelaHTML) {
@@ -676,25 +707,19 @@
                 return;
             }
 
-            // Clona a estrutura para realizar uma higienização estrutural dos dados
             const clone = tabelaHTML.cloneNode(true);
-            
-            // Remove a linha de seletores/filtros para não poluir o cabeçalho do arquivo final
             const linhaFiltros = clone.querySelector('thead tr:nth-child(2)');
             if (linhaFiltros) linhaFiltros.remove();
 
-            // Percorre as linhas removendo elementos visuais HTML (Badges e Descrições secundárias)
             clone.querySelectorAll('tr').forEach((row, index) => {
-                if (index === 0) return; // Mantém os títulos das colunas intactos
+                if (index === 0) return;
 
-                // Higieniza a coluna de Status Ação (índice 1) extraindo apenas o texto do Badge
                 const celulaStatus = row.cells[1];
                 if (celulaStatus) {
                     const badge = celulaStatus.querySelector('span');
                     if (badge) celulaStatus.innerText = badge.innerText.replace(/[🚨⚠️📅🔍]/g, '').trim();
                 }
 
-                // Higieniza a coluna de Descrição do Item (índice 4) para separar Título de Subtítulo estruturalmente
                 const celulaItem = row.cells[4];
                 if (celulaItem) {
                     const subtexto = celulaItem.querySelector('span');
@@ -705,10 +730,7 @@
                 }
             });
 
-            // Converte o clone higienizado em estrutura Workbook
             const wb = XLSX.utils.table_to_book(clone, { sheet: "Validades Analítico" });
-            
-            // Define o nome do arquivo usando a data atual corrigida
             const dataHoje = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
             XLSX.writeFile(wb, `Painel_Validades_${dataHoje}.xlsx`);
         }
@@ -760,11 +782,25 @@
             });
         }
 
-        function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, setInstanciaCallback) {
+        // MODIFICADO: Função genérica reconstruída para interceptar cliques e tratar cores dinâmicas de filtros
+        function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, chaveFiltro, setInstanciaCallback) {
             if(instanciaGrafico) instanciaGrafico.destroy();
+            
             const itensOrdenados = Object.entries(objetoDados).sort((a,b) => b[1] - a[1]).slice(0, 5);
             const labels = itensOrdenados.map(i => i[0]);
             const valores = itensOrdenados.map(i => i[1]);
+
+            // Paleta padrão estruturada do dashboard
+            const paletaCores = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+            
+            // Lógica visual: Se houver filtro ativo desse gráfico, destaca apenas a fatia selecionada
+            const coresFinais = labels.map((label, idx) => {
+                const filtroCorrente = filtrosAtivos[chaveFiltro];
+                if (filtroCorrente) {
+                    return label === filtroCorrente ? paletaCores[idx % paletaCores.length] : 'rgba(75, 85, 99, 0.2)'; // Esmaece os não selecionados
+                }
+                return paletaCores[idx % paletaCores.length];
+            });
 
             const novaInstancia = new Chart(document.getElementById(idElemento), {
                 type: tipo,
@@ -772,16 +808,37 @@
                     labels: labels.length ? labels : ["Sem Lançamentos"],
                     datasets: [{
                         data: valores.length ? valores : [0],
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
-                        borderWidth: 1, borderColor: '#1f2937'
+                        backgroundColor: coresFinais,
+                        borderWidth: 1, 
+                        borderColor: '#1f2937'
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true, 
+                    maintainAspectRatio: false,
                     plugins: { 
-                        legend: { position: tipo === 'bar' ? 'none' : 'right', labels: { color: '#9ca3af', boxWidth: 12, font: { size: 10 } } } 
+                        legend: { 
+                            position: tipo === 'bar' ? 'none' : 'right', 
+                            labels: { color: '#9ca3af', boxWidth: 12, font: { size: 10 } } 
+                        } 
                     },
-                    scales: tipo === 'bar' ? { y: { ticks: { color: '#9ca3af' } }, x: { ticks: { color: '#9ca3af' } } } : {}
+                    scales: tipo === 'bar' ? { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } } : {},
+                    
+                    // Captura e gerencia o clique em cima de fatias ou barras específicos
+                    onClick: (evt, elementos) => {
+                        if (elementos.length > 0 && labels.length > 0) {
+                            const index = elementos[0].index;
+                            const itemClicado = labels[index];
+                            
+                            // Se clicou no que já estava filtrado, desmarca. Caso contrário, aplica o novo filtro.
+                            if (filtrosAtivos[chaveFiltro] === itemClicado) {
+                                filtrosAtivos[chaveFiltro] = null;
+                            } else {
+                                filtrosAtivos[chaveFiltro] = itemClicado;
+                            }
+                            renderizarDashboard();
+                        }
+                    }
                 }
             });
             setInstanciaCallback(novaInstancia);
