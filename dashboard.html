@@ -180,3 +180,137 @@
             
             const idxLoja = cabecalho.indexOf('loja');
             const idxCod = cabecalho.indexOf('código de barras');
+            const idxItem = cabecalho.indexOf('item/produto');
+            const idxDesc = cabecalho.indexOf('descrição');
+            const idxForn = cabecalho.indexOf('fornecedor');
+            const idxLinha = cabecalho.indexOf('linha');
+            const idxFam = cabecalho.indexOf('família');
+            const idxQtd = cabecalho.indexOf('quantidade');
+            const idxValidade = cabecalho.indexOf('data de vencimento');
+            const idxTotalPerda = cabecalho.indexOf('total perda (r$)');
+
+            dadosBrutos = [];
+
+            for (let i = 1; i < linhas.length; i++) {
+                if (!linhas[i].trim()) continue;
+                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                
+                let qtdNum = parseInt(colunas[idxQtd]) || 0;
+                let perdaNum = tratarNumeroBrasil(colunas[idxTotalPerda]);
+                
+                let dataValidadeObj = null;
+                let dataTexto = colunas[idxValidade] || "";
+                if (dataTexto.includes("/")) {
+                    const partes = dataTexto.split("/");
+                    dataValidadeObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+                }
+
+                if (colunas[idxCod]) {
+                    dadosBrutos.push({
+                        loja: colunas[idxLoja] || "Não Identificada",
+                        codigo: colunas[idxCod],
+                        item: colunas[idxItem] || "Item Sem Nome",
+                        descricao: colunas[idxDesc] || "",
+                        fornecedor: colunas[idxForn] || "Sem Fornecedor",
+                        linha: colunas[idxLinha] || "Sem Linha",
+                        familia: colunas[idxFam] || "Sem Família",
+                        quantidade: qtdNum,
+                        validade: dataValidadeObj,
+                        validadeTexto: dataTexto,
+                        totalPerda: perdaNum
+                    });
+                }
+            }
+        }
+
+        function obterDadosFiltrados() {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            
+            return dadosBrutos.filter(item => {
+                if (filtrosAtivos.vencimento && item.validade) {
+                    const mesesDiferenca = (item.validade - hoje) / (1000 * 60 * 60 * 24 * 30.41);
+                    if (filtrosAtivos.vencimento === '3meses' && (mesesDiferenca < 0 || mesesDiferenca > 3)) return false;
+                    if (filtrosAtivos.vencimento === '6meses' && (mesesDiferenca < 0 || mesesDiferenca > 6)) return false;
+                }
+                if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
+                if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
+
+                return true;
+            });
+        }
+
+        function renderizarDashboard() {
+            const dadosFiltrados = obterDadosFiltrados();
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+
+            let somaFinanceira = 0;
+            let somaUnidades = 0;
+            let total3Meses = 0;
+            let total6Meses = 0;
+            let setLojas = new Set();
+            let setSkus = new Set();
+
+            dadosFiltrados.forEach(item => {
+                somaUnidades += item.quantidade;
+                setLojas.add(item.loja);
+                setSkus.add(item.codigo);
+
+                // IGNORA ITENS JÁ VENCIDOS NA CONTA DOS INDICADORES E CRONOGRAMAS
+                if (item.validade && item.validade >= hoje) {
+                    somaFinanceira += item.totalPerda;
+
+                    const diffMeses = (item.validade - hoje) / (1000 * 60 * 60 * 24 * 30.41);
+                    if (diffMeses <= 3) total3Meses += item.totalPerda;
+                    if (diffMeses <= 6) total6Meses += item.totalPerda;
+                }
+            });
+
+            document.getElementById("kpiTotalRs").innerText = somaFinanceira.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpi3Meses").innerText = total3Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpi6Meses").innerText = total6Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpiCodBarras").innerText = setSkus.size;
+            document.getElementById("kpiUnidades").innerText = somaUnidades.toLocaleString('pt-BR');
+            document.getElementById("kpiLojas").innerText = setLojas.size;
+
+            const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras;
+            document.getElementById("btnLimparFiltros").className = temFiltroAtivo 
+                ? "px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500"
+                : "hidden";
+
+            const agruparLojas = {}, agruparForn = {}, agruparLinhas = {}, agruparFamilias = {}, agruparCronograma = {};
+            
+            const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            for(let i=0; i<6; i++) {
+                let m = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
+                agruparCronograma[mesesNomes[m.getMonth()] + "/" + String(m.getFullYear()).substring(2)] = 0;
+            }
+
+            dadosFiltrados.forEach(item => {
+                // Monta os gráficos exclusivamente com itens no prazo
+                if (item.validade && item.validade >= hoje) {
+                    agruparLojas[item.loja] = (agruparLojas[item.loja] || 0) + item.totalPerda;
+                    agruparForn[item.fornecedor] = (agruparForn[item.fornecedor] || 0) + item.totalPerda;
+                    agruparLinhas[item.linha] = (agruparLinhas[item.linha] || 0) + item.totalPerda;
+                    agruparFamilias[item.familia] = (agruparFamilias[item.familia] || 0) + item.totalPerda;
+
+                    let chaveMes = mesesNomes[item.validade.getMonth()] + "/" + String(item.validade.getFullYear()).substring(2);
+                    if (agruparCronograma[chaveMes] !== undefined) {
+                        agruparCronograma[chaveMes] += item.totalPerda;
+                    }
+                }
+            });
+
+            montarGraficoCronograma(agruparCronograma);
+            montarGraficoLojas(agruparLojas);
+            montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, (instance) => chartFornecedores = instance);
+            montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, (instance) => chartLinhas = instance);
+            montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, (instance) => chartFamilias = instance);
+
+            const tabelaCorpo = document.getElementById("corpoTabelaPerdas");
+            tabelaCorpo.innerHTML = "";
+            
+            const itensOrdenados = [...dadosFiltrados].sort((a,b) => {
+                if (!a.validade) return 1; if (!b.validade) return -1;
+                return a.valid
