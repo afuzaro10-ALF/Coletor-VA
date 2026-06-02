@@ -70,4 +70,345 @@
             </div>
 
             <div class="bg-gray-100 px-4 py-2 rounded-xl flex justify-between items-center">
-                <span class="text-xs font-semibold text-gray-5
+                <span class="text-xs font-semibold text-gray-500 uppercase">Código Coletado:</span>
+                <span id="txtCodigoExibido" class="font-mono font-bold text-gray-700 tracking-wide text-sm"></span>
+            </div>
+
+            <div id="cardCadastro" class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3 transition-colors duration-300">
+                <span id="txtStatusCadastro" class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
+                
+                <div class="grid grid-cols-1 gap-1">
+                    <label class="block text-xs font-semibold text-gray-400 uppercase">Item / Descrição</label>
+                    <input type="text" id="txtItemEDescricao" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-bold text-sm focus:outline-none text-gray-700">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase">Fornecedor / Fabricante</label>
+                        <input type="text" id="txtFornecedor" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-semibold text-xs focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase">Família</label>
+                        <input type="text" id="txtFamilia" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 text-xs focus:outline-none text-gray-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase">Custo Unitário (R$)</label>
+                        <input type="text" id="txtCusto" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-bold text-sm focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase">Total Perda (R$)</label>
+                        <input type="text" id="txtTotalFinanceiro" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-black text-sm focus:outline-none text-emerald-600">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Quantidade</label>
+                    <input type="number" id="campoQtd" value="1" min="1" oninput="calcularTotalFinanceiro()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base font-bold text-center">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Data de Vencimento</label>
+                    <input type="date" id="campoValidade" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-semibold">
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button id="btnSalvar" onclick="salvarColeta()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-base tracking-wide">
+                    <span>💾 Salvar Coleta</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_PLANILHA_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv";
+        const CADASTRO_URL = `${BASE_PLANILHA_URL}&sheet=Cadastro`;
+        const USUARIOS_URL = `${BASE_PLANILHA_URL}&sheet=Usuarios`;
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
+        
+        let baseProdutos = {};
+        let credenciaisLojas = {};
+        let usuarioLogado = "";
+        let lojaSessao = "";
+        let html5QrCodeScanner = null;
+        let produtoEncontrado = false;
+        let emPausaLeitura = false;
+
+        window.onload = function() {
+            carregarCredenciaisDaNuvem();
+        };
+
+        function carregarCredenciaisDaNuvem() {
+            fetch(USUARIOS_URL)
+                .then(response => response.text())
+                .then(text => {
+                    const linhas = text.split(/\r?\n/);
+                    if (linhas.length < 2) return;
+
+                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+                    const idxLoja = cabecalho.indexOf('loja');
+                    const idxUser = cabecalho.indexOf('usuario');
+                    const idxSenha = cabecalho.indexOf('senha');
+
+                    const select = document.getElementById("loginLoja");
+                    select.innerHTML = "";
+
+                    for (let i = 1; i < linhas.length; i++) {
+                        if (!linhas[i].trim()) continue;
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        
+                        let loja = colunas[idxLoja];
+                        let user = colunas[idxUser];
+                        let senha = colunas[idxSenha];
+
+                        if (loja && user && senha) {
+                            credenciaisLojas[loja] = { usuario: user, senha: senha };
+                            const opt = document.createElement("option");
+                            opt.value = loja; opt.textContent = loja;
+                            select.appendChild(opt);
+                        }
+                    }
+
+                    document.getElementById("txtStatusLogin").innerText = "Selecione sua loja e identifique-se";
+                    const btnEntrar = document.getElementById("btnEntrar");
+                    btnEntrar.disabled = false;
+                    btnEntrar.innerText = "Entrar no Sistema";
+                    btnEntrar.className = "w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md mt-2 cursor-pointer";
+                })
+                .catch(err => {
+                    console.error("Erro credenciais:", err);
+                    alert("Falha crítica ao buscar tabela de acessos.");
+                });
+        }
+
+        function autenticar() {
+            const lojaSelecionada = document.getElementById("loginLoja").value;
+            const usuarioDigitado = document.getElementById("loginUsuario").value.trim();
+            const senhaDigitada = document.getElementById("loginSenha").value.trim();
+
+            if (!lojaSelecionada) { alert("Selecione uma loja válida."); return; }
+
+            if (usuarioDigitado === "admin" && senhaDigitada === "123") {
+                logarSucesso(lojaSelecionada, usuarioDigitado);
+                return;
+            }
+
+            const credencialLoja = credenciaisLojas[lojaSelecionada];
+            if (credencialLoja && usuarioDigitado === credencialLoja.usuario && senhaDigitada === credencialLoja.senha) {
+                logarSucesso(lojaSelecionada, usuarioDigitado);
+            } else {
+                alert("❌ Usuário ou senha incorretos para a loja selecionada!");
+            }
+        }
+
+        function logarSucesso(loja, usuario) {
+            usuarioLogado = usuario;
+            lojaSessao = loja;
+
+            document.getElementById("txtLojaAtiva").innerText = lojaSessao;
+            document.getElementById("txtOperadorAtivo").innerText = usuarioLogado;
+
+            document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
+            document.getElementById("secaoLogin").classList.add("hidden");
+            document.getElementById("secaoColetor").classList.remove("hidden");
+            
+            inicializarBaseCadastro();
+            ligarCameraAutomatica();
+        }
+
+        function inicializarBaseCadastro() {
+            fetch(CADASTRO_URL)
+                .then(response => response.text())
+                .then(text => {
+                    const linhas = text.split(/\r?\n/);
+                    if (linhas.length < 2) return;
+
+                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+                    const idxCod = cabecalho.indexOf('codigo');
+                    const idxItem = cabecalho.indexOf('item');
+                    const idxDesc = cabecalho.indexOf('descricao');
+                    const idxForn = cabecalho.indexOf('fornecedor');
+                    const idxLinha = cabecalho.indexOf('linha');
+                    const idxFam = cabecalho.indexOf('familia');
+                    const idxCusto = cabecalho.indexOf('custo');
+
+                    for (let i = 1; i < linhas.length; i++) {
+                        if (!linhas[i].trim()) continue;
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        
+                        let codigo = colunas[idxCod];
+                        if (codigo) {
+                            codigo = codigo.replace(/^["']|["']$/g, '').trim();
+                            baseProdutos[codigo] = {
+                                item: colunas[idxItem] || '',
+                                descricao: colunas[idxDesc] || '',
+                                fornecedor: colunas[idxForn] || '',
+                                linha: colunas[idxLinha] || '',
+                                familia: colunas[idxFam] || '',
+                                custo: colunas[idxCusto] ? parseFloat(colunas[idxCusto].replace(/\./g, '').replace(',', '.')) || 0 : 0
+                            };
+                        }
+                    }
+                })
+                .catch(err => console.error("Erro Cadastro:", err));
+        }
+
+        function ligarCameraAutomatica() {
+            html5QrCodeScanner = new Html5Qrcode("reader");
+            const config = { 
+                fps: 25, 
+                qrbox: (width, height) => { return { width: width * 0.85, height: height * 0.55 }; },
+                formatsToSupport: [ 
+                    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, 
+                    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.QR_CODE 
+                ]
+            };
+
+            html5QrCodeScanner.start(
+                { facingMode: "environment" }, config, 
+                (decodedText) => {
+                    if (emPausaLeitura) return;
+                    emPausaLeitura = true;
+                    
+                    // Coloca o valor no input e chama o direcionador de tela
+                    document.getElementById('campoCodigo').value = decodedText;
+                    avancarParaFormulario(decodedText);
+                },
+                (errorMessage) => {}
+            ).catch(err => console.error("Erro câmera:", err));
+        }
+
+        function verificarEnterScanner(event) {
+            if (event.key === 'Enter') { 
+                event.preventDefault(); 
+                if(event.target.value.trim()) avancarParaFormulario(event.target.value); 
+            }
+        }
+
+        function verificarTamanhoScanner(valor) {
+            if (valor.trim().length >= 13) { 
+                avancarParaFormulario(valor.trim()); 
+            }
+        }
+
+        // --- SISTEMA DE TRANSIÇÃO E VALIDAÇÃO DE TELAS ---
+        function avancarParaFormulario(codigo) {
+            codigo = codigo.trim();
+            document.getElementById("txtCodigoExibido").innerText = codigo;
+
+            // Faz a validação contra o banco local
+            const prod = baseProdutos[codigo];
+            const card = document.getElementById('cardCadastro');
+            const statusTxt = document.getElementById('txtStatusCadastro');
+
+            if (prod) {
+                produtoEncontrado = true;
+                card.className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
+                statusTxt.innerText = "Dados do Cadastro Localizado";
+                statusTxt.className = "text-xs font-bold text-blue-500 uppercase tracking-wider block";
+
+                document.getElementById('txtItemEDescricao').value = prod.item + (prod.descricao ? " - " + prod.descricao : "");
+                document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
+                document.getElementById('txtFamilia').value = prod.familia;
+                document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                
+                document.getElementById('txtItemEDescricao').dataset.itemBruto = prod.item;
+                document.getElementById('txtItemEDescricao').dataset.descricaoBruta = prod.descricao;
+                document.getElementById('txtItemEDescricao').dataset.fornecedorReal = prod.fornecedor;
+                document.getElementById('txtItemEDescricao').dataset.linhaReal = prod.linha;
+                
+                calcularTotalFinanceiro();
+            } else {
+                produtoEncontrado = false;
+                card.className = "p-4 bg-red-50 rounded-xl border border-red-200 space-y-3";
+                statusTxt.innerText = "⚠️ ATENÇÃO: Produto não encontrado no cadastro!";
+                statusTxt.className = "text-xs font-bold text-red-600 uppercase tracking-wider block";
+
+                document.getElementById('txtItemEDescricao').value = "PRODUTO NÃO CADASTRADO";
+                document.getElementById('txtFornecedor').value = "-";
+                document.getElementById('txtFamilia').value = "-";
+                document.getElementById('txtCusto').value = "0,00";
+                document.getElementById('txtTotalFinanceiro').value = "0,00";
+            }
+
+            // Transiciona visualmente os painéis de forma imediata
+            document.getElementById("etapaScanner").classList.add("hidden");
+            document.getElementById("etapaFormulario").classList.remove("hidden");
+            
+            // Foca automaticamente no campo de quantidade para agilizar o processo
+            setTimeout(() => { document.getElementById("campoQtd").select(); }, 100);
+        }
+
+        function voltarParaScanner() {
+            // Limpa dados temporários e inputs
+            document.getElementById('campoCodigo').value = '';
+            document.getElementById('campoQtd').value = '1';
+            document.getElementById('campoValidade').value = '';
+            
+            // Troca as telas de volta
+            document.getElementById("etapaFormulario").classList.add("hidden");
+            document.getElementById("etapaScanner").classList.remove("hidden");
+            
+            // Libera o semáforo da câmera para voltar a bipar
+            emPausaLeitura = false;
+            
+            setTimeout(() => { document.getElementById("campoCodigo").focus(); }, 100);
+        }
+
+        function calcularTotalFinanceiro() {
+            const custoTexto = document.getElementById('txtCusto').value;
+            const qtd = parseInt(document.getElementById('campoQtd').value) || 0;
+            if (custoTexto && produtoEncontrado) {
+                const custoNum = parseFloat(custoTexto.replace('.', '').replace(',', '.'));
+                document.getElementById('txtTotalFinanceiro').value = (custoNum * qtd).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            }
+        }
+
+        function salvarColeta() {
+            const btn = document.getElementById('btnSalvar');
+            const codigo = document.getElementById("txtCodigoExibido").innerText.trim();
+            const validadeInput = document.getElementById('campoValidade').value;
+            const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
+
+            if (!codigo || quantidade <= 0 || !validadeInput) { alert("Preencha todos os campos corretamente (Falta data ou quantidade)."); return; }
+
+            const [ano, mes, dia] = validadeInput.split('-');
+            const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
+
+            let payload = {
+                loja: lojaSessao, usuario: usuarioLogado, codigoBarras: codigo, validade: dataValidadeFormatada, quantidade: quantidade
+            };
+
+            if (produtoEncontrado) {
+                payload.item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
+                payload.descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
+                payload.fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
+                payload.linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
+                payload.familia = document.getElementById('txtFamilia').value;
+                payload.totalPerda = document.getElementById('txtTotalFinanceiro').value;
+            } else {
+                payload.item = "NÃO CADASTRADO"; payload.descricao = ""; payload.fornecedor = ""; payload.linha = ""; payload.familia = ""; payload.totalPerda = "0,00";
+            }
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Gravando na Planilha...";
+
+            fetch(WEB_APP_URL, {
+                method: "POST", mode: "no-cors",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams(payload).toString()
+            })
+            .then(() => { 
+                alert(`✅ Sucesso! Registro salvo para a filial ${lojaSessao}.`); 
+                voltarParaScanner(); 
+            })
+            .catch(err => { console.error(err); alert("❌ Erro de conexão ao tentar salvar."); })
+            .finally(() => { btn.disabled = false; btn.innerText = "💾 Salvar Coleta"; });
+        }
+    </script>
+</body>
+</html>
