@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Pro - Controle de Validades</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
@@ -124,7 +125,15 @@
                     <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
                     <p class="text-xs text-gray-400 mt-0.5">Visão analítica com réguas de plano de ação baseadas no dia de hoje</p>
                 </div>
-                <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold"></span>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <button id="btnExportarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition duration-200 shadow-md border border-emerald-500/30">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Exportar Excel
+                    </button>
+                    <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold whitespace-nowrap"></span>
+                </div>
             </div>
             <div class="overflow-x-auto max-h-[550px] overflow-y-auto">
                 <table class="w-full text-left border-collapse text-xs">
@@ -242,6 +251,9 @@
                     fecharTodosDropdownisCustomizados();
                 }
             });
+
+            // Ativa o evento do botão de exportação
+            document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
         };
 
         function carregarDadosDaPlanilha() {
@@ -309,7 +321,7 @@
             for (let i = 1; i < linhas.length; i++) {
                 if (!linhas[i].trim()) continue;
                 
-                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                const colunas = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
                 let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
                 let perdaNum = idxTotalPerda !== -1 ? tratarNumeroBrasil(colunas[idxTotalPerda]) : 0;
@@ -470,7 +482,7 @@
             container.querySelector(".label").innerText = textoExibir;
             filtrosCabecalhoTabela[chaveFiltro] = valorArmazenar;
             fecharTodosDropdownisCustomizados();
-            renderizarDashboard(); // CORREÇÃO: Força o dashboard completo a se re-renderizar
+            renderizarDashboard();
         }
 
         function alterarFiltroLojaSuperior(lojaSelecionada) {
@@ -478,21 +490,18 @@
             renderizarDashboard();
         }
 
-        function executarFiltrosTabela() {
+        function ejecutarFiltrosTabela() {
             filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
-            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno");
             filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
             filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
-            renderizarDashboard(); // CORREÇÃO: Força o dashboard completo a se re-renderizar
+            renderizarDashboard();
         }
 
-        // CORREÇÃO CENTRAL: Esta função passa a centralizar TODA a regra de filtragem tanto de cards quanto de colunas
         function obterDadosFiltradosGerais() {
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
             
             return dadosBrutos.filter(item => {
-                // 1. Filtros de Cards / Cliques Globais
                 if (filtrosAtivos.vencimento) {
                     if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
                     const mesesDiferenca = item.diasRestantes / 30.41;
@@ -502,7 +511,6 @@
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
                 if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
 
-                // 2. Filtros de colunas da Tabela (Agregam e alteram os gráficos agora!)
                 if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
                 if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
                 if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
@@ -549,7 +557,6 @@
             document.getElementById("btnLimparFiltros").className = temFiltroAtivo 
                 ? "px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500" : "hidden";
 
-            // Modos de seleção visual dos cards superiores
             document.getElementById("cardUrgencia").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200";
             document.getElementById("card3Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200";
             document.getElementById("card6Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200";
@@ -659,6 +666,51 @@
             document.getElementById("filtroLojaSuperior").value = "";
             fecharTodosDropdownisCustomizados();
             renderizarDashboard();
+        }
+
+        // LÓGICA DE EXPORTAÇÃO EXCEL ATUALIZADA
+        function exportarParaExcel() {
+            const tabelaHTML = document.querySelector('table');
+            if (!tabelaHTML) {
+                alert('Tabela não localizada.');
+                return;
+            }
+
+            // Clona a estrutura para realizar uma higienização estrutural dos dados
+            const clone = tabelaHTML.cloneNode(true);
+            
+            // Remove a linha de seletores/filtros para não poluir o cabeçalho do arquivo final
+            const linhaFiltros = clone.querySelector('thead tr:nth-child(2)');
+            if (linhaFiltros) linhaFiltros.remove();
+
+            // Percorre as linhas removendo elementos visuais HTML (Badges e Descrições secundárias)
+            clone.querySelectorAll('tr').forEach((row, index) => {
+                if (index === 0) return; // Mantém os títulos das colunas intactos
+
+                // Higieniza a coluna de Status Ação (índice 1) extraindo apenas o texto do Badge
+                const celulaStatus = row.cells[1];
+                if (celulaStatus) {
+                    const badge = celulaStatus.querySelector('span');
+                    if (badge) celulaStatus.innerText = badge.innerText.replace(/[🚨⚠️📅🔍]/g, '').trim();
+                }
+
+                // Higieniza a coluna de Descrição do Item (índice 4) para separar Título de Subtítulo estruturalmente
+                const celulaItem = row.cells[4];
+                if (celulaItem) {
+                    const subtexto = celulaItem.querySelector('span');
+                    if (subtexto) {
+                        const textoPrincipal = celulaItem.childNodes[0].textContent.trim();
+                        celulaItem.innerText = `${textoPrincipal} (${subtexto.innerText.trim()})`;
+                    }
+                }
+            });
+
+            // Converte o clone higienizado em estrutura Workbook
+            const wb = XLSX.utils.table_to_book(clone, { sheet: "Validades Analítico" });
+            
+            // Define o nome do arquivo usando a data atual corrigida
+            const dataHoje = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
+            XLSX.writeFile(wb, `Painel_Validades_${dataHoje}.xlsx`);
         }
 
         function montarGraficoCronograma(objetoDados) {
