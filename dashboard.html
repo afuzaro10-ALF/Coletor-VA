@@ -11,7 +11,7 @@
 
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
         <div>
-            <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Validades</h1>
+            <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Quebras &amp; Validades</h1>
             <p class="text-xs text-gray-400 mt-1">Dados consolidados em tempo real via Google Sheets</p>
         </div>
         <div class="flex items-center space-x-3">
@@ -33,7 +33,7 @@
         
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vebcimento Mapeado R$</span>
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vencimento Mapeado R$</span>
                 <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
             </div>
             
@@ -104,7 +104,7 @@
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
                     <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada (Ordenado por Vencimento mais Próximo)</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Clique em uma linha para focar o dashboard exclusivamente no produto selecionado</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Clique em uma linha para focusar o dashboard exclusivamente no produto selecionado</p>
                 </div>
                 <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold"></span>
             </div>
@@ -122,7 +122,7 @@
                         </tr>
                     </thead>
                     <tbody id="corpoTabelaPerdas" class="divide-y divide-gray-700/50">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -160,11 +160,9 @@
                 });
         }
 
-        // Função auxiliar robusta para limpar e converter texto em número flutuante válido
         function tratarNumeroBrasil(texto) {
             if (!texto) return 0;
             let limpo = texto.replace(/^["']|["']$/g, '').trim();
-            // Se tiver pontos e vírgulas (ex: 1.250,45 ou 7,37)
             if (limpo.includes(',') && limpo.includes('.')) {
                 limpo = limpo.replace(/\./g, '').replace(',', '.');
             } else if (limpo.includes(',')) {
@@ -195,7 +193,7 @@
 
             for (let i = 1; i < linhas.length; i++) {
                 if (!linhas[i].trim()) continue;
-                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                const colunas = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
                 let qtdNum = parseInt(colunas[idxQtd]) || 0;
                 let perdaNum = tratarNumeroBrasil(colunas[idxTotalPerda]);
