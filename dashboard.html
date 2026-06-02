@@ -12,7 +12,7 @@
     <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Validades</h1>
-            <p class="text-xs text-gray-400 mt-1">Dados consolidados em tempo real via Google Sheets (Apenas Validades Futuras)</p>
+            <p class="text-xs text-gray-400 mt-1">Dados consolidados em tempo real via Google Sheets</p>
         </div>
         
         <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto justify-end">
@@ -43,7 +43,7 @@
         
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vencimento Mapeado R$</span>
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Perda R$</span>
                 <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
             </div>
             
@@ -81,7 +81,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
-                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Próximos 12 Meses</h3>
+                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
                 <div class="h-64 relative">
                     <canvas id="chartCronograma"></canvas>
                 </div>
@@ -113,8 +113,8 @@
         <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
-                    <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada (Validades Futuras)</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Utilize as caixas de texto nos cabeçalhos para refinar as linhas da tabela</p>
+                    <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Filtre as linhas utilizando os campos de busca abaixo</p>
                 </div>
                 <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold"></span>
             </div>
@@ -131,11 +131,11 @@
                             <th class="p-3 text-right">Total Perda</th>
                         </tr>
                         <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-10">
-                            <th class="p-2"><input type="text" id="thFiltroVencimento" oninput="executarFiltrosTabela()" placeholder="🔍 Buscar data..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] font-normal text-gray-200 focus:outline-none focus:border-blue-500"></th>
-                            <th class="p-2"><input type="text" id="thFiltroLoja" oninput="executarFiltrosTabela()" placeholder="🔍 Buscar loja..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] font-normal text-gray-200 focus:outline-none focus:border-blue-500"></th>
-                            <th class="p-2"><input type="text" id="thFiltroCodigo" oninput="executarFiltrosTabela()" placeholder="🔍 Código..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] font-normal text-gray-200 focus:outline-none focus:border-blue-500"></th>
-                            <th class="p-2"><input type="text" id="thFiltroItem" oninput="executarFiltrosTabela()" placeholder="🔍 Descrição do produto..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] font-normal text-gray-200 focus:outline-none focus:border-blue-500"></th>
-                            <th class="p-2"><input type="text" id="thFiltroFamilia" oninput="executarFiltrosTabela()" placeholder="🔍 Família..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] font-normal text-gray-200 focus:outline-none focus:border-blue-500"></th>
+                            <th class="p-2"><input type="text" id="thFiltroVencimento" oninput="executarFiltrosTabela()" placeholder="🔍 Data..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
+                            <th class="p-2"><input type="text" id="thFiltroLoja" oninput="executarFiltrosTabela()" placeholder="🔍 Loja..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
+                            <th class="p-2"><input type="text" id="thFiltroCodigo" oninput="executarFiltrosTabela()" placeholder="🔍 Código..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
+                            <th class="p-2"><input type="text" id="thFiltroItem" oninput="executarFiltrosTabela()" placeholder="🔍 Descrição..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
+                            <th class="p-2"><input type="text" id="thFiltroFamilia" oninput="executarFiltrosTabela()" placeholder="🔍 Família..." class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500"></th>
                             <th class="p-2"></th>
                             <th class="p-2"></th>
                         </tr>
@@ -190,12 +190,10 @@
 
         function tratarNumeroBrasil(texto) {
             if (!texto) return 0;
+            // Limpa aspas extras que vêm do CSV do Google
             let limpo = texto.replace(/^["']|["']$/g, '').trim();
-            if (limpo.includes(',') && limpo.includes('.')) {
-                limpo = limpo.replace(/\./g, '').replace(',', '.');
-            } else if (limpo.includes(',')) {
-                limpo = limpo.replace(',', '.');
-            }
+            // Substitui a vírgula decimal por ponto para conversão correta do JS
+            limpo = limpo.replace(/\./g, '').replace(',', '.');
             let n = parseFloat(limpo);
             return isNaN(n) ? 0 : n;
         }
@@ -235,9 +233,11 @@
 
             for (let i = 1; i < linhas.length; i++) {
                 if (!linhas[i].trim()) continue;
+                
+                // Regex para separar por vírgulas respeitando células com aspas
                 const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
-                let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd]) || 0) : 0;
+                let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
                 let perdaNum = idxTotalPerda !== -1 ? tratarNumeroBrasil(colunas[idxTotalPerda]) : 0;
                 
                 let dataValidadeObj = null;
@@ -261,31 +261,32 @@
                     dataValidadeObj = null;
                 }
 
-                if (dataValidadeObj && dataValidadeObj >= hoje) {
-                    let codChave = idxCod !== -1 ? colunas[idxCod] : null;
-                    if (codChave) {
-                        dadosBrutos.push({
-                            loja: idxLoja !== -1 ? (colunas[idxLoja] || "Não Identificada") : "Não Identificada",
-                            codigo: codChave,
-                            item: idxItem !== -1 ? (colunas[idxItem] || "Item Sem Nome") : "Item Sem Nome",
-                            descricao: idxDesc !== -1 ? (colunas[idxDesc] || "") : "",
-                            fornecedor: idxForn !== -1 ? (colunas[idxForn] || "Sem Fornecedor") : "Sem Fornecedor",
-                            linha: idxLinha !== -1 ? (colunas[idxLinha] || "Sem Linha") : "Sem Linha",
-                            familia: idxFam !== -1 ? (colunas[idxFam] || "Sem Família") : "Sem Família",
-                            quantidade: qtdNum,
-                            validade: dataValidadeObj,
-                            validadeTexto: dataTexto || "Sem Data",
-                            totalPerda: perdaNum
-                        });
-                    }
+                // Carrega todos os registros válidos sem podar o mês corrente por fuso horário
+                if (dataValidadeObj) {
+                    let codChave = idxCod !== -1 ? colunas[idxCod] : "S/C";
+                    dadosBrutos.push({
+                        loja: idxLoja !== -1 ? (colunas[idxLoja] || "Não Identificada") : "Não Identificada",
+                        codigo: codChave,
+                        item: idxItem !== -1 ? (colunas[idxItem] || "Item Sem Nome") : "Item Sem Nome",
+                        descricao: idxDesc !== -1 ? (colunas[idxDesc] || "") : "",
+                        fornecedor: idxForn !== -1 ? (colunas[idxForn] || "Sem Fornecedor") : "Sem Fornecedor",
+                        linha: idxLinha !== -1 ? (colunas[idxLinha] || "Sem Linha") : "Sem Linha",
+                        familia: idxFam !== -1 ? (colunas[idxFam] || "Sem Família") : "Sem Família",
+                        quantidade: qtdNum,
+                        validade: dataValidadeObj,
+                        validadeTexto: dataTexto || "Sem Data",
+                        totalPerda: perdaNum
+                    });
                 }
             }
         }
 
         function popularSeletorLojas() {
             const seletor = document.getElementById("filtroLojaSuperior");
-            const lojasUnicas = [...new Set(dadosBrutos.map(item => item.loja))].sort();
+            // Remove duplicados e reconstrói as opções dinamicamente
+            while(seletor.options.length > 1) seletor.remove(1);
             
+            const lojasUnicas = [...new Set(dadosBrutos.map(item => item.loja))].sort();
             lojasUnicas.forEach(loja => {
                 const opt = document.createElement("option");
                 opt.value = loja;
@@ -299,7 +300,7 @@
             renderizarDashboard();
         }
 
-        function ejecutarFiltrosTabela() {
+        function executarFiltrosTabela() {
             filtrosCabecalhoTabela.vencimento = document.getElementById("thFiltroVencimento").value.toLowerCase();
             filtrosCabecalhoTabela.loja = document.getElementById("thFiltroLoja").value.toLowerCase();
             filtrosCabecalhoTabela.codigo = document.getElementById("thFiltroCodigo").value.toLowerCase();
@@ -340,8 +341,8 @@
 
             dadosFiltrados.forEach(item => {
                 somaUnidades += item.quantidade;
-                setLojas.add(item.loja);
-                setSkus.add(item.codigo);
+                if(item.loja) setLojas.add(item.loja);
+                if(item.codigo) setSkus.add(item.codigo);
                 somaFinanceira += item.totalPerda;
 
                 const diffMeses = (item.validade - hoje) / (1000 * 60 * 60 * 24 * 30.41);
@@ -366,6 +367,8 @@
             const agruparLojas = {}, agruparForn = {}, agruparLinhas = {}, agruparFamilias = {}, agruparCronograma = {};
             
             const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            
+            // Inicia o cronograma com os próximos 12 meses zerados para garantir estrutura visual limpa
             for(let i=0; i<12; i++) {
                 let m = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
                 agruparCronograma[mesesNomes[m.getMonth()] + "/" + String(m.getFullYear()).substring(2)] = 0;
@@ -377,9 +380,11 @@
                 agruparLinhas[item.linha] = (agruparLinhas[item.linha] || 0) + item.totalPerda;
                 agruparFamilias[item.familia] = (agruparFamilias[item.familia] || 0) + item.totalPerda;
 
-                let chaveMes = mesesNomes[item.validade.getMonth()] + "/" + String(item.validade.getFullYear()).substring(2);
-                if (agruparCronograma[chaveMes] !== undefined) {
-                    agruparCronograma[chaveMes] += item.totalPerda;
+                if (item.validade) {
+                    let chaveMes = mesesNomes[item.validade.getMonth()] + "/" + String(item.validade.getFullYear()).substring(2);
+                    if (agruparCronograma[chaveMes] !== undefined) {
+                        agruparCronograma[chaveMes] += item.totalPerda;
+                    }
                 }
             });
 
@@ -402,11 +407,11 @@
                 if (filtrosCabecalhoTabela.loja && !item.loja.toLowerCase().includes(filtrosCabecalhoTabela.loja)) return false;
                 if (filtrosCabecalhoTabela.codigo && !item.codigo.toLowerCase().includes(filtrosCabecalhoTabela.codigo)) return false;
                 if (filtrosCabecalhoTabela.item && !item.item.toLowerCase().includes(filtrosCabecalhoTabela.item) && !item.descricao.toLowerCase().includes(filtrosCabecalhoTabela.item)) return false;
-                if (filtrosCabecalhoTabela.family && !item.familia.toLowerCase().includes(filtrosCabecalhoTabela.familia)) return false;
+                if (filtrosCabecalhoTabela.familia && !item.familia.toLowerCase().includes(filtrosCabecalhoTabela.familia)) return false;
                 return true;
             });
 
-            const itensOrdenados = [...dadosFiltradosNaTabela].sort((a,b) => a.validade - b.validade);
+            const itensOrdenados = [...dadosFiltradosNaTabela].sort((a,b) => (a.validade || 0) - (b.validade || 0));
             document.getElementById("txtContagemLinhas").innerText = itensOrdenados.length + " listados";
 
             itensOrdenados.forEach(item => {
@@ -419,13 +424,13 @@
                 tr.onclick = () => alternarFiltroTabela(item.codigo);
 
                 tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-300">` + item.validadeTexto + `</td>
-                    <td class="p-3"><span class="px-1.5 py-0.5 bg-gray-700 rounded text-gray-300 font-medium">` + item.loja + `</span></td>
-                    <td class="p-3 font-mono text-gray-400">` + item.codigo + `</td>
-                    <td class="p-3 font-medium text-gray-100">` + item.item + ` <span class="text-gray-500 block text-[10px] font-normal">` + item.descricao + `</span></td>
-                    <td class="p-3 text-gray-400">` + item.familia + `</td>
-                    <td class="p-3 text-center font-bold text-gray-300">` + item.quantidade + `</td>
-                    <td class="p-3 text-right font-black text-emerald-400">` + item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + `</td>
+                    <td class="p-3 font-semibold text-gray-300">${item.validadeTexto}</td>
+                    <td class="p-3"><span class="px-1.5 py-0.5 bg-gray-700 rounded text-gray-300 font-medium">${item.loja}</span></td>
+                    <td class="p-3 font-mono text-gray-400">${item.codigo}</td>
+                    <td class="p-3 font-medium text-gray-100">${item.item} <span class="text-gray-500 block text-[10px] font-normal">${item.descricao}</span></td>
+                    <td class="p-3 text-gray-400">${item.familia}</td>
+                    <td class="p-3 text-center font-bold text-gray-300">${item.quantidade}</td>
+                    <td class="p-3 text-right font-black text-emerald-400">${item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                 `;
                 tabelaCorpo.appendChild(tr);
             });
