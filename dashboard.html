@@ -11,7 +11,7 @@
 
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
         <div>
-            <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Validades</h1>
+            <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Quebras &amp; Validades</h1>
             <p class="text-xs text-gray-400 mt-1">Dados consolidados em tempo real via Google Sheets</p>
         </div>
         <div class="flex items-center space-x-3">
@@ -33,7 +33,7 @@
         
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vencimento Mapeado R$</span>
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Vebcimento Mapeado R$</span>
                 <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
             </div>
             
@@ -54,7 +54,7 @@
             </div>
 
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cód. Barras Uniq</span>
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cód. Barras Coletados</span>
                 <span id="kpiCodBarras" class="text-xl font-black text-blue-400 mt-2">0</span>
             </div>
 
@@ -129,19 +129,16 @@
     </div>
 
     <script>
-        // URL de exportação em CSV da sua planilha (Aba Coletas)
         const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
 
         let dadosBrutos = [];
         
-        // Objeto global que controla os filtros ativos no Dashboard (Engenharia de BI)
         let filtrosAtivos = {
-            vencimento: null, // Pode ser '3meses' ou '6meses'
+            vencimento: null, 
             loja: null,
             codigoBarras: null
         };
 
-        // Instâncias globais dos gráficos para podermos dar .destroy() ou .update() ao filtrar
         let chartCronograma, chartLojas, chartFornecedores, chartLinhas, chartFamilias;
 
         window.onload = function() {
@@ -159,15 +156,28 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    alert("Erro ao sincronizar dados com a nuvem do Google Sheets.");
+                    alert("Erro ao sincronizar dados com a nuvem.");
                 });
+        }
+
+        // Função auxiliar robusta para limpar e converter texto em número flutuante válido
+        function tratarNumeroBrasil(texto) {
+            if (!texto) return 0;
+            let limpo = texto.replace(/^["']|["']$/g, '').trim();
+            // Se tiver pontos e vírgulas (ex: 1.250,45 ou 7,37)
+            if (limpo.includes(',') && limpo.includes('.')) {
+                limpo = limpo.replace(/\./g, '').replace(',', '.');
+            } else if (limpo.includes(',')) {
+                limpo = limpo.replace(',', '.');
+            }
+            let n = parseFloat(limpo);
+            return isNaN(n) ? 0 : n;
         }
 
         function processarCsvBruto(text) {
             const linhas = text.split(/\r?\n/);
             if (linhas.length < 2) return;
 
-            // Mapeamento dinâmico dos cabeçalhos da aba Coletas
             const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
             
             const idxLoja = cabecalho.indexOf('loja');
@@ -187,11 +197,9 @@
                 if (!linhas[i].trim()) continue;
                 const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
-                // Conversores de tipo seguros
                 let qtdNum = parseInt(colunas[idxQtd]) || 0;
-                let perdaNum = colunas[idxTotalPerda] ? parseFloat(colunas[idxTotalPerda].replace(/\./g, '').replace(',', '.')) || 0 : 0;
+                let perdaNum = tratarNumeroBrasil(colunas[idxTotalPerda]);
                 
-                // Trata a string da data de vencimento (dd/mm/aaaa) para objeto Date real
                 let dataValidadeObj = null;
                 let dataTexto = colunas[idxValidade] || "";
                 if (dataTexto.includes("/")) {
@@ -217,20 +225,16 @@
             }
         }
 
-        // --- SISTEMA INTERATIVO DE FILTROS (MÁQUINA DE CÁLCULO) ---
         function obterDadosFiltrados() {
             const hoje = new Date();
             
             return dadosBrutos.filter(item => {
-                // Filtro 1: Por KPI de Vencimento (3 ou 6 meses)
                 if (filtrosAtivos.vencimento && item.validade) {
                     const mesesDiferenca = (item.validade - hoje) / (1000 * 60 * 60 * 24 * 30.41);
                     if (filtrosAtivos.vencimento === '3meses' && (mesesDiferenca < 0 || mesesDiferenca > 3)) return false;
                     if (filtrosAtivos.vencimento === '6meses' && (mesesDiferenca < 0 || mesesDiferenca > 6)) return false;
                 }
-                // Filtro 2: Por cliques nos gráficos de Loja
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
-                // Filtro 3: Por foco em linha de produto na tabela
                 if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
 
                 return true;
@@ -241,7 +245,6 @@
             const dadosFiltrados = obterDadosFiltrados();
             const hoje = new Date();
 
-            // 1. ATUALIZAÇÃO DOS KPIS FINANCEIROS E QUANTITATIVOS
             let somaFinanceira = 0;
             let somaUnidades = 0;
             let total3Meses = 0;
@@ -249,7 +252,6 @@
             let setLojas = new Set();
             let setSkus = new Set();
 
-            // Loop para cálculo dos cartões (sempre varre os dados filtrados para refletir os cliques)
             dadosFiltrados.forEach(item => {
                 somaFinanceira += item.totalPerda;
                 somaUnidades += item.quantidade;
@@ -263,7 +265,6 @@
                 }
             });
 
-            // Injeta os valores formatados nos elementos HTML
             document.getElementById("kpiTotalRs").innerText = somaFinanceira.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById("kpi3Meses").innerText = total3Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById("kpi6Meses").innerText = total6Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -271,16 +272,13 @@
             document.getElementById("kpiUnidades").innerText = somaUnidades.toLocaleString('pt-BR');
             document.getElementById("kpiLojas").innerText = setLojas.size;
 
-            // Mostra ou esconde o botão de reset global de filtros
             const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras;
             document.getElementById("btnLimparFiltros").className = temFiltroAtivo 
                 ? "px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500"
                 : "hidden";
 
-            // 2. CONSTRUÇÃO E POPULAÇÃO DOS GRÁFICOS (AGREGAÇÃO DE VALORES)
             const agruparLojas = {}, agruparForn = {}, agruparLinhas = {}, agruparFamilias = {}, agruparCronograma = {};
             
-            // Inicializa meses do cronograma dinâmico (próximos 6 meses)
             const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
             for(let i=0; i<6; i++) {
                 let m = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
@@ -301,18 +299,15 @@
                 }
             });
 
-            // Renderizadores de Gráficos usando a estrutura Chart.js adaptada para escuta de cliques
             montarGraficoCronograma(agruparCronograma);
             montarGraficoLojas(agruparLojas);
             montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, (instance) => chartFornecedores = instance);
             montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, (instance) => chartLinhas = instance);
             montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, (instance) => chartFamilias = instance);
 
-            // 3. ATUALIZAÇÃO DA TABELA DE DETALHES DE PERDA
             const tabelaCorpo = document.getElementById("corpoTabelaPerdas");
             tabelaCorpo.innerHTML = "";
             
-            // Ordena os itens filtrados pela proximidade do vencimento
             const itensOrdenados = [...dadosFiltrados].sort((a,b) => {
                 if (!a.validade) return 1; if (!b.validade) return -1;
                 return a.validade - b.validade;
@@ -322,7 +317,6 @@
 
             itensOrdenados.forEach(item => {
                 const tr = document.createElement("tr");
-                // Destaca se a linha atual for o produto ativo no filtro
                 tr.className = filtrosAtivos.codigoBarras === item.codigo 
                     ? "bg-blue-600/30 font-bold border-l-4 border-blue-500 hover:bg-blue-600/40 cursor-pointer transition"
                     : "hover:bg-gray-700/50 cursor-pointer transition";
@@ -342,16 +336,15 @@
             });
         }
 
-        // --- SISTEMAS DE INTERAÇÃO POR CLIQUE (ENGENHARIA REVERSA BI) ---
         function alternarFiltroCard(tipo, valor) {
             if (filtrosAtivos[tipo] === valor) {
-                filtrosAtivos[tipo] = null; // Tira o filtro se clicar de novo
+                filtrosAtivos[tipo] = null;
                 document.getElementById("card3Meses").className = document.getElementById("card3Meses").className.replace("border-amber-500 bg-amber-950/20", "border-gray-700 bg-gray-800");
                 document.getElementById("card6Meses").className = document.getElementById("card6Meses").className.replace("border-orange-500 bg-orange-950/20", "border-gray-700 bg-gray-800");
                 document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-transparent";
                 document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-transparent";
             } else {
-                filtrosAtivos[tipo] = valor; // Aplica o novo filtro
+                filtrosAtivos[tipo] = valor;
                 if(valor === '3meses') {
                     document.getElementById("card3Meses").className = "bg-amber-950/20 p-4 rounded-xl border border-amber-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
                     document.getElementById("card6Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200";
@@ -377,7 +370,6 @@
             filtrosAtivos.loja = null;
             filtrosAtivos.codigoBarras = null;
             
-            // Restaura visual dos cartões
             document.getElementById("card3Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200";
             document.getElementById("card6Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200";
             document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-transparent";
@@ -386,10 +378,8 @@
             renderizarDashboard();
         }
 
-        // --- CONSTRUTORES DE GRÁFICOS CHART.JS COM DETECÇÃO DE CLIQUES ---
         function montarGraficoCronograma(objetoDados) {
             if(chartCronograma) chartCronograma.destroy();
-            const ctx = document.getElementById("chartCronograma").getContext("2array");
             
             chartCronograma = new Chart(document.getElementById("chartCronograma"), {
                 type: 'line',
@@ -418,7 +408,6 @@
             const labels = Object.keys(objetoDados);
             const valores = Object.values(objetoDados);
 
-            // Determina a cor das colunas dinamicamente (destaca se a loja estiver filtrada)
             const coresBarras = labels.map(loja => loja === filtrosAtivos.loja ? '#eab308' : '#10b981');
 
             chartLojas = new Chart(document.getElementById("chartLojas"), {
@@ -435,7 +424,6 @@
                     responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } },
-                    // ESCUTA DE CLIQUE INTERATIVO NA COLUNA DO GRÁFICO
                     onClick: (evt, elementos) => {
                         if (elementos.length > 0) {
                             const index = elementos[0].index;
@@ -451,7 +439,6 @@
         function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, setInstanciaCallback) {
             if(instanciaGrafico) instanciaGrafico.destroy();
             
-            // Pega apenas as top 5 entradas para não poluir o visual do Dashboard
             const itensOrdenados = Object.entries(objetoDados).sort((a,b) => b[1] - a[1]).slice(0, 5);
             const labels = itensOrdenados.map(i => i[0]);
             const valores = itensOrdenados.map(i => i[1]);
