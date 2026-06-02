@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Pro - Controle de Validades</title>
-    <script src="https://tailwindcss.com"></script>
+    <!-- ALTERADO: Utilizando a CDN estável e correta do Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- BIBLIOTECA PARA EXPORTAR EXCEL -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         .custom-scroll::-webkit-scrollbar { width: 6px; }
@@ -15,6 +17,7 @@
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
 
+    <!-- CABEÇALHO -->
     <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Validades</h1>
@@ -40,13 +43,16 @@
         </div>
     </div>
 
-    <div id="loader" class="text-center py-20">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
-        <p class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
+    <!-- LOADER / MENSAGENS DE ERRO -->
+    <div id="loader" class="text-center py-20 max-w-7xl mx-auto bg-gray-800 rounded-2xl border border-gray-700 p-6 shadow-xl">
+        <div id="loaderIcon" class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
+        <p id="loaderTexto" class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
     </div>
 
+    <!-- CONTEÚDO PRINCIPAL -->
     <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
         
+        <!-- CARDS DE INDICADORES (KPIS) -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Perda R$</span>
@@ -88,6 +94,7 @@
             </div>
         </div>
 
+        <!-- GRÁFICOS PRINCIPAIS -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
                 <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
@@ -104,6 +111,7 @@
             </div>
         </div>
 
+        <!-- ANÁLISES SETORIAIS -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
@@ -128,6 +136,7 @@
             </div>
         </div>
 
+        <!-- TABELA ANALÍTICA -->
         <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
@@ -248,19 +257,8 @@
         const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
 
         let dadosBrutos = [];
-        
-        // NOVO: Adicionado suporte a filtros de Fornecedor, Linha e Família via cliques nos gráficos
-        let filtrosAtivos = { 
-            vencimento: null, 
-            loja: null, 
-            codigoBarras: null,
-            fornecedor: null,
-            linha: null,
-            familiaGrafico: null
-        };
-        
+        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
         let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", familia: "" };
-        
         let chartCronograma, chartLojas, chartFornecedores, chartLinhas, chartFamilias;
 
         window.onload = function() {
@@ -270,7 +268,6 @@
                     fecharTodosDropdownisCustomizados();
                 }
             });
-
             document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
         };
 
@@ -282,9 +279,7 @@
                 })
                 .then(csv => {
                     if (csv.includes("<!DOCTYPE") || csv.includes("login") || csv.length < 50) {
-                        document.getElementById("loader").innerHTML = `
-                            <p class="text-red-500 font-bold text-lg">⚠️ Falha na permissão da Planilha</p>
-                        `;
+                        exibirMensagemErro("⚠️ Permissão necessária: A planilha precisa estar configurada como 'Qualquer pessoa com o link pode ler'.");
                         return;
                     }
                     processarCsvBruto(csv);
@@ -295,8 +290,16 @@
                     renderizarDashboard();
                 })
                 .catch(err => {
-                    document.getElementById("loader").innerHTML = `<p class="text-red-500 font-bold text-lg">❌ Erro de Conexão</p>`;
+                    exibirMensagemErro("❌ Falha de Conexão: Não foi possível acessar os dados da planilha do Google. Verifique o link ou sua internet.");
                 });
+        }
+
+        // TRATAMENTO DE ERRO MELHORADO: Não quebra o visual da página
+        function exibirMensagemErro(mensagem) {
+            document.getElementById("loaderIcon").classList.add("hidden");
+            const txtErro = document.getElementById("loaderTexto");
+            txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
+            txtErro.innerText = mensaje;
         }
 
         function tratarNumeroBrasil(texto) {
@@ -371,7 +374,6 @@
                 if (dataValidadeObj && isNaN(dataValidadeObj.getTime())) dataValidadeObj = null;
 
                 if (dataValidadeObj && dataValidadeObj >= hojeCorte) {
-                    
                     const diffTempo = dataValidadeObj.getTime() - hojeCorte.getTime();
                     const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
                     
@@ -508,7 +510,7 @@
             renderizarDashboard();
         }
 
-        function executarFiltrosTabela() {
+        function ejecutarFiltrosTabela() {
             filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
             filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
             filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
@@ -528,8 +530,6 @@
                 }
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
                 if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
-                
-                // NOVO: Condicionais para os novos filtros setoriais dos gráficos
                 if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
                 if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
                 if (filtrosAtivos.familiaGrafico && item.familia !== filtrosAtivos.familiaGrafico) return false;
@@ -573,7 +573,6 @@
 
             document.getElementById("filtroLojaSuperior").value = filtrosAtivos.loja || "";
 
-            // Atualiza os indicadores de texto acima dos gráficos setoriais
             document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `(filtrado: ${filtrosAtivos.fornecedor})` : "";
             document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `(filtrado: ${filtrosAtivos.linha})` : "";
             document.getElementById("lblFiltroFamilia").innerText = filtrosAtivos.familiaGrafico ? `(filtrado: ${filtrosAtivos.familiaGrafico})` : "";
@@ -627,7 +626,6 @@
             montarGraficoCronograma(agruparCronograma);
             montarGraficoLojas(agruparLojas);
             
-            // ATUALIZAÇÃO: Agora passamos a chave do filtro ativo correspondente para cada um dos 3 gráficos abaixo
             montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, 'fornecedor', (instance) => chartFornecedores = instance);
             montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, 'linha', (instance) => chartLinhas = instance);
             montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, 'familiaGrafico', (instance) => chartFamilias = instance);
@@ -683,7 +681,6 @@
         }
 
         function limparTodosFiltros() {
-            // NOVO: Resetando também os 3 novos filtros setoriais dos gráficos
             filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
             document.getElementById("thFiltroMes").value = "";
             document.getElementById("thFiltroAno").value = "";
@@ -782,7 +779,6 @@
             });
         }
 
-        // MODIFICADO: Função genérica reconstruída para interceptar cliques e tratar cores dinâmicas de filtros
         function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, chaveFiltro, setInstanciaCallback) {
             if(instanciaGrafico) instanciaGrafico.destroy();
             
@@ -790,14 +786,12 @@
             const labels = itensOrdenados.map(i => i[0]);
             const valores = itensOrdenados.map(i => i[1]);
 
-            // Paleta padrão estruturada do dashboard
             const paletaCores = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
             
-            // Lógica visual: Se houver filtro ativo desse gráfico, destaca apenas a fatia selecionada
             const coresFinais = labels.map((label, idx) => {
                 const filtroCorrente = filtrosAtivos[chaveFiltro];
                 if (filtroCorrente) {
-                    return label === filtroCorrente ? paletaCores[idx % paletaCores.length] : 'rgba(75, 85, 99, 0.2)'; // Esmaece os não selecionados
+                    return label === filtroCorrente ? paletaCores[idx % paletaCores.length] : 'rgba(75, 85, 99, 0.2)';
                 }
                 return paletaCores[idx % paletaCores.length];
             });
@@ -823,14 +817,11 @@
                         } 
                     },
                     scales: tipo === 'bar' ? { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } } : {},
-                    
-                    // Captura e gerencia o clique em cima de fatias ou barras específicos
                     onClick: (evt, elementos) => {
                         if (elementos.length > 0 && labels.length > 0) {
                             const index = elementos[0].index;
                             const itemClicado = labels[index];
                             
-                            // Se clicou no que já estava filtrado, desmarca. Caso contrário, aplica o novo filtro.
                             if (filtrosAtivos[chaveFiltro] === itemClicado) {
                                 filtrosAtivos[chaveFiltro] = null;
                             } else {
