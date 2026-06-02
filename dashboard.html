@@ -6,6 +6,12 @@
     <title>Dashboard Pro - Controle de Validades</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Ajuste para esconder o scrollbar nativo mantendo a rolagem dos dropdowns */
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+    </style>
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
 
@@ -114,11 +120,11 @@
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
                     <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Utilize os filtros suspensos abaixo para segmentar a visão</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Utilize os filtros suspensos pesquisáveis abaixo para segmentar a visão</p>
                 </div>
                 <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold"></span>
             </div>
-            <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
+            <div class="overflow-x-auto max-h-[550px] overflow-y-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-gray-900 text-gray-400 font-bold border-b border-gray-700">
@@ -130,7 +136,7 @@
                             <th class="p-3 w-16 text-center">Qtd</th>
                             <th class="p-3 w-28 text-right">Total Perda</th>
                         </tr>
-                        <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-10">
+                        <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-20">
                             <th class="p-2">
                                 <div class="flex gap-1">
                                     <select id="thFiltroMes" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
@@ -153,25 +159,50 @@
                                     </select>
                                 </div>
                             </th>
-                            <th class="p-2">
-                                <select id="thFiltroLoja" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
-                                    <option value="">Selecione...</option>
-                                </select>
+                            
+                            <th class="p-2 relative">
+                                <div id="dropdown-loja" class="relative target-dropdown">
+                                    <button onclick="toggleDropdownCustomizado('dropdown-loja')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none focus:border-blue-500">
+                                        <span class="label truncate">Selecione...</span> <span>▼</span>
+                                    </button>
+                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
+                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2 focus:outline-none focus:border-blue-500">
+                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
+                                    </div>
+                                </div>
                             </th>
-                            <th class="p-2">
-                                <select id="thFiltroCodigo" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
-                                    <option value="">Selecione...</option>
-                                </select>
+                            <th class="p-2 relative">
+                                <div id="dropdown-codigo" class="relative target-dropdown">
+                                    <button onclick="toggleDropdownCustomizado('dropdown-codigo')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none focus:border-blue-500">
+                                        <span class="label truncate">Selecione...</span> <span>▼</span>
+                                    </button>
+                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
+                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2 focus:outline-none focus:border-blue-500">
+                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
+                                    </div>
+                                </div>
                             </th>
-                            <th class="p-2">
-                                <select id="thFiltroItem" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
-                                    <option value="">Selecione...</option>
-                                </select>
+                            <th class="p-2 relative">
+                                <div id="dropdown-item" class="relative target-dropdown">
+                                    <button onclick="toggleDropdownCustomizado('dropdown-item')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none focus:border-blue-500">
+                                        <span class="label truncate">Todos os Itens</span> <span>▼</span>
+                                    </button>
+                                    <div class="lista-container hidden absolute left-0 mt-1 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
+                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2 focus:outline-none focus:border-blue-500">
+                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
+                                    </div>
+                                </div>
                             </th>
-                            <th class="p-2">
-                                <select id="thFiltroFamilia" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
-                                    <option value="">Selecione...</option>
-                                </select>
+                            <th class="p-2 relative">
+                                <div id="dropdown-familia" class="relative target-dropdown">
+                                    <button onclick="toggleDropdownCustomizado('dropdown-familia')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none focus:border-blue-500">
+                                        <span class="label truncate">Selecione...</span> <span>▼</span>
+                                    </button>
+                                    <div class="lista-container hidden absolute right-0 mt-1 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
+                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2 focus:outline-none focus:border-blue-500">
+                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
+                                    </div>
+                                </div>
                             </th>
                             <th class="p-2"></th>
                             <th class="p-2"></th>
@@ -195,6 +226,13 @@
 
         window.onload = function() {
             carregarDadosDaPlanilha();
+            
+            // Fecha qualquer dropdown se o usuário clicar fora dele
+            document.addEventListener("click", function(e) {
+                if (!e.target.closest(".target-dropdown")) {
+                    fecharTodosDropdownisCustomizados();
+                }
+            });
         };
 
         function carregarDadosDaPlanilha() {
@@ -334,43 +372,106 @@
             });
         }
 
-        // Preenche os selects da tabela dinamicamente com base nos dados brutos
+        // Preenche os selects nativos (Ano) e constrói as listas dos dropdowns customizados
         function popularFiltrosSuspensosTabela() {
             const anos = [...new Set(dadosBrutos.map(i => i.ano))].filter(Boolean).sort();
+            
+            // Popular select nativo de Ano
+            const selectAno = document.getElementById("thFiltroAno");
+            selectAno.innerHTML = '<option value="">Ano</option>';
+            anos.forEach(ano => {
+                const opt = document.createElement("option");
+                opt.value = ano;
+                opt.innerText = ano;
+                selectAno.appendChild(opt);
+            });
+
+            // Coleta de listas únicas ordenadas
             const lojas = [...new Set(dadosBrutos.map(i => i.loja))].filter(Boolean).sort();
             const codigos = [...new Set(dadosBrutos.map(i => i.codigo))].filter(Boolean).sort();
             const familias = [...new Set(dadosBrutos.map(i => i.familia))].filter(Boolean).sort();
-            
-            // Itens combinando código e nome para exibição limpa no dropdown
-            const itens = [...new Map(dadosBrutos.map(i => [i.item, i])).values()]
-                            .sort((a,b) => a.item.localeCompare(b.item));
+            const itens = [...new Set(dadosBrutos.map(i => i.item))].filter(Boolean).sort();
 
-            alimentarSelect("thFiltroAno", anos);
-            alimentarSelect("thFiltroLoja", lojas);
-            alimentarSelect("thFiltroCodigo", codigos);
-            alimentarSelect("thFiltroFamilia", familias);
+            // Construir os dropdowns inteligentes com input de pesquisa
+            construirOpcoesDropdownCustom("dropdown-loja", lojas, "loja", "Selecione...");
+            construirOpcoesDropdownCustom("dropdown-codigo", codigos, "codigo", "Selecione...");
+            construirOpcoesDropdownCustom("dropdown-item", itens, "item", "Todos os Itens");
+            construirOpcoesDropdownCustom("dropdown-familia", familias, "familia", "Selecione...");
+        }
+
+        // Cria a estrutura visual e interativa interna para cada dropdown customizado
+        function construirOpcoesDropdownCustom(idDropdown, arrayValores, chaveFiltro, labelPadrao) {
+            const container = document.getElementById(idDropdown);
+            const wrapper = container.querySelector(".opcoes-wrapper");
             
-            // Alimentação customizada para o Nome do Item
-            const selectItem = document.getElementById("thFiltroItem");
-            selectItem.innerHTML = '<option value="">Todos os Itens</option>';
-            itens.forEach(i => {
-                const opt = document.createElement("option");
-                opt.value = i.item.toLowerCase();
-                opt.innerText = i.item;
-                selectItem.appendChild(opt);
+            wrapper.innerHTML = "";
+
+            // Opção Padrão (Limpar Filtro específico)
+            const divLimpar = document.createElement("div");
+            divLimpar.className = "px-2 py-1.5 hover:bg-gray-700 rounded cursor-pointer text-gray-400 italic transition";
+            divLimpar.innerText = "❌ Limpar Filtro";
+            divLimpar.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, "", labelPadrao, chaveFiltro);
+            wrapper.appendChild(divLimpar);
+
+            // Gerar opções baseadas na base de dados
+            arrayValores.forEach(valor => {
+                const divOpt = document.createElement("div");
+                divOpt.className = "opcao-item px-2 py-1.5 hover:bg-blue-600 rounded cursor-pointer text-gray-200 transition truncate";
+                divOpt.innerText = valor;
+                divOpt.setAttribute("data-valor", valor.toLowerCase());
+                divOpt.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, valor.toLowerCase(), valor, chaveFiltro);
+                wrapper.appendChild(divOpt);
             });
         }
 
-        function alimentarSelect(idElemento, listaValores) {
-            const select = document.getElementById(idElemento);
-            const textoPadrao = select.options[0].text;
-            select.innerHTML = `<option value="">${textoPadrao}</option>`;
-            listaValores.forEach(val => {
-                const opt = document.createElement("option");
-                opt.value = val.toLowerCase();
-                opt.innerText = val;
-                select.appendChild(opt);
+        // Controla a abertura e fechamento das listas suspensas
+        function toggleDropdownCustomizado(idDropdown) {
+            const container = document.getElementById(idDropdown);
+            const lista = container.querySelector(".lista-container");
+            const inputPesquisa = container.querySelector("input");
+            
+            const estaAtivo = !lista.classList.contains("hidden");
+            
+            fecharTodosDropdownisCustomizados();
+            
+            if (!estaAtivo) {
+                lista.classList.remove("hidden");
+                inputPesquisa.value = "";
+                filtrarOpcoesDropdown(inputPesquisa); // Reseta a pesquisa visual
+                setTimeout(() => inputPesquisa.focus(), 50);
+            }
+        }
+
+        function fecharTodosDropdownisCustomizados() {
+            document.querySelectorAll(".lista-container").forEach(el => el.classList.add("hidden"));
+        }
+
+        // Executa a filtragem em tempo real dentro do dropdown à medida que digita
+        function filtrarOpcoesDropdown(input) {
+            const busca = input.value.toLowerCase().trim();
+            const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
+            const opcoes = wrapper.querySelectorAll(".opcao-item");
+
+            opcoes.forEach(opcao => {
+                const texto = opcao.getAttribute("data-valor");
+                if (texto.includes(busca)) {
+                    opcao.classList.remove("hidden");
+                } else {
+                    opcao.classList.add("hidden");
+                }
             });
+        }
+
+        // Define o valor selecionado e dispara o motor de busca do BI
+        function selecionarOpcaoDropdownCustom(idDropdown, valorArmazenar, textoExibir, chaveFiltro) {
+            const container = document.getElementById(idDropdown);
+            const btnLabel = container.querySelector(".label");
+            
+            btnLabel.innerText = textoExibir;
+            filtrosCabecalhoTabela[chaveFiltro] = valorArmazenar;
+            
+            fecharTodosDropdownisCustomizados();
+            montarTabelaEspecifica();
         }
 
         function alterarFiltroLojaSuperior(lojaSelecionada) {
@@ -379,12 +480,9 @@
         }
 
         function executarFiltrosTabela() {
+            // Sincroniza apenas os filtros que permaneceram nativos (Mês/Ano)
             filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
             filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
-            filtrosCabecalhoTabela.loja = document.getElementById("thFiltroLoja").value;
-            filtrosCabecalhoTabela.codigo = document.getElementById("thFiltroCodigo").value;
-            filtrosCabecalhoTabela.item = document.getElementById("thFiltroItem").value;
-            filtrosCabecalhoTabela.familia = document.getElementById("thFiltroFamilia").value;
             
             montarTabelaEspecifica();
         }
@@ -485,7 +583,6 @@
                 if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
                 if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
                 if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.family && item.familia.toLowerCase() !== filtrosCabecalhoTabela.familia) return false; // Compatibilidade com chamadas legadas
                 if (filtrosCabecalhoTabela.familia && item.familia.toLowerCase() !== filtrosCabecalhoTabela.familia) return false;
                 return true;
             });
@@ -551,12 +648,14 @@
             
             document.getElementById("thFiltroMes").value = "";
             document.getElementById("thFiltroAno").value = "";
-            document.getElementById("thFiltroLoja").value = "";
-            document.getElementById("thFiltroCodigo").value = "";
-            document.getElementById("thFiltroItem").value = "";
-            document.getElementById("thFiltroFamilia").value = "";
+            
+            // Resetar labels visuais dos dropdowns customizados
+            document.querySelector("#dropdown-loja .label").innerText = "Selecione...";
+            document.querySelector("#dropdown-codigo .label").innerText = "Selecione...";
+            document.querySelector("#dropdown-item .label").innerText = "Todos os Itens";
+            document.querySelector("#dropdown-familia .label").innerText = "Selecione...";
+            
             filtrosCabecalhoTabela = { mes: "", ano: "", loja: "", codigo: "", item: "", familia: "" };
-
             document.getElementById("filtroLojaSuperior").value = "";
 
             document.getElementById("card3Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200";
@@ -564,6 +663,7 @@
             document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-transparent";
             document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-transparent";
             
+            fecharTodosDropdownisCustomizados();
             renderizarDashboard();
         }
 
