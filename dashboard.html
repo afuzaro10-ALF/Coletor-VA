@@ -14,7 +14,6 @@
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
 
-    <!-- CABEÇALHO -->
     <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
         <div>
             <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Validades</h1>
@@ -40,16 +39,13 @@
         </div>
     </div>
 
-    <!-- LOADER -->
     <div id="loader" class="text-center py-20">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
         <p class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
         
-        <!-- CARDS DE INDICADORES (KPIS) -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Perda R$</span>
@@ -91,7 +87,6 @@
             </div>
         </div>
 
-        <!-- GRÁFICOS PRINCIPAIS -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
                 <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
@@ -108,7 +103,6 @@
             </div>
         </div>
 
-        <!-- ANÁLISES SETORIAIS -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Top Fornecedores (R$)</h3>
@@ -124,7 +118,6 @@
             </div>
         </div>
 
-        <!-- TABELA ANALÍTICA -->
         <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
@@ -347,10 +340,8 @@
 
                 if (dataValidadeObj && isNaN(dataValidadeObj.getTime())) dataValidadeObj = null;
 
-                // Restrição de datas passadas mantida conforme sua solicitação anterior
                 if (dataValidadeObj && dataValidadeObj >= hojeCorte) {
                     
-                    // CÁLCULO DINÂMICO DOS DIAS RESTANTES PARA A REGRA DE NEGÓCIO
                     const diffTempo = dataValidadeObj.getTime() - hojeCorte.getTime();
                     const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
                     
@@ -479,7 +470,7 @@
             container.querySelector(".label").innerText = textoExibir;
             filtrosCabecalhoTabela[chaveFiltro] = valorArmazenar;
             fecharTodosDropdownisCustomizados();
-            montarTabelaEspecifica();
+            renderizarDashboard(); // CORREÇÃO: Força o dashboard completo a se re-renderizar
         }
 
         function alterarFiltroLojaSuperior(lojaSelecionada) {
@@ -489,25 +480,37 @@
 
         function executarFiltrosTabela() {
             filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
+            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno");
             filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
             filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
-            montarTabelaEspecifica();
+            renderizarDashboard(); // CORREÇÃO: Força o dashboard completo a se re-renderizar
         }
 
+        // CORREÇÃO CENTRAL: Esta função passa a centralizar TODA a regra de filtragem tanto de cards quanto de colunas
         function obterDadosFiltradosGerais() {
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
             
             return dadosBrutos.filter(item => {
+                // 1. Filtros de Cards / Cliques Globais
                 if (filtrosAtivos.vencimento) {
                     if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
-                    
                     const mesesDiferenca = item.diasRestantes / 30.41;
                     if (filtrosAtivos.vencimento === '3meses' && mesesDiferenca > 3) return false;
                     if (filtrosAtivos.vencimento === '6meses' && mesesDiferenca > 6) return false;
                 }
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
                 if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
+
+                // 2. Filtros de colunas da Tabela (Agregam e alteram os gráficos agora!)
+                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
+                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
+                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
+                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
+                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
+                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
+                if (filtrosCabecalhoTabela.family && item.familia.toLowerCase() !== filtrosCabecalhoTabela.family) return false;
+
                 return true;
             });
         }
@@ -539,11 +542,14 @@
 
             document.getElementById("filtroLojaSuperior").value = filtrosAtivos.loja || "";
 
-            const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras;
+            const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras ||
+                                   filtrosCabecalhoTabela.mes || filtrosCabecalhoTabela.ano || filtrosCabecalhoTabela.status ||
+                                   filtrosCabecalhoTabela.loja || filtrosCabecalhoTabela.codigo || filtrosCabecalhoTabela.item || filtrosCabecalhoTabela.family;
+            
             document.getElementById("btnLimparFiltros").className = temFiltroAtivo 
                 ? "px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500" : "hidden";
 
-            // Resetando classes dos Cards superiores clicáveis para o estado original
+            // Modos de seleção visual dos cards superiores
             document.getElementById("cardUrgencia").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200";
             document.getElementById("card3Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200";
             document.getElementById("card6Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200";
@@ -551,7 +557,6 @@
             document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-transparent";
             document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-transparent";
 
-            // Ativando efeito de piscar no card ativo
             if (filtrosAtivos.vencimento === 'urgencia') {
                 document.getElementById("cardUrgencia").className = "bg-red-950/20 p-4 rounded-xl border border-red-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
                 document.getElementById("dotUrg").className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
@@ -589,26 +594,14 @@
             montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, (instance) => chartLinhas = instance);
             montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, (instance) => chartFamilias = instance);
 
-            montarTabelaEspecifica();
+            montarTabelaEspecifica(dadosFiltrados);
         }
 
-        function montarTabelaEspecifica() {
-            const dadosIniciais = obterDadosFiltradosGerais();
+        function montarTabelaEspecifica(dadosFiltrados) {
             const tabelaCorpo = document.getElementById("corpoTabelaPerdas");
             tabelaCorpo.innerHTML = "";
 
-            const dadosFiltradosNaTabela = dadosIniciais.filter(item => {
-                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.familia && item.familia.toLowerCase() !== filtrosCabecalhoTabela.familia) return false;
-                return true;
-            });
-
-            const itensOrdenados = [...dadosFiltradosNaTabela].sort((a,b) => (a.validade || 0) - (b.validade || 0));
+            const itensOrdenados = [...dadosFiltrados].sort((a,b) => (a.validade || 0) - (b.validade || 0));
             document.getElementById("txtContagemLinhas").innerText = itensOrdenados.length + " listados";
 
             itensOrdenados.forEach(item => {
@@ -662,7 +655,7 @@
             document.querySelector("#dropdown-item .label").innerText = "Todos os Itens";
             document.querySelector("#dropdown-family .label").innerText = "Selecione...";
             
-            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", familia: "" };
+            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
             document.getElementById("filtroLojaSuperior").value = "";
             fecharTodosDropdownisCustomizados();
             renderizarDashboard();
