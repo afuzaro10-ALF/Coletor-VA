@@ -920,10 +920,11 @@
 
 dadosFinais.slice(0, 15).forEach((item, index) => {
     texto += `*${index + 1}) Loja:* ${item.loja}\n`;
+    texto += `• *EAN:* ${item.codigo}\n`;
     texto += `• *Item:* ${item.item}\n`;
     texto += `• *Descrição:* ${item.descricao || "Não informada"}\n`;
     texto += `• *Fornecedor:* ${item.fornecedor || "Não informado"}\n`;
-    texto += `• *EAN:* ${item.codigo}\n`;
+    texto += `• *Item:* ${item.linha}\n`;
     texto += `• *Vencimento:* ${item.validadeTexto} (_${item.diasRestantes} dias rest._)\n`;
     texto += `• *Qtd:* ${item.quantidade} un\n`;
     texto += `• *Perda:* ${formatarMoedaBrl(item.totalPerda)}\n`;
