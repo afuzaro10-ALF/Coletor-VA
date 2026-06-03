@@ -71,10 +71,10 @@
 
             <div onclick="alternarFiltroCard('vencimento', '6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
                 <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Vence &le; 6 Meses</span>
+                <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">📅 Vence 3 a 6 Meses</span>
                     <span id="dot6m" class="h-2 w-2 rounded-full bg-transparent"></span>
                 </div>
-                <span id="kpi6Meses" class="text-xl font-black text-orange-300 mt-2">R$ 0,00</span>
+                    <span id="kpi6Meses" class="text-xl font-black text-orange-300 mt-2">R$ 0,00</span>
             </div>
 
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
@@ -544,23 +544,24 @@
             renderizarDashboard();
         }
 
-        function obterDadosFiltradosGlobais() {
-            return dadosBrutos.filter(d => {
-                if (filtrosAtivos.loja && d.loja !== filtrosAtivos.loja) return false;
-                if (filtrosAtivos.fornecedor && d.fornecedor !== filtrosAtivos.fornecedor) return false;
-                if (filtrosAtivos.linha && d.linha !== filtrosAtivos.linha) return false;
-                if (filtrosAtivos.cronogramaMesAno) {
-                    let mAno = `${d.mes}/${d.ano}`;
-                    if (mAno !== filtrosAtivos.cronogramaMesAno) return false;
-                }
-                if (filtrosAtivos.vencimento) {
-                    if (filtrosAtivos.vencimento === 'urgencia' && d.diasRestantes > 45) return false;
-                    if (filtrosAtivos.vencimento === '3meses' && d.diasRestantes > 90) return false;
-                    if (filtrosAtivos.vencimento === '6meses' && d.diasRestantes > 180) return false;
-                }
-                return true;
-            });
+function obterDadosFiltradosGlobais() {
+    return dadosBrutos.filter(d => {
+        if (filtrosAtivos.loja && d.loja !== filtrosAtivos.loja) return false;
+        if (filtrosAtivos.fornecedor && d.fornecedor !== filtrosAtivos.fornecedor) return false;
+        if (filtrosAtivos.linha && d.linha !== filtrosAtivos.linha) return false;
+        if (filtrosAtivos.cronogramaMesAno) {
+            let mAno = `${d.mes}/${d.ano}`;
+            if (mAno !== filtrosAtivos.cronogramaMesAno) return false;
         }
+        if (filtrosAtivos.vencimento) {
+            if (filtrosAtivos.vencimento === 'urgencia' && d.diasRestantes > 45) return false;
+            if (filtrosAtivos.vencimento === '3meses' && d.diasRestantes > 90) return false;
+            // Ajustado para pegar estritamente o intervalo entre 3 e 6 meses (91 a 180 dias)
+            if (filtrosAtivos.vencimento === '6meses' && (d.diasRestantes <= 90 || d.diasRestantes > 180)) return false;
+        }
+        return true;
+    });
+}
 
         function renderizarDashboard() {
             const dadosCardsEGraficos = obterDadosFiltradosGlobais();
