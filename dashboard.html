@@ -889,12 +889,8 @@
         }
 
         function enviarFiltroWhatsApp() {
-let dadosParaEnvio = dadosBrutos.filter(item => {
-                if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
-                if (filtrosAtivos.vencimento === "urgencia" && item.diasRestantes > 45) return false;
-                if (filtrosAtivos.vencimento === "3meses" && (item.diasRestantes <= 45 || item.diasRestantes > 90)) return false;
-                if (filtrosAtivos.vencimento === "6meses" && (item.diasRestantes <= 90 || item.diasRestantes > 180)) return false;
-
+            let baseFiltrada = aplicarFiltrosGlobais(dadosBrutos);
+            let dadosFinais = baseFiltrada.filter(item => {
                 if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
                 if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
                 if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
@@ -903,7 +899,6 @@ let dadosParaEnvio = dadosBrutos.filter(item => {
                 if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
                 if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
                 if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-
                 return true;
             });
 
