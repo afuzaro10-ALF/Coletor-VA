@@ -9,7 +9,6 @@
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800 p-4 sm:p-6 flex items-center justify-center min-h-screen">
 
-    <!-- SEÇÃO DE LOGIN -->
     <div id="secaoLogin" class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden p-6 space-y-4">
         <div class="text-center">
             <span class="text-4xl">🔒</span>
@@ -36,9 +35,7 @@
         </div>
     </div>
 
-    <!-- SEÇÃO DO COLETOR -->
     <div id="secaoColetor" class="w-full max-w-2xl bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hidden">
-        <!-- CABEÇALHO -->
         <div class="bg-blue-600 p-5 text-white flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold">Coletor de Validades</h1>
@@ -52,7 +49,6 @@
 
         <div class="p-6 space-y-4">
             
-            <!-- ETAPA 1: APENAS SCANNER E CÓDIGO (Inicialmente visível) -->
             <div id="etapaScanner" class="space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Scanner de Código de Barras Ativo</label>
@@ -67,16 +63,20 @@
                 </div>
             </div>
 
-            <!-- ETAPA 2: FORMULÁRIO DE DADOS E VALIDADE (Inicialmente oculto) -->
             <div id="etapaFormulario" class="space-y-4 hidden">
                 
-                <!-- Botão para voltar se quiser escanear outro sem salvar -->
                 <button onclick="voltarParaScanner()" class="text-xs text-blue-600 hover:underline font-semibold flex items-center space-x-1">
                     <span>← Voltar e Escanear Outro</span>
                 </button>
 
                 <div id="cardCadastro" class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3 transition-colors duration-300">
                     <span id="txtStatusCadastro" class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
+                    
+                    <div class="border-b border-gray-200 pb-2">
+                        <label class="block text-xs text-gray-500">Código de Barras Coletado</label>
+                        <input type="text" id="txtCodigoExibicao" readonly class="w-full bg-transparent py-0.5 font-mono font-black text-sm text-blue-700 focus:outline-none">
+                    </div>
+
                     <div class="grid grid-cols-1 gap-3">
                         <div>
                             <label class="block text-xs text-gray-500">Item / Descrição</label>
@@ -277,7 +277,7 @@
 
                     for (let i = 1; i < linhas.length; i++) {
                         if (!linhas[i].trim()) continue;
-                        const colunas = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                         
                         let codigo = colunas[idxCod];
                         if (codigo) {
@@ -332,15 +332,12 @@
             if (valor.trim().length >= 13) { buscarProduto(valor.trim()); }
         }
 
-        // CONTROLADORES DE ETAPAS VISUAIS
         function avancarParaFormulario() {
-            // Oculta a área do scanner e mostra o formulário de cadastro/vencimento
             document.getElementById("etapaScanner").classList.add("hidden");
             document.getElementById("etapaFormulario").classList.remove("hidden");
         }
 
         function voltarParaScanner() {
-            // Limpa o código, oculta formulário e reativa o scanner na tela
             document.getElementById("etapaFormulario").classList.add("hidden");
             document.getElementById("etapaScanner").classList.remove("hidden");
             document.getElementById('campoCodigo').value = '';
@@ -351,6 +348,9 @@
         function buscarProduto(codigo) {
             codigo = codigo.trim();
             if (!codigo) { resetarCamposCadastro(); return; }
+
+            // Preenche o novo campo de exibição com o código coletado
+            document.getElementById('txtCodigoExibicao').value = codigo;
 
             const prod = baseProdutos[codigo];
             const card = document.getElementById('cardCadastro');
@@ -386,12 +386,12 @@
                 document.getElementById('txtTotalFinanceiro').value = "0,00";
             }
 
-            // Muda de etapa imediatamente após ler o código com sucesso
             avancarParaFormulario();
         }
 
         function resetarCamposCadastro() {
             produtoEncontrado = false;
+            document.getElementById('txtCodigoExibicao').value = '';
             document.getElementById('cardCadastro').className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
             document.getElementById('txtStatusCadastro').innerText = "Dados do Cadastro Localizado";
             document.getElementById('txtItemEDescricao').value = '';
@@ -461,7 +461,7 @@
         function resetarFormulario() {
             document.getElementById('campoQtd').value = '1';
             document.getElementById('campoValidade').value = '';
-            voltarParaScanner(); // Volta para a Etapa 1 automaticamente
+            voltarParaScanner();
         }
     </script>
 </body>
