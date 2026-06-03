@@ -41,7 +41,7 @@
         <div class="bg-blue-600 p-5 text-white flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold">Coletor de Validade</h1>
-                <p class="text-xs text-blue-100 mt-1">Sessão ativa: <span id="txtLojaAtiva" class="font-bold underline"></span> | Operador: <span id="txtOperadorAtivo" class="font-bold"></span></p>
+                <p class="text-xs text-blue-100 mt-1">Sessão active: <span id="txtLojaAtiva" class="font-bold underline"></span> | Operador: <span id="txtOperadorAtivo" class="font-bold"></span></p>
             </div>
             <div class="flex space-x-2">
                 <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
@@ -167,7 +167,6 @@
 
                     const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
                     
-                    // Melhoria na busca das colunas (evita problemas com acentuação ou espaços)
                     const idxLoja = cabecalho.findIndex(c => c.includes('loja'));
                     const idxUser = cabecalho.findIndex(c => c.includes('usuario') || c.includes('usuário'));
                     const idxSenha = cabecalho.findIndex(c => c.includes('senha'));
@@ -185,7 +184,6 @@
                         let senha = colunas[idxSenha];
 
                         if (loja && user && senha) {
-                            // CORRIGIDO: Modificado de 'senate' para 'senha' para alinhar com a função autenticar()
                             credenciaisLojas[loja] = { usuario: user, senha: senha };
 
                             const opt = document.createElement("option");
@@ -281,7 +279,9 @@
 
                     for (let i = 1; i < linhas.length; i++) {
                         if (!linhas[i].trim()) continue;
-                        const colunas = lines[i] = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        
+                        // CORRIGIDO: Removido o resíduo "lines[i] =" que causava erro de sintaxe oculto
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                         
                         let codigo = colunas[idxCod];
                         if (codigo) {
@@ -297,6 +297,7 @@
                             };
                         }
                     }
+                    console.log("Base de produtos carregada com sucesso. Total:", Object.keys(baseProdutos).length);
                 })
                 .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
@@ -367,7 +368,7 @@
 
                 document.getElementById('txtItemEDescricao').value = prod.item + (prod.descricao ? " - " + prod.descricao : "");
                 document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
-                document.getElementById('txtFamilia').value = prod.familia;
+                document.getElementById('txtFamilia').value = prod.family || prod.familia;
                 document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                 
                 document.getElementById('txtItemEDescricao').dataset.itemBruto = prod.item;
@@ -377,6 +378,7 @@
                 
                 calcularTotalFinanceiro();
             } else {
+                // Caso não encontre, permite continuar a coleta sem travar o operador
                 produtoEncontrado = false;
                 card.className = "p-4 bg-red-50 rounded-xl border border-red-200 space-y-3";
                 statusTxt.innerText = "⚠️ ATENÇÃO: Produto não encontrado no cadastro!";
