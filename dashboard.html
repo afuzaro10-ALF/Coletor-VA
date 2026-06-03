@@ -55,7 +55,7 @@
             
             <div onclick="alternarFiltroCard('status', 'Tratar item com Urgência')" id="cardUrgencia" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200">
                 <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (≤ 45d)</span>
+                    <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (&le; 45d)</span>
                     <span id="dotUrg" class="h-2 w-2 rounded-full bg-transparent"></span>
                 </div>
                 <span id="kpiUrgencia" class="text-xl font-black text-red-400 mt-2">0 itens</span>
@@ -174,9 +174,9 @@
                             <th class="p-2">
                                 <select id="thFiltroStatus" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
                                     <option value="">Todos os Status</option>
-                                    <option value="Tratar item com Urgência">🚨 Urgência (≤ 45d)</option>
-                                    <option value="Tratar item">⚠️ Tratar (≤ 90d)</option>
-                                    <option value="Acompanhar Tratativas">📅 Acompanhar (≤ 180d)</option>
+                                    <option value="Tratar item com Urgência">🚨 Urgência (&le; 45d)</option>
+                                    <option value="Tratar item">⚠️ Tratar (&le; 90d)</option>
+                                    <option value="Acompanhar Tratativas">📅 Acompanhar (&le; 180d)</option>
                                     <option value="Item Mapeado">🔍 Mapeado (&gt; 180d)</option>
                                 </select>
                             </th>
@@ -252,6 +252,7 @@
         let filtrosAtivos = { status: null, lojaSuperior: null };
         let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", linha: "", fornecedor: "" };
         
+        // Aqui ficam armazenadas as instâncias ativas do Chart.js para limpeza
         let instanciasGraficos = { cronograma: null, lojas: null, fornecedores: null, linhas: null };
 
         window.onload = function() {
@@ -271,7 +272,7 @@
                     return res.text();
                 })
                 .then(csv => {
-                    if (csv.includes("<!DOCTYPE") || csv.includes("login") || csv.length < 50) {
+                    if (csv.includes("<|DOCTYPE") || csv.includes("login") || csv.length < 50) {
                         exibirMensagemErro("⚠️ Ajuste o compartilhamento da planilha para: 'Qualquer pessoa com o link pode ler'.");
                         return;
                     }
@@ -291,7 +292,7 @@
             document.getElementById("loaderIcon").classList.add("hidden");
             const txtErro = document.getElementById("loaderTexto");
             txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
-            txtErro.innerText = mensagem;
+            txtErro.innerText = message = mensagem;
         }
 
         function tratarNumeroBrasil(texto) {
@@ -423,7 +424,7 @@
             selectAno.innerHTML = '<option value="">Ano</option>';
             anos.forEach(ano => {
                 const opt = document.createElement("option");
-                opt.value = ano; opt.innerText = year = ano; selectAno.appendChild(opt);
+                opt.value = ano; opt.innerText = ano; selectAno.appendChild(opt);
             });
 
             const lojas = [...new Set(dadosBrutos.map(i => i.loja))].filter(Boolean).sort();
@@ -481,28 +482,23 @@
         function filtrarOpcoesDropdown(input) {
             const busca = input.value.toLowerCase().trim();
             const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
-            const opcoes = wrapper.querySelectorAll(".opcao-item");
-            
-            opcoes.forEach(opt => {
-                const txt = opt.getAttribute("data-valor");
-                if (txt.includes(busca)) {
-                    opt.classList.remove("hidden");
-                } else {
-                    opt.classList.add("hidden");
-                }
+            wrapper.querySelectorAll(".opcao-item").forEach(el => {
+                const txt = el.getAttribute("data-valor") || "";
+                if (txt.includes(busca)) el.classList.remove("hidden");
+                else el.classList.add("hidden");
             });
         }
 
-        function selecionarOpcaoDropdownCustom(idDropdown, valor, label, chaveFiltro) {
+        function selecionarOpcaoDropdownCustom(idDropdown, valorChave, labelVisivel, chaveFiltro) {
             const container = document.getElementById(idDropdown);
-            container.querySelector(".label").innerText = label;
+            container.querySelector(".label").innerText = labelVisivel;
+            filtrosCabecalhoTabela[chaveFiltro] = valorChave;
             fecharTodosDropdownisCustomizados();
-            filtrosCabecalhoTabela[chaveFiltro] = valor;
             executarFiltrosTabela();
         }
 
-        function alterarFiltroLojaSuperior(loja) {
-            filtrosAtivos.lojaSuperior = loja || null;
+        function alterarFiltroLojaSuperior(valor) {
+            filtrosAtivos.lojaSuperior = valor || null;
             verificarBotaoLimpar();
             renderizarDashboard();
         }
@@ -530,261 +526,349 @@
             filtrosAtivos.status = null;
             filtrosAtivos.lojaSuperior = null;
             document.getElementById("filtroLojaSuperior").value = "";
-            
-            // Limpa filtros da tabela também
-            document.getElementById("thFiltroMes").value = "";
-            document.getElementById("thFiltroAno").value = "";
-            document.getElementById("thFiltroStatus").value = "";
-            
-            const dropdowns = ["loja", "codigo", "item", "linha", "fornecedor"];
-            dropdowns.forEach(d => {
-                const label = d === "item" ? "Todos os Itens" : "Selecione...";
-                document.getElementById(`dropdown-${d}`).querySelector(".label").innerText = label;
-                filtrosCabecalhoTabela[d] = "";
-            });
-
-            filtrosCabecalhoTabela.mes = "";
-            filtrosCabecalhoTabela.ano = "";
-            filtrosCabecalhoTabela.status = "";
-
             verificarBotaoLimpar();
             renderizarDashboard();
         }
 
-        function obterDadosFiltradosParaCardsEGraficos() {
-            return dadosBrutos.filter(item => {
+        function formatarMoeda(valor) {
+            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        // --- ENGENHARIA LOGICA E GRAFICOS DINAMICOS ---
+        function renderizarDashboard() {
+            // Filtragem primária baseada nos cards de KPI e Filtro Superior de Lojas
+            let dadosFiltrados = dadosBrutos.filter(item => {
                 if (filtrosAtivos.lojaSuperior && item.loja !== filtrosAtivos.lojaSuperior) return false;
                 if (filtrosAtivos.status && item.statusAcao !== filtrosAtivos.status) return false;
                 return true;
             });
-        }
 
-        function renderizarDashboard() {
-            const dadosFiltrados = obterDadosFiltradosParaCardsEGraficos();
-            
-            // Atualizar Estilos dos Cards Selecionados
-            document.getElementById("cardUrgencia").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.status === 'Tratar item com Urgência' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200`;
-            document.getElementById("card3Meses").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.status === 'Tratar item' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200`;
-            document.getElementById("card6Meses").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.status === 'Acompanhar Tratativas' ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200`;
+            // 1. CÁLCULO E ATUALIZAÇÃO DOS CARD DE INDICADORES (KPI)
+            let totalMapeadoRs = 0;
+            let totalUrgenciaItens = 0;
+            let total3MesesRs = 0;
+            let total6MesesRs = 0;
+            let unidadesTotais = 0;
+            let codigosUnicosSet = new Set();
+            let lojasAtivasSet = new Set();
 
-            // Cálculos KPIs
-            let totalRs = 0;
-            let totalUnidades = 0;
-            let itensUrgentes = 0;
-            let valor3m = 0;
-            let valor6m = 0;
-            let barrasUnicos = new Set();
-            let lojasAtivas = new Set();
+            dadosFiltrados.forEach(item => {
+                totalMapeadoRs += item.totalPerda;
+                unidadesTotais += item.quantidade;
+                codigosUnicosSet.add(item.codigo);
+                lojasAtivasSet.add(item.loja);
 
-            dadosFiltrados.forEach(i => {
-                totalRs += i.totalPerda;
-                totalUnidades += i.quantidade;
-                barrasUnicos.add(i.codigo);
-                lojasAtivas.add(i.loja);
-
-                if (i.statusAcao === "Tratar item com Urgência") itensUrgentes++;
-                if (i.statusAcao === "Tratar item") valor3m += i.totalPerda;
-                if (i.statusAcao === "Acompanhar Tratativas") valor6m += i.totalPerda;
+                if (item.diasRestantes <= 45) totalUrgenciaItens++;
+                if (item.diasRestantes <= 90) total3MesesRs += item.totalPerda;
+                if (item.diasRestantes > 90 && item.diasRestantes <= 180) total6MesesRs += item.totalPerda;
             });
 
-            // Atualizar Elementos KPIs
-            document.getElementById("kpiTotalRs").innerText = totalRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiUrgencia").innerText = `${itensUrgentes} itens`;
-            document.getElementById("kpi3Meses").innerText = valor3m.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpi6Meses").innerText = valor6m.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiBarrasUnicos").innerText = barrasUnicos.size;
-            document.getElementById("kpiUnidades").innerText = totalUnidades.toLocaleString('pt-BR');
-            document.getElementById("kpiLojas").innerText = lojasAtivas.size;
+            document.getElementById("kpiTotalRs").innerText = formatarMoeda(totalMapeadoRs);
+            document.getElementById("kpiUrgencia").innerText = `${totalUrgenciaItens} itens`;
+            document.getElementById("kpi3Meses").innerText = formatarMoeda(total3MesesRs);
+            document.getElementById("kpi6Meses").innerText = formatarMoeda(total6MesesRs);
+            document.getElementById("kpiBarrasUnicos").innerText = codigosUnicosSet.size;
+            document.getElementById("kpiUnidades").innerText = unidadesTotais.toLocaleString('pt-BR');
+            document.getElementById("kpiLojas").innerText = lojasAtivasSet.size;
 
-            // Renderizar Componentes Visuais
-            construirGraficos(dadosFiltrados);
+            // Destaques nos cards ativados por clique
+            document.getElementById("cardUrgencia").className = `bg-gray-800 p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition-all duration-200 ${filtrosAtivos.status === 'Tratar item com Urgência' ? 'border-red-500 bg-red-950/20 scale-[1.02]' : 'border-gray-700 border-gray-700/60 hover:border-red-500'}`;
+            document.getElementById("card3Meses").className = `bg-gray-800 p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition-all duration-200 ${filtrosAtivos.status === 'Tratar item' ? 'border-amber-500 bg-amber-950/20 scale-[1.02]' : 'border-gray-700 border-gray-700/60 hover:border-amber-500'}`;
+            document.getElementById("card6Meses").className = `bg-gray-800 p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition-all duration-200 ${filtrosAtivos.status === 'Acompanhar Tratativas' ? 'border-orange-500 bg-orange-950/20 scale-[1.02]' : 'border-gray-700 border-gray-700/60 hover:border-orange-500'}`;
+
+            // 2. ATUALIZAÇÃO DA TABELA ANALÍTICA
+            const tabelaBody = document.getElementById("corpoTabelaPerdas");
+            tabelaBody.innerHTML = "";
+
+            dadosFiltrados.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-gray-750 border-b border-gray-800 text-gray-300 row-analitica-tabela transition";
+                tr.setAttribute("data-mes", item.mes);
+                tr.setAttribute("data-ano", item.ano);
+                tr.setAttribute("data-status", item.statusAcao);
+                tr.setAttribute("data-loja", item.loja.toLowerCase());
+                tr.setAttribute("data-codigo", item.codigo.toLowerCase());
+                tr.setAttribute("data-item", item.item.toLowerCase());
+                tr.setAttribute("data-linha", item.linha.toLowerCase());
+                tr.setAttribute("data-fornecedor", item.fornecedor.toLowerCase());
+                tr.setAttribute("data-valor-bruto", item.totalPerda);
+                tr.setAttribute("data-qtd-bruto", item.quantidade);
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-gray-200">${item.validadeTexto} <span class="block text-[10px] text-gray-500 font-normal">${item.diasRestantes}d restantes</span></td>
+                    <td class="p-3"><span class="px-2.5 py-1 rounded-md text-[10px] font-bold inline-block uppercase tracking-wider ${item.classeBadge}">${item.statusAcao}</span></td>
+                    <td class="p-3 font-medium text-gray-400">${item.loja}</td>
+                    <td class="p-3 font-mono text-gray-500">${item.codigo}</td>
+                    <td class="p-3 font-semibold text-white truncate max-w-xs">${item.item} <span class="block text-[10px] text-gray-400 font-normal truncate">${item.descricao}</span></td>
+                    <td class="p-3 text-gray-400">${item.linha}</td>
+                    <td class="p-3 text-gray-400 truncate max-w-xxs">${item.fornecedor}</td>
+                    <td class="p-3 text-center font-bold text-purple-300">${item.quantidade}</td>
+                    <td class="p-3 text-right font-black text-emerald-400">${formatarMoeda(item.totalPerda)}</td>
+                `;
+                tabelaBody.appendChild(tr);
+            });
+
             executarFiltrosTabela();
         }
 
         function executarFiltrosTabela() {
-            // Sincroniza selects simples da tabela com a estrutura de filtros
-            filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
-            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
-            filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
+            const fMes = document.getElementById("thFiltroMes").value;
+            const fAno = document.getElementById("thFiltroAno").value;
+            const fStatus = document.getElementById("thFiltroStatus").value;
 
-            const baseDados = obterDadosFiltradosParaCardsEGraficos();
+            const linhasTabela = document.querySelectorAll("#corpoTabelaPerdas tr");
+            
+            let totalFiltradoRs = 0;
+            let linhasVisiveisQuantidade = 0;
 
-            const dadosTabelaFinal = baseDados.filter(item => {
-                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-                return true;
+            // Arrays temporários para recalcular e remontar os gráficos com base no estado real da tabela
+            let dadosParaGraficos = [];
+
+            linhasTabela.forEach(tr => {
+                const cMes = tr.getAttribute("data-mes");
+                const cAno = tr.getAttribute("data-ano");
+                const cStatus = tr.getAttribute("data-status");
+                const cLoja = tr.getAttribute("data-loja");
+                const cCodigo = tr.getAttribute("data-codigo");
+                const cItem = tr.getAttribute("data-item");
+                const cLinha = tr.getAttribute("data-linha");
+                const cFornecedor = tr.getAttribute("data-fornecedor");
+                
+                const vBruto = parseFloat(tr.getAttribute("data-valor-bruto")) || 0;
+                const qBruto = parseInt(tr.getAttribute("data-qtd-bruto")) || 0;
+
+                let match = true;
+
+                if (fMes && cMes !== fMes) match = false;
+                if (fAno && cAno !== fAno) match = false;
+                if (fStatus && cStatus !== fStatus) match = false;
+                if (filtrosCabecalhoTabela.loja && cLoja !== filtrosCabecalhoTabela.loja) match = false;
+                if (filtrosCabecalhoTabela.codigo && cCodigo !== filtrosCabecalhoTabela.codigo) match = false;
+                if (filtrosCabecalhoTabela.item && cItem !== filtrosCabecalhoTabela.item) match = false;
+                if (filtrosCabecalhoTabela.linha && cLinha !== filtrosCabecalhoTabela.linha) match = false;
+                if (filtrosCabecalhoTabela.fornecedor && cFornecedor !== filtrosCabecalhoTabela.fornecedor) match = false;
+
+                if (match) {
+                    tr.classList.remove("hidden");
+                    totalFiltradoRs += vBruto;
+                    linhasVisiveisQuantidade++;
+                    
+                    // Alimenta a matriz de consolidação dos gráficos dinâmicos
+                    dadosParaGraficos.push({
+                        mesAno: `${cMes}/${cAno}`,
+                        loja: tr.querySelector("td:nth-child(3)").innerText,
+                        fornecedor: tr.querySelector("td:nth-child(7)").innerText,
+                        linha: tr.querySelector("td:nth-child(6)").innerText,
+                        valor: vBruto
+                    });
+                } else {
+                    tr.classList.add("hidden");
+                }
             });
 
-            document.getElementById("txtContagemLinhas").innerText = `${dadosTabelaFinal.length} registros`;
-
-            const tbody = document.getElementById("corpoTabelaPerdas");
-            tbody.innerHTML = "";
-
-            dadosTabelaFinal.forEach(item => {
-                const tr = document.createElement("tr");
-                tr.className = "hover:bg-gray-750/40 transition border-b border-gray-800 text-gray-300";
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-400">${item.validadeTexto}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.classeBadge}">${item.statusAcao}</span></td>
-                    <td class="p-3 font-medium text-gray-200">${item.loja}</td>
-                    <td class="p-3 text-gray-400 font-mono">${item.codigo}</td>
-                    <td class="p-3 max-w-xs truncate font-bold text-gray-100" title="${item.item} ${item.descricao}">${item.item}</td>
-                    <td class="p-3 text-gray-400 truncate">${item.linha}</td>
-                    <td class="p-3 text-gray-400 truncate">${item.fornecedor}</td>
-                    <td class="p-3 text-center font-bold text-purple-300">${item.quantidade}</td>
-                    <td class="p-3 text-right font-black text-emerald-400">${item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            window.dadosAtuaisDaTabela = dadosTabelaFinal;
+            document.getElementById("txtContagemLinhas").innerText = `${linhasVisiveisQuantidade} registros | Total: ${formatarMoeda(totalFiltradoRs)}`;
+            
+            // Dispara a montagem/atualização dinâmica das instâncias de gráficos do Chart.js
+            construirGraficosDinamicos(dadosParaGraficos);
         }
 
-        function construirGraficos(dados) {
-            // Helper para destruir gráfico se já existir
-            const resetChart = (chave) => {
-                if (instanciasGraficos[chave]) instanciasGraficos[chave].destroy();
-            };
-
-            // 1. CRONOGRAMA (Por Mês/Ano)
-            resetChart('cronograma');
+        function construirGraficosDinamicos(dados) {
+            // --- 1. PROCESSAMENTO DE MAPAS DE SOMA DE VALOR ---
             let agrupadoCronograma = {};
-            dados.forEach(i => {
-                let chave = `${i.ano}-${i.mes}`;
-                if (i.ano && i.mes) agrupadoCronograma[chave] = (agrupadoCronograma[chave] || 0) + i.totalPerda;
-            });
-            let labelsCrono = Object.keys(agrupadoCronograma).sort();
-            let valoresCrono = labelsCrono.map(l => agrupadoCronograma[l]);
-            let labelsExibicaoCrono = labelsCrono.map(l => {
-                let p = l.split('-');
-                return `${p[1]}/${p[0]}`;
+            let agrupadoLojas = {};
+            let agrupadoFornecedores = {};
+            let agrupadoLinhas = {};
+
+            dados.forEach(d => {
+                agrupadoCronograma[d.mesAno] = (agrupadoCronograma[d.mesAno] || 0) + d.valor;
+                agrupadoLojas[d.loja] = (agrupadoLojas[d.loja] || 0) + d.valor;
+                agrupadoFornecedores[d.fornecedor] = (agrupadoFornecedores[d.fornecedor] || 0) + d.valor;
+                agrupadoLinhas[d.linha] = (agrupadoLinhas[d.linha] || 0) + d.valor;
             });
 
-            instanciasGraficos.cronograma = new Chart(document.getElementById("chartCronograma"), {
+            // Ordenação dos meses da linha cronológica
+            const labelsCronograma = Object.keys(agrupadoCronograma).sort((a, b) => {
+                let [m1, a1] = a.split('/'); let [m2, a2] = b.split('/');
+                return new Date(a1, m1 - 1) - new Date(a2, m2 - 1);
+            });
+            const valoresCronograma = labelsCronograma.map(l => agrupadoCronograma[l]);
+
+            // Transformação e ordenação decrescente (Top 5) para os demais gráficos de barras
+            const arrLojas = Object.entries(agrupadoLojas).sort((a, b) => b[1] - a[1]);
+            const arrFornecedores = Object.entries(agrupadoFornecedores).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const arrLinhas = Object.entries(agrupadoLinhas).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+            // --- 2. RENDERIZAÇÃO E CONFIGURAÇÃO INDIVIDUAL DOS CANVAS (CHART.JS) ---
+            
+            // Gráfico de Linha do Tempo (Cronograma)
+            if (instanciasGraficos.cronograma) instanciasGraficos.cronograma.destroy();
+            instanciasGraficos.cronograma = new Chart(document.getElementById('chartCronograma').getContext('2d'), {
                 type: 'line',
                 data: {
-                    labels: labelsExibicaoCrono,
+                    labels: labelsCronograma.length ? labelsCronograma : ['Sem dados'],
                     datasets: [{
-                        label: 'Perda Estimada R$',
-                        data: valoresCrono,
+                        label: 'Impacto R$',
+                        data: valoresCronograma.length ? valoresCronograma : [0],
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
                         fill: true,
-                        tension: 0.3,
-                        borderWidth: 3
+                        tension: 0.2
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } },
+                        y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } }
+                    }
+                }
             });
 
-            // 2. LOJAS
-            resetChart('lojas');
-            let agrupadoLojas = {};
-            dados.forEach(i => { agrupadoLojas[i.loja] = (agrupadoLojas[i.loja] || 0) + i.totalPerda; });
-            let lojasOrdenadas = Object.keys(agrupadoLojas).sort((a,b) => agrupadoLojas[b] - agrupadoLojas[a]);
-
-            instanciasGraficos.lojas = new Chart(document.getElementById("chartLojas"), {
+            // Gráfico de Barras: Lojas / Filiais
+            if (instanciasGraficos.lojas) instanciasGraficos.lojas.destroy();
+            instanciasGraficos.lojas = new Chart(document.getElementById('chartLojas').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: lojasOrdenadas,
+                    labels: arrLojas.map(x => x[0]).length ? arrLojas.map(x => x[0]) : ['Sem dados'],
                     datasets: [{
-                        data: lojasOrdenadas.map(l => agrupadoLojas[l]),
-                        backgroundColor: '#10b981'
+                        data: arrLojas.map(x => x[1]).length ? arrLojas.map(x => x[1]) : [0],
+                        backgroundColor: '#60a5fa',
+                        borderRadius: 6
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
+                        y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } }
+                    }
+                }
             });
 
-            // 3. FORNECECORES (Top 5)
-            resetChart('fornecedores');
-            let agrupadoForn = {};
-            dados.forEach(i => { agrupadoForn[i.fornecedor] = (agrupadoForn[i.fornecedor] || 0) + i.totalPerda; });
-            let fornOrdenados = Object.keys(agrupadoForn).sort((a,b) => agrupadoForn[b] - agrupadoForn[a]).slice(0, 5);
-
-            instanciasGraficos.fornecedores = new Chart(document.getElementById("chartFornecedores"), {
-                type: 'doughnut',
+            // Gráfico de Barras Horizontais: Fornecedores
+            if (instanciasGraficos.fornecedores) instanciasGraficos.fornecedores.destroy();
+            instanciasGraficos.fornecedores = new Chart(document.getElementById('chartFornecedores').getContext('2d'), {
+                type: 'bar',
                 data: {
-                    labels: fornOrdenados,
+                    labels: arrFornecedores.map(x => x[0]).length ? arrFornecedores.map(x => x[0]) : ['Sem dados'],
                     datasets: [{
-                        data: fornOrdenados.map(f => agrupadoForn[f]),
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+                        data: arrFornecedores.map(x => x[1]).length ? arrFornecedores.map(x => x[1]) : [0],
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 4
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } },
+                        y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
             });
 
-            // 4. LINHAS (Top 5)
-            resetChart('linhas');
-            let agrupadoLinhas = {};
-            dados.forEach(i => { agrupadoLinhas[i.linha] = (agrupadoLinhas[i.linha] || 0) + i.totalPerda; });
-            let linhasOrdenadas = Object.keys(agrupadoLinhas).sort((a,b) => agrupadoLinhas[b] - agrupadoLinhas[a]).slice(0, 5);
-
-            instanciasGraficos.linhas = new Chart(document.getElementById("chartLinhas"), {
-                type: 'polarArea',
+            // Gráfico de Barras Horizontais: Linhas
+            if (instanciasGraficos.linhas) instanciasGraficos.linhas.destroy();
+            instanciasGraficos.linhas = new Chart(document.getElementById('chartLinhas').getContext('2d'), {
+                type: 'bar',
                 data: {
-                    labels: linhasOrdenadas,
+                    labels: arrLinhas.map(x => x[0]).length ? arrLinhas.map(x => x[0]) : ['Sem dados'],
                     datasets: [{
-                        data: linhasOrdenadas.map(l => agrupadoLinhas[l]),
-                        backgroundColor: ['rgba(59, 130, 246, 0.6)', 'rgba(16, 185, 129, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(239, 68, 68, 0.6)', 'rgba(139, 92, 246, 0.6)']
+                        data: arrLinhas.map(x => x[1]).length ? arrLinhas.map(x => x[1]) : [0],
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#374151' } },
+                        y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
             });
         }
 
+        // --- SISTEMAS DE EXPORTAÇÃO ---
         function exportarParaExcel() {
-            if (!window.dadosAtuaisDaTabela || window.dadosAtuaisDaTabela.length === 0) {
-                alert("Nenhum dado disponível para exportação.");
+            const linhasVisiveis = document.querySelectorAll("#corpoTabelaPerdas tr:not(.hidden)");
+            if (linhasVisiveis.length === 0) {
+                alert("Nenhum dado disponível para exportação na tabela atual.");
                 return;
             }
 
-            const formatados = window.dadosAtuaisDaTabela.map(i => ({
-                "Vencimento": i.validadeTexto,
-                "Status Ação": i.statusAcao,
-                "Loja": i.loja,
-                "Código de Barras": i.codigo,
-                "Item / Descrição": i.item,
-                "Linha": i.linha,
-                "Fornecedor": i.fornecedor,
-                "Qtd": i.quantidade,
-                "Total Perda (R$)": i.totalPerda
-            }));
+            let matrizExcel = [
+                ["Vencimento", "Status Ação", "Loja", "Código de Barras", "Item / Descrição", "Linha", "Fornecedor", "Qtd", "Total Perda (R$)"]
+            ];
+
+            linhasVisiveis.forEach(tr => {
+                const colunas = tr.querySelectorAll("td");
+                let descCompleta = colunas[4].innerText.replace(/\n/g, ' - ');
+                let valorLimpo = parseFloat(tr.getAttribute("data-valor-bruto")) || 0;
+                let qtdLimpa = parseInt(tr.getAttribute("data-qtd-bruto")) || 0;
+
+                matrizExcel.push([
+                    colunas[0].innerText.split('\n')[0].trim(),
+                    colunas[1].innerText.trim(),
+                    colunas[2].innerText.trim(),
+                    colunas[3].innerText.trim(),
+                    descCompleta,
+                    colunas[5].innerText.trim(),
+                    colunas[6].innerText.trim(),
+                    qtdLimpa,
+                    valorLimpo
+                ]);
+            });
 
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(formatados);
-            XLSX.utils.book_append_sheet(wb, ws, "Validades Filtradas");
-            XLSX.writeFile(wb, `Controle_Validade_Export_${new Date().toISOString().slice(0,10)}.xlsx`);
+            const ws = XLSX.utils.aoa_to_sheet(matrizExcel);
+            XLSX.utils.book_append_sheet(wb, ws, "Validades_Filtradas");
+            XLSX.utils.writeFile(wb, "Relatorio_Controle_Validade.xlsx");
         }
 
         function enviarFiltroWhatsApp() {
-            if (!window.dadosAtuaisDaTabela || window.dadosAtuaisDaTabela.length === 0) {
-                alert("Sem dados para compartilhar.");
+            const linhasVisiveis = document.querySelectorAll("#corpoTabelaPerdas tr:not(.hidden)");
+            if (linhasVisiveis.length === 0) {
+                alert("Não há dados visíveis filtrados para envio.");
                 return;
             }
 
-            let msg = `📢 *RELATÓRIO DE VALIDADES CRÍTICAS*\n`;
-            msg += `_Gerado em: ${new Date().toLocaleDateString('pt-BR')}_\n\n`;
-            
-            const itensCriticos = window.dadosAtuaisDaTabela.slice(0, 10);
-            
-            itensCriticos.forEach((i, idx) => {
-                msg += `*${idx + 1}.* ${i.item}\n`;
-                msg += `   🏢 Loja: ${i.loja} | 📅 Venc: ${i.validadeTexto}\n`;
-                msg += `   📦 Qtd: ${i.quantidade} | 💰 Valor: ${i.totalPerda.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}\n`;
-                msg += `   🚨 Status: ${i.statusAcao}\n\n`;
+            let textoZap = `*PAINEL DE VALIDADE - RESUMO DE PERDAS*\n`;
+            textoZap += `_Gerado em: ${new Date().toLocaleDateString('pt-BR')}_\n`;
+            textoZap += `-------------------------------------------\n\n`;
+
+            let contador = 0;
+            linhasVisiveis.forEach(tr => {
+                if (contador < 15) { 
+                    const colunas = tr.querySelectorAll("td");
+                    let dataVenc = colunas[0].innerText.split('\n')[0].trim();
+                    let status = colunas[1].innerText.trim();
+                    let desc = colunas[4].innerText.split('\n')[0].trim();
+                    let valor = colunas[8].innerText.trim();
+                    let loja = colunas[2].innerText.trim();
+
+                    textoZap += `• *${desc}* (${loja})\n`;
+                    textoZap += `  Venc: ${dataVenc} | *${valor}* | ${status}\n\n`;
+                    contador++;
+                }
             });
 
-            if(window.dadosAtuaisDaTabela.length > 10) {
-                msg += `... e mais ${window.dadosAtuaisDaTabela.length - 10} itens no painel.`;
+            if (linhasVisiveis.length > 15) {
+                textoZap += `... e mais ${linhasVisiveis.length - 15} itens na lista do painel.`;
             }
 
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+            const linkWhatsApp = `https://api.whatsapp.com/send?text=${encodeURIComponent(textoZap)}`;
+            window.open(linkWhatsApp, '_blank');
         }
     </script>
 </body>
