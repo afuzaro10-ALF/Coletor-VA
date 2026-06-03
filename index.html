@@ -3,788 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pro - Controle de Validades</title>
-    <script src="https://tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <style>
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
-    </style>
+    <title>Coletor de Validades Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
+<body class="bg-gray-100 font-sans antialiased text-gray-800 p-4 sm:p-6 flex items-center justify-center min-h-screen">
 
-    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
-        <div>
-            <h1 class="text-2xl font-black text-blue-400 tracking-tight">Dashboard de Validades</h1>
-            <p class="text-xs text-gray-400 mt-1">Dados consolidados em tempo real (Apenas Vencimentos Futuros)</p>
+    <div id="secaoLogin" class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden p-6 space-y-4">
+        <div class="text-center">
+            <span class="text-4xl">🔒</span>
+            <h2 class="text-2xl font-black text-blue-600 mt-2">Acesso Restrito</h2>
+            <p id="txtStatusLogin" class="text-sm text-gray-400 mt-1">Sincronizando credenciais da nuvem...</p>
         </div>
         
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto justify-end">
-            <div class="w-full sm:w-64">
-                <label for="filtroLojaSuperior" class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Filtrar por Loja Principal:</label>
-                <select id="filtroLojaSuperior" onchange="alterarFiltroLojaSuperior(this.value)" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-3 py-2 text-xs font-semibold text-gray-100 focus:outline-none focus:border-blue-500 transition">
-                    <option value="">✨ Todas as Lojas</option>
+        <div class="space-y-3">
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Selecione sua Loja</label>
+                <select id="loginLoja" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
+                    <option value="">Carregando lojas...</option>
                 </select>
             </div>
-            
-            <div class="flex items-center space-x-2 w-full sm:w-auto pt-4 sm:pt-0">
-                <button onclick="limparTodosFiltros()" id="btnLimparFiltros" class="hidden px-3 py-2 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white rounded-xl text-xs font-bold transition border border-red-500/30">
-                    ❌ Limpar Filtros
-                </button>
-                <button onclick="window.location.href='index.html'" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-xs font-bold text-white transition shadow-md whitespace-nowrap">
-                    ⬅️ Abrir Coletor
-                </button>
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Usuário</label>
+                <input type="text" id="loginUsuario" placeholder="Digite seu usuário" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
             </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Senha</label>
+                <input type="password" id="loginSenha" placeholder="••••••••" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
+            </div>
+            <button id="btnEntrar" onclick="autenticar()" disabled class="w-full py-3 bg-gray-400 text-white font-bold rounded-xl transition shadow-md mt-2 cursor-not-allowed">Aguarde o Carregamento...</button>
         </div>
     </div>
 
-    <div id="loader" class="text-center py-20">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
-        <p class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
-    </div>
-
-    <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
-        
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Perda R$</span>
-                <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
+    <div id="secaoColetor" class="w-full max-w-xl bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hidden">
+        <div class="bg-blue-600 p-4 text-white flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold tracking-tight">Coletor de Validades</h1>
+                <p class="text-xs text-blue-100 mt-0.5">Sessão: <span id="txtLojaAtiva" class="font-bold underline"></span> | Op: <span id="txtOperadorAtivo" class="font-bold"></span></p>
             </div>
-            
-            <div onclick="alternarFiltroCard('vencimento', 'urgencia')" id="cardUrgencia" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (≤ 45d)</span>
-                    <span id="dotUrg" class="h-2 w-2 rounded-full bg-transparent"></span>
+            <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
+        </div>
+
+        <div id="etapaScanner" class="p-5 space-y-4">
+            <div class="text-center py-1">
+                <p class="text-sm font-bold text-gray-500 uppercase tracking-wide">Passo 1: Bipe ou digite o produto</p>
+            </div>
+
+            <div>
+                <div id="leitorCameraContainer" class="p-2 bg-black rounded-xl overflow-hidden relative border border-gray-700 shadow-inner">
+                    <div id="reader" class="w-full"></div>
                 </div>
-                <span id="kpiUrgencia" class="text-xl font-black text-red-400 mt-2">0 itens</span>
             </div>
 
-            <div onclick="alternarFiltroCard('vencimento', '3meses')" id="card3Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Vence &le; 3 Meses</span>
-                    <span id="dot3m" class="h-2 w-2 rounded-full bg-transparent"></span>
-                </div>
-                <span id="kpi3Meses" class="text-xl font-black text-amber-300 mt-2">R$ 0,00</span>
-            </div>
-
-            <div onclick="alternarFiltroCard('vencimento', '6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Vence &le; 6 Meses</span>
-                    <span id="dot6m" class="h-2 w-2 rounded-full bg-transparent"></span>
-                </div>
-                <span id="kpi6Meses" class="text-xl font-black text-orange-300 mt-2">R$ 0,00</span>
-            </div>
-
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qtd Total Itens</span>
-                <span id="kpiUnidades" class="text-xl font-black text-purple-400 mt-2">0</span>
-            </div>
-
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas</span>
-                <span id="kpiLojas" class="text-xl font-black text-gray-200 mt-2">0</span>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Código de Barras Manual</label>
+                <input type="text" id="campoCodigo" onkeydown="verificarEnterScanner(event)" oninput="verificarTamanhoScanner(this.value)" placeholder="Digite e pressione Enter ou aguarde o bip..." class="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base font-mono font-bold text-center text-blue-600 tracking-wider">
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
-                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
-                <div class="h-64 relative">
-                    <canvas id="chartCronograma"></canvas>
+        <div id="etapaFormulario" class="p-5 space-y-4 hidden">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                <button onclick="voltarParaScanner()" class="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+                    <span>⬅️ Voltar / Cancelar</span>
+                </button>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Passo 2: Detalhes da Perda</p>
+            </div>
+
+            <div class="bg-gray-100 px-4 py-2 rounded-xl flex justify-between items-center">
+                <span class="text-xs font-semibold text-gray-500 uppercase">Código Coletado:</span>
+                <span id="txtCodigoExibido" class="font-mono font-bold text-gray-700 tracking-wide text-sm"></span>
+            </div>
+
+            <div id="cardCadastro" class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3 transition-colors duration-300">
+                <span id="txtStatusCadastro" class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
+                
+                <div class="grid grid-cols-1 gap-1">
+                    <label class="block text-xs font-semibold text-gray-400 uppercase">Item / Descrição</label>
+                    <input type="text" id="txtItemEDescricao" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-bold text-sm focus:outline-none text-gray-700">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase">Fornecedor / Fabricante</label>
+                        <input type="text" id="txtFornecedor" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-semibold text-xs focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase">Família</label>
+                        <input type="text" id="txtFamilia" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 text-xs focus:outline-none text-gray-600">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase">Custo Unitário (R$)</label>
+                        <input type="text" id="txtCusto" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-bold text-sm focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase">Total Perda (R$)</label>
+                        <input type="text" id="txtTotalFinanceiro" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-black text-sm focus:outline-none text-emerald-600">
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
-                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Mapeamento Financeiro (R$) por Loja / Filial</h3>
-                <div class="h-64 relative">
-                    <canvas id="chartLojas"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Top Fornecedores (R$)</h3>
-                <div class="h-56 relative"><canvas id="chartFornecedores"></canvas></div>
-            </div>
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Quebra por Linha (R$)</h3>
-                <div class="h-56 relative"><canvas id="chartLinhas"></canvas></div>
-            </div>
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Análise por Família (R$)</h3>
-                <div class="h-56 relative"><canvas id="chartFamilias"></canvas></div>
-            </div>
-        </div>
-
-        <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
-            <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Visão analítica com réguas de plano de ação baseadas no dia de hoje</p>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Quantidade</label>
+                    <input type="number" id="campoQtd" value="1" min="1" oninput="calcularTotalFinanceiro()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base font-bold text-center">
                 </div>
-                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    <button id="btnExportarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition duration-200 shadow-md border border-emerald-500/30">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Exportar Excel
-                    </button>
-                    <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold whitespace-nowrap"></span>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Data de Vencimento</label>
+                    <input type="date" id="campoValidade" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-semibold">
                 </div>
             </div>
-            <div class="overflow-x-auto max-h-[550px] overflow-y-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-gray-900 text-gray-400 font-bold border-b border-gray-700">
-                            <th class="p-3 w-32">Vencimento</th>
-                            <th class="p-3 w-40">Status Ação</th>
-                            <th class="p-3 w-28">Loja</th>
-                            <th class="p-3 w-32">Código</th>
-                            <th class="p-3">Item / Descrição</th>
-                            <th class="p-3 w-36">Família</th>
-                            <th class="p-3 w-16 text-center">Qtd</th>
-                            <th class="p-3 w-28 text-right">Total Perda</th>
-                        </tr>
-                        <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-20">
-                            <th class="p-2">
-                                <div class="flex gap-1">
-                                    <select id="thFiltroMes" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
-                                        <option value="">Mês</option>
-                                        <option value="01">Jan</option>
-                                        <option value="02">Fev</option>
-                                        <option value="03">Mar</option>
-                                        <option value="04">Abr</option>
-                                        <option value="05">Mai</option>
-                                        <option value="06">Jun</option>
-                                        <option value="07">Jul</option>
-                                        <option value="08">Ago</option>
-                                        <option value="09">Set</option>
-                                        <option value="10">Out</option>
-                                        <option value="11">Nov</option>
-                                        <option value="12">Dez</option>
-                                    </select>
-                                    <select id="thFiltroAno" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
-                                        <option value="">Ano</option>
-                                    </select>
-                                </div>
-                            </th>
-                            <th class="p-2">
-                                <select id="thFiltroStatus" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500 font-medium">
-                                    <option value="">Todos os Status</option>
-                                    <option value="Tratar item com Urgência">🚨 Urgência (≤ 45d)</option>
-                                    <option value="Tratar item">⚠️ Tratar (≤ 90d)</option>
-                                    <option value="Acompanhar Tratativas">📅 Acompanhar (≤ 180d)</option>
-                                    <option value="Item Mapeado">🔍 Mapeado (&gt; 180d)</option>
-                                </select>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-loja" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-loja')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none focus:border-blue-500">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2 focus:outline-none focus:border-blue-500">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-codigo" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-codigo')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none focus:border-blue-500">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2 focus:outline-none focus:border-blue-500">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-item" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-item')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none focus:border-blue-500">
-                                        <span class="label truncate">Todos os Itens</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2 focus:outline-none focus:border-blue-500">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-family" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-family')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none focus:border-blue-500">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute right-0 mt-1 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2 focus:outline-none focus:border-blue-500">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2"></th>
-                            <th class="p-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpoTabelaPerdas" class="divide-y divide-gray-700/50">
-                    </tbody>
-                </table>
+
+            <div class="pt-2">
+                <button id="btnSalvar" onclick="salvarColeta()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-base tracking-wide">
+                    <span>💾 Salvar Coleta</span>
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
-
-        let dadosBrutos = [];
-        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null };
-        let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", familia: "" };
+        const BASE_PLANILHA_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv";
+        const CADASTRO_URL = `${BASE_PLANILHA_URL}&sheet=Cadastro`;
+        const USUARIOS_URL = `${BASE_PLANILHA_URL}&sheet=Usuarios`;
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
         
-        let chartCronograma, chartLojas, chartFornecedores, chartLinhas, chartFamilias;
+        let baseProdutos = {};
+        let credenciaisLojas = {};
+        let usuarioLogado = "";
+        let lojaSessao = "";
+        let html5QrCodeScanner = null;
+        let produtoEncontrado = false;
+        let emPausaLeitura = false;
 
         window.onload = function() {
-            carregarDadosDaPlanilha();
-            document.addEventListener("click", function(e) {
-                if (!e.target.closest(".target-dropdown")) {
-                    fecharTodosDropdownisCustomizados();
-                }
-            });
-
-            // Ativa o evento do botão de exportação
-            document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
+            carregarCredenciaisDaNuvem();
         };
 
-        function carregarDadosDaPlanilha() {
-            fetch(URL_COLETAS)
-                .then(res => {
-                    if (!res.ok) throw new Error("Erro HTTP: " + res.status);
-                    return res.text();
-                })
-                .then(csv => {
-                    if (csv.includes("<!DOCTYPE") || csv.includes("login") || csv.length < 50) {
-                        document.getElementById("loader").innerHTML = `
-                            <p class="text-red-500 font-bold text-lg">⚠️ Falha na permissão da Planilha</p>
-                        `;
-                        return;
+        function carregarCredenciaisDaNuvem() {
+            fetch(USUARIOS_URL)
+                .then(response => response.text())
+                .then(text => {
+                    const linhas = text.split(/\r?\n/);
+                    if (linhas.length < 2) return;
+
+                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+                    const idxLoja = cabecalho.indexOf('loja');
+                    const idxUser = cabecalho.indexOf('usuario');
+                    const idxSenha = cabecalho.indexOf('senha');
+
+                    const select = document.getElementById("loginLoja");
+                    select.innerHTML = "";
+
+                    for (let i = 1; i < linhas.length; i++) {
+                        if (!linhas[i].trim()) continue;
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        
+                        let loja = colunas[idxLoja];
+                        let user = colunas[idxUser];
+                        let senha = colunas[idxSenha];
+
+                        if (loja && user && senha) {
+                            credenciaisLojas[loja] = { usuario: user, senha: senha };
+                            const opt = document.createElement("option");
+                            opt.value = loja; opt.textContent = loja;
+                            select.appendChild(opt);
+                        }
                     }
-                    processarCsvBruto(csv);
-                    popularSeletorLojas();
-                    popularFiltrosSuspensosTabela();
-                    document.getElementById("loader").classList.add("hidden");
-                    document.getElementById("conteudoDash").classList.remove("hidden");
-                    renderizarDashboard();
+
+                    document.getElementById("txtStatusLogin").innerText = "Selecione sua loja e identifique-se";
+                    const btnEntrar = document.getElementById("btnEntrar");
+                    btnEntrar.disabled = false;
+                    btnEntrar.innerText = "Entrar no Sistema";
+                    btnEntrar.className = "w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md mt-2 cursor-pointer";
                 })
                 .catch(err => {
-                    document.getElementById("loader").innerHTML = `<p class="text-red-500 font-bold text-lg">❌ Erro de Conexão</p>`;
+                    console.error("Erro credenciais:", err);
+                    alert("Falha crítica ao buscar tabela de acessos.");
                 });
         }
 
-        function tratarNumeroBrasil(texto) {
-            if (!texto) return 0;
-            let limpo = texto.replace(/^["']|["']$/g, '').trim();
-            limpo = limpo.replace(/\./g, '').replace(',', '.');
-            let n = parseFloat(limpo);
-            return isNaN(n) ? 0 : n;
-        }
+        function autenticar() {
+            const lojaSelecionada = document.getElementById("loginLoja").value;
+            const usuarioDigitado = document.getElementById("loginUsuario").value.trim();
+            const senhaDigitada = document.getElementById("loginSenha").value.trim();
 
-        function encontrarIndexColuna(cabecalho, nomesPossiveis) {
-            for (let nome of nomesPossiveis) {
-                let idx = cabecalho.indexOf(nome.toLowerCase());
-                if (idx !== -1) return idx;
-            }
-            return -1;
-        }
+            if (!lojaSelecionada) { alert("Selecione uma loja válida."); return; }
 
-        function processarCsvBruto(text) {
-            const linhas = text.split(/\r?\n/);
-            if (linhas.length < 2) return;
-
-            const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
-            
-            const idxLoja = encontrarIndexColuna(cabecalho, ['loja', 'filial']);
-            const idxCod = encontrarIndexColuna(cabecalho, ['código de barras', 'codigo', 'barras', 'sku']);
-            const idxItem = encontrarIndexColuna(cabecalho, ['item/produto', 'item', 'produto', 'nome']);
-            const idxDesc = encontrarIndexColuna(cabecalho, ['descrição', 'descricao']);
-            const idxForn = encontrarIndexColuna(cabecalho, ['fornecedor', 'fabricante']);
-            const idxLinha = encontrarIndexColuna(cabecalho, ['linha']);
-            const idxFam = encontrarIndexColuna(cabecalho, ['família', 'familia']);
-            const idxQtd = encontrarIndexColuna(cabecalho, ['quantidade', 'qtd']);
-            const idxValidade = encontrarIndexColuna(cabecalho, ['data de vencimento', 'vencimento', 'validade']);
-            const idxTotalPerda = encontrarIndexColuna(cabecalho, ['total perda (r$)', 'total perda', 'perda', 'valor']);
-
-            dadosBrutos = [];
-            const hojeCorte = new Date();
-            hojeCorte.setHours(0, 0, 0, 0);
-
-            for (let i = 1; i < linhas.length; i++) {
-                if (!linhas[i].trim()) continue;
-                
-                const colunas = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
-                
-                let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
-                let perdaNum = idxTotalPerda !== -1 ? tratarNumeroBrasil(colunas[idxTotalPerda]) : 0;
-                
-                let dataValidadeObj = null;
-                let dataTexto = (idxValidade !== -1 && colunas[idxValidade]) ? colunas[idxValidade].trim() : "";
-                let mesTexto = "";
-                let anoTexto = "";
-
-                if (dataTexto) {
-                    let partes = [];
-                    if (dataTexto.includes("/")) {
-                        partes = dataTexto.split("/");
-                        if (partes.length === 3) {
-                            dataValidadeObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-                            mesTexto = partes[1].padStart(2, '0');
-                            anoTexto = partes[2];
-                        }
-                    } else if (dataTexto.includes("-")) {
-                        partes = dataTexto.split("-");
-                        if (partes.length === 3) {
-                            dataValidadeObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-                            mesTexto = partes[1].padStart(2, '0');
-                            anoTexto = partes[0];
-                        }
-                    }
-                }
-
-                if (dataValidadeObj && isNaN(dataValidadeObj.getTime())) dataValidadeObj = null;
-
-                if (dataValidadeObj && dataValidadeObj >= hojeCorte) {
-                    
-                    const diffTempo = dataValidadeObj.getTime() - hojeCorte.getTime();
-                    const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
-                    
-                    let statusAcao = "";
-                    let classeBadge = "";
-                    
-                    if (diasRestantes <= 45) {
-                        statusAcao = "Tratar item com Urgência";
-                        classeBadge = "bg-red-500/20 text-red-400 border border-red-500/30";
-                    } else if (diasRestantes <= 90) {
-                        statusAcao = "Tratar item";
-                        classeBadge = "bg-orange-500/20 text-orange-400 border border-orange-500/30";
-                    } else if (diasRestantes <= 180) {
-                        statusAcao = "Acompanhar Tratativas";
-                        classeBadge = "bg-blue-500/20 text-blue-400 border border-blue-500/30";
-                    } else {
-                        statusAcao = "Item Mapeado";
-                        classeBadge = "bg-gray-700/50 text-gray-400 border border-gray-600/30";
-                    }
-
-                    dadosBrutos.push({
-                        loja: idxLoja !== -1 ? (colunas[idxLoja] || "Não Identificada") : "Não Identificada",
-                        codigo: idxCod !== -1 ? colunas[idxCod] : "S/C",
-                        item: idxItem !== -1 ? (colunas[idxItem] || "Item Sem Nome") : "Item Sem Nome",
-                        descricao: idxDesc !== -1 ? (colunas[idxDesc] || "") : "",
-                        fornecedor: idxForn !== -1 ? (colunas[idxForn] || "Sem Fornecedor") : "Sem Fornecedor",
-                        linha: idxLinha !== -1 ? (colunas[idxLinha] || "Sem Linha") : "Sem Linha",
-                        familia: idxFam !== -1 ? (colunas[idxFam] || "Sem Família") : "Sem Família",
-                        quantidade: qtdNum,
-                        validade: dataValidadeObj,
-                        validadeTexto: dataTexto || "Sem Data",
-                        mes: mesTexto,
-                        ano: anoTexto,
-                        totalPerda: perdaNum,
-                        diasRestantes: diasRestantes,
-                        statusAcao: statusAcao,
-                        classeBadge: classeBadge
-                    });
-                }
-            }
-        }
-
-        function popularSeletorLojas() {
-            const seletor = document.getElementById("filtroLojaSuperior");
-            while(seletor.options.length > 1) seletor.remove(1);
-            const lojasUnicas = [...new Set(dadosBrutos.map(item => item.loja))].sort();
-            lojasUnicas.forEach(loja => {
-                const opt = document.createElement("option");
-                opt.value = loja; opt.innerText = "🏢 " + loja;
-                seletor.appendChild(opt);
-            });
-        }
-
-        function popularFiltrosSuspensosTabela() {
-            const anos = [...new Set(dadosBrutos.map(i => i.ano))].filter(Boolean).sort();
-            const selectAno = document.getElementById("thFiltroAno");
-            selectAno.innerHTML = '<option value="">Ano</option>';
-            anos.forEach(ano => {
-                const opt = document.createElement("option");
-                opt.value = ano; opt.innerText = ano; selectAno.appendChild(opt);
-            });
-
-            const lojas = [...new Set(dadosBrutos.map(i => i.loja))].filter(Boolean).sort();
-            const codigos = [...new Set(dadosBrutos.map(i => i.codigo))].filter(Boolean).sort();
-            const familias = [...new Set(dadosBrutos.map(i => i.familia))].filter(Boolean).sort();
-            const itens = [...new Set(dadosBrutos.map(i => i.item))].filter(Boolean).sort();
-
-            construirOpcoesDropdownCustom("dropdown-loja", lojas, "loja", "Selecione...");
-            construirOpcoesDropdownCustom("dropdown-codigo", codigos, "codigo", "Selecione...");
-            construirOpcoesDropdownCustom("dropdown-item", itens, "item", "Todos os Itens");
-            construirOpcoesDropdownCustom("dropdown-family", familias, "familia", "Selecione...");
-        }
-
-        function construirOpcoesDropdownCustom(idDropdown, arrayValores, chaveFiltro, labelPadrao) {
-            const container = document.getElementById(idDropdown);
-            const wrapper = container.querySelector(".opcoes-wrapper");
-            wrapper.innerHTML = "";
-
-            const divLimpar = document.createElement("div");
-            divLimpar.className = "px-2 py-1.5 hover:bg-gray-700 rounded cursor-pointer text-gray-400 italic transition";
-            divLimpar.innerText = "❌ Limpar Filtro";
-            divLimpar.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, "", labelPadrao, chaveFiltro);
-            wrapper.appendChild(divLimpar);
-
-            arrayValores.forEach(valor => {
-                const divOpt = document.createElement("div");
-                divOpt.className = "opcao-item px-2 py-1.5 hover:bg-blue-600 rounded cursor-pointer text-gray-200 transition truncate";
-                divOpt.innerText = valor; divOpt.setAttribute("data-valor", valor.toLowerCase());
-                divOpt.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, valor.toLowerCase(), valor, chaveFiltro);
-                wrapper.appendChild(divOpt);
-            });
-        }
-
-        function toggleDropdownCustomizado(idDropdown) {
-            const container = document.getElementById(idDropdown);
-            const lista = container.querySelector(".lista-container");
-            const inputPesquisa = container.querySelector("input");
-            const estaAtivo = !lista.classList.contains("hidden");
-            
-            fecharTodosDropdownisCustomizados();
-            if (!estaAtivo) {
-                lista.classList.remove("hidden");
-                inputPesquisa.value = "";
-                filtrarOpcoesDropdown(inputPesquisa);
-                setTimeout(() => inputPesquisa.focus(), 50);
-            }
-        }
-
-        function fecharTodosDropdownisCustomizados() {
-            document.querySelectorAll(".lista-container").forEach(el => el.classList.add("hidden"));
-        }
-
-        function filtrarOpcoesDropdown(input) {
-            const busca = input.value.toLowerCase().trim();
-            const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
-            const opcoes = wrapper.querySelectorAll(".opcao-item");
-            opcoes.forEach(opcao => {
-                const texto = opcao.getAttribute("data-valor");
-                if (texto.includes(busca)) opcao.classList.remove("hidden");
-                else opcao.classList.add("hidden");
-            });
-        }
-
-        function selecionarOpcaoDropdownCustom(idDropdown, valorArmazenar, textoExibir, chaveFiltro) {
-            const container = document.getElementById(idDropdown);
-            container.querySelector(".label").innerText = textoExibir;
-            filtrosCabecalhoTabela[chaveFiltro] = valorArmazenar;
-            fecharTodosDropdownisCustomizados();
-            renderizarDashboard();
-        }
-
-        function alterarFiltroLojaSuperior(lojaSelecionada) {
-            filtrosAtivos.loja = lojaSelecionada || null;
-            renderizarDashboard();
-        }
-
-        function ejecutarFiltrosTabela() {
-            filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
-            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
-            filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
-            renderizarDashboard();
-        }
-
-        function obterDadosFiltradosGerais() {
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-            
-            return dadosBrutos.filter(item => {
-                if (filtrosAtivos.vencimento) {
-                    if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
-                    const mesesDiferenca = item.diasRestantes / 30.41;
-                    if (filtrosAtivos.vencimento === '3meses' && mesesDiferenca > 3) return false;
-                    if (filtrosAtivos.vencimento === '6meses' && mesesDiferenca > 6) return false;
-                }
-                if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
-                if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
-
-                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.family && item.familia.toLowerCase() !== filtrosCabecalhoTabela.family) return false;
-
-                return true;
-            });
-        }
-
-        function renderizarDashboard() {
-            const dadosFiltrados = obterDadosFiltradosGerais();
-            const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-
-            let somaFinanceira = 0, somaUnidades = 0, total3Meses = 0, total6Meses = 0, totalUrgentes = 0;
-            let setLojas = new Set();
-
-            dadosFiltrados.forEach(item => {
-                somaUnidades += item.quantidade;
-                if(item.loja) setLojas.add(item.loja);
-                somaFinanceira += item.totalPerda;
-
-                if (item.diasRestantes <= 45) totalUrgentes++;
-                if (item.diasRestantes / 30.41 <= 3) total3Meses += item.totalPerda;
-                if (item.diasRestantes / 30.41 <= 6) total6Meses += item.totalPerda;
-            });
-
-            document.getElementById("kpiTotalRs").innerText = somaFinanceira.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiUrgencia").innerText = totalUrgentes + (totalUrgentes === 1 ? " item" : " itens");
-            document.getElementById("kpi3Meses").innerText = total3Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpi6Meses").innerText = total6Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiUnidades").innerText = somaUnidades.toLocaleString('pt-BR');
-            document.getElementById("kpiLojas").innerText = setLojas.size;
-
-            document.getElementById("filtroLojaSuperior").value = filtrosAtivos.loja || "";
-
-            const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras ||
-                                   filtrosCabecalhoTabela.mes || filtrosCabecalhoTabela.ano || filtrosCabecalhoTabela.status ||
-                                   filtrosCabecalhoTabela.loja || filtrosCabecalhoTabela.codigo || filtrosCabecalhoTabela.item || filtrosCabecalhoTabela.family;
-            
-            document.getElementById("btnLimparFiltros").className = temFiltroAtivo 
-                ? "px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500" : "hidden";
-
-            document.getElementById("cardUrgencia").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200";
-            document.getElementById("card3Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200";
-            document.getElementById("card6Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200";
-            document.getElementById("dotUrg").className = "h-2 w-2 rounded-full bg-transparent";
-            document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-transparent";
-            document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-transparent";
-
-            if (filtrosAtivos.vencimento === 'urgencia') {
-                document.getElementById("cardUrgencia").className = "bg-red-950/20 p-4 rounded-xl border border-red-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
-                document.getElementById("dotUrg").className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
-            } else if (filtrosAtivos.vencimento === '3meses') {
-                document.getElementById("card3Meses").className = "bg-amber-950/20 p-4 rounded-xl border border-amber-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
-                document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-amber-500 animate-pulse";
-            } else if (filtrosAtivos.vencimento === '6meses') {
-                document.getElementById("card6Meses").className = "bg-orange-950/20 p-4 rounded-xl border border-orange-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
-                document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-orange-500 animate-pulse";
-            }
-
-            const agruparLojas = {}, agruparForn = {}, agruparLinhas = {}, agruparFamilias = {}, agruparCronograma = {};
-            const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            
-            for(let i=0; i<12; i++) {
-                let m = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
-                agruparCronograma[mesesNomes[m.getMonth()] + "/" + String(m.getFullYear()).substring(2)] = 0;
-            }
-
-            dadosFiltrados.forEach(item => {
-                agruparLojas[item.loja] = (agruparLojas[item.loja] || 0) + item.totalPerda;
-                agruparForn[item.fornecedor] = (agruparForn[item.fornecedor] || 0) + item.totalPerda;
-                agruparLinhas[item.linha] = (agruparLinhas[item.linha] || 0) + item.totalPerda;
-                agruparFamilias[item.familia] = (agruparFamilias[item.familia] || 0) + item.totalPerda;
-
-                if (item.validade) {
-                    let chaveMes = mesesNomes[item.validade.getMonth()] + "/" + String(item.validade.getFullYear()).substring(2);
-                    if (agruparCronograma[chaveMes] !== undefined) agruparCronograma[chaveMes] += item.totalPerda;
-                }
-            });
-
-            montarGraficoCronograma(agruparCronograma);
-            montarGraficoLojas(agruparLojas);
-            montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, (instance) => chartFornecedores = instance);
-            montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, (instance) => chartLinhas = instance);
-            montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, (instance) => chartFamilias = instance);
-
-            montarTabelaEspecifica(dadosFiltrados);
-        }
-
-        function montarTabelaEspecifica(dadosFiltrados) {
-            const tabelaCorpo = document.getElementById("corpoTabelaPerdas");
-            tabelaCorpo.innerHTML = "";
-
-            const itensOrdenados = [...dadosFiltrados].sort((a,b) => (a.validade || 0) - (b.validade || 0));
-            document.getElementById("txtContagemLinhas").innerText = itensOrdenados.length + " listados";
-
-            itensOrdenados.forEach(item => {
-                const tr = document.createElement("tr");
-                tr.className = filtrosAtivos.codigoBarras === item.codigo 
-                    ? "bg-blue-600/30 font-bold border-l-4 border-blue-500 hover:bg-blue-600/40 cursor-pointer transition"
-                    : "hover:bg-gray-700/50 cursor-pointer transition";
-                
-                tr.onclick = () => alternarFiltroTabela(item.codigo);
-
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-300">${item.validadeTexto}</td>
-                    <td class="p-3">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold block text-center uppercase tracking-wider ${item.classeBadge}">
-                            ${item.statusAcao}
-                        </span>
-                    </td>
-                    <td class="p-3"><span class="px-1.5 py-0.5 bg-gray-700 rounded text-gray-300 font-medium">${item.loja}</span></td>
-                    <td class="p-3 font-mono text-gray-400">${item.codigo}</td>
-                    <td class="p-3 font-medium text-gray-100">${item.item} <span class="text-gray-500 block text-[10px] font-normal">${item.descricao}</span></td>
-                    <td class="p-3 text-gray-400">${item.familia}</td>
-                    <td class="p-3 text-center font-bold text-gray-300">${item.quantidade}</td>
-                    <td class="p-3 text-right font-black text-emerald-400">${item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-                `;
-                tabelaCorpo.appendChild(tr);
-            });
-        }
-
-        function alternarFiltroCard(tipo, valor) {
-            if (filtrosAtivos[tipo] === valor) {
-                filtrosAtivos[tipo] = null;
-            } else {
-                filtrosAtivos[tipo] = valor;
-            }
-            renderizarDashboard();
-        }
-
-        function alternarFiltroTabela(codigo) {
-            filtrosAtivos.codigoBarras = (filtrosAtivos.codigoBarras === codigo) ? null : codigo;
-            renderizarDashboard();
-        }
-
-        function limparTodosFiltros() {
-            filtrosAtivos.vencimento = null; filtrosAtivos.loja = null; filtrosAtivos.codigoBarras = null;
-            document.getElementById("thFiltroMes").value = "";
-            document.getElementById("thFiltroAno").value = "";
-            document.getElementById("thFiltroStatus").value = "";
-            
-            document.querySelector("#dropdown-loja .label").innerText = "Selecione...";
-            document.querySelector("#dropdown-codigo .label").innerText = "Selecione...";
-            document.querySelector("#dropdown-item .label").innerText = "Todos os Itens";
-            document.querySelector("#dropdown-family .label").innerText = "Selecione...";
-            
-            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
-            document.getElementById("filtroLojaSuperior").value = "";
-            fecharTodosDropdownisCustomizados();
-            renderizarDashboard();
-        }
-
-        // LÓGICA DE EXPORTAÇÃO EXCEL ATUALIZADA
-        function exportarParaExcel() {
-            const tabelaHTML = document.querySelector('table');
-            if (!tabelaHTML) {
-                alert('Tabela não localizada.');
+            if (usuarioDigitado === "admin" && senhaDigitada === "123") {
+                logarSucesso(lojaSelecionada, usuarioDigitado);
                 return;
             }
 
-            // Clona a estrutura para realizar uma higienização estrutural dos dados
-            const clone = tabelaHTML.cloneNode(true);
-            
-            // Remove a linha de seletores/filtros para não poluir o cabeçalho do arquivo final
-            const linhaFiltros = clone.querySelector('thead tr:nth-child(2)');
-            if (linhaFiltros) linhaFiltros.remove();
-
-            // Percorre as linhas removendo elementos visuais HTML (Badges e Descrições secundárias)
-            clone.querySelectorAll('tr').forEach((row, index) => {
-                if (index === 0) return; // Mantém os títulos das colunas intactos
-
-                // Higieniza a coluna de Status Ação (índice 1) extraindo apenas o texto do Badge
-                const celulaStatus = row.cells[1];
-                if (celulaStatus) {
-                    const badge = celulaStatus.querySelector('span');
-                    if (badge) celulaStatus.innerText = badge.innerText.replace(/[🚨⚠️📅🔍]/g, '').trim();
-                }
-
-                // Higieniza a coluna de Descrição do Item (índice 4) para separar Título de Subtítulo estruturalmente
-                const celulaItem = row.cells[4];
-                if (celulaItem) {
-                    const subtexto = celulaItem.querySelector('span');
-                    if (subtexto) {
-                        const textoPrincipal = celulaItem.childNodes[0].textContent.trim();
-                        celulaItem.innerText = `${textoPrincipal} (${subtexto.innerText.trim()})`;
-                    }
-                }
-            });
-
-            // Converte o clone higienizado em estrutura Workbook
-            const wb = XLSX.utils.table_to_book(clone, { sheet: "Validades Analítico" });
-            
-            // Define o nome do arquivo usando a data atual corrigida
-            const dataHoje = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
-            XLSX.writeFile(wb, `Painel_Validades_${dataHoje}.xlsx`);
+            const credencialLoja = credenciaisLojas[lojaSelecionada];
+            if (credencialLoja && usuarioDigitado === credencialLoja.usuario && senhaDigitada === credencialLoja.senha) {
+                logarSucesso(lojaSelecionada, usuarioDigitado);
+            } else {
+                alert("❌ Usuário ou senha incorretos para a loja selecionada!");
+            }
         }
 
-        function montarGraficoCronograma(objetoDados) {
-            if(chartCronograma) chartCronograma.destroy();
-            chartCronograma = new Chart(document.getElementById("chartCronograma"), {
-                type: 'line',
-                data: {
-                    labels: Object.keys(objetoDados),
-                    datasets: [{
-                        label: 'Valor Perda Estimada (R$)', data: Object.values(objetoDados),
-                        borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3, fill: true, tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } }
-                }
-            });
+        function logarSucesso(loja, usuario) {
+            usuarioLogado = usuario;
+            lojaSessao = loja;
+
+            document.getElementById("txtLojaAtiva").innerText = lojaSessao;
+            document.getElementById("txtOperadorAtivo").innerText = usuarioLogado;
+
+            document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
+            document.getElementById("secaoLogin").classList.add("hidden");
+            document.getElementById("secaoColetor").classList.remove("hidden");
+            
+            inicializarBaseCadastro();
+            ligarCameraAutomatica();
         }
 
-        function montarGraficoLojas(objetoDados) {
-            if(chartLojas) chartLojas.destroy();
-            const labels = Object.keys(objetoDados);
-            const valores = Object.values(objetoDados);
-            const coresBarras = labels.map(loja => loja === filtrosAtivos.loja ? '#eab308' : '#10b981');
+        function inicializarBaseCadastro() {
+            fetch(CADASTRO_URL)
+                .then(response => response.text())
+                .then(text => {
+                    const linhas = text.split(/\r?\n/);
+                    if (linhas.length < 2) return;
 
-            chartLojas = new Chart(document.getElementById("chartLojas"), {
-                type: 'bar',
-                data: {
-                    labels: labels, datasets: [{ data: valores, backgroundColor: coresBarras, borderRadius: 6 }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } },
-                    onClick: (evt, elementos) => {
-                        if (elementos.length > 0) {
-                            const index = elementos[0].index;
-                            const lojaClicada = labels[index];
-                            filtrosAtivos.loja = (filtrosAtivos.loja === lojaClicada) ? null : lojaClicada;
-                            renderizarDashboard();
+                    const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+                    const idxCod = cabecalho.indexOf('codigo');
+                    const idxItem = cabecalho.indexOf('item');
+                    const idxDesc = cabecalho.indexOf('descricao');
+                    const idxForn = cabecalho.indexOf('fornecedor');
+                    const idxLinha = cabecalho.indexOf('linha');
+                    const idxFam = cabecalho.indexOf('familia');
+                    const idxCusto = cabecalho.indexOf('custo');
+
+                    for (let i = 1; i < linhas.length; i++) {
+                        if (!linhas[i].trim()) continue;
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        
+                        let codigo = colunas[idxCod];
+                        if (codigo) {
+                            codigo = codigo.replace(/^["']|["']$/g, '').trim();
+                            baseProdutos[codigo] = {
+                                item: colunas[idxItem] || '',
+                                descricao: colunas[idxDesc] || '',
+                                fornecedor: colunas[idxForn] || '',
+                                linha: colunas[idxLinha] || '',
+                                familia: colunas[idxFam] || '',
+                                custo: colunas[idxCusto] ? parseFloat(colunas[idxCusto].replace(/\./g, '').replace(',', '.')) || 0 : 0
+                            };
                         }
                     }
-                }
-            });
+                })
+                .catch(err => console.error("Erro Cadastro:", err));
         }
 
-        function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, setInstanciaCallback) {
-            if(instanciaGrafico) instanciaGrafico.destroy();
-            const itensOrdenados = Object.entries(objetoDados).sort((a,b) => b[1] - a[1]).slice(0, 5);
-            const labels = itensOrdenados.map(i => i[0]);
-            const valores = itensOrdenados.map(i => i[1]);
+        function ligarCameraAutomatica() {
+            html5QrCodeScanner = new Html5Qrcode("reader");
+            const config = { 
+                fps: 25, 
+                qrbox: (width, height) => { return { width: width * 0.85, height: height * 0.55 }; },
+                formatsToSupport: [ 
+                    Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, 
+                    Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.QR_CODE 
+                ]
+            };
 
-            const novaInstancia = new Chart(document.getElementById(idElemento), {
-                type: tipo,
-                data: {
-                    labels: labels.length ? labels : ["Sem Lançamentos"],
-                    datasets: [{
-                        data: valores.length ? valores : [0],
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
-                        borderWidth: 1, borderColor: '#1f2937'
-                    }]
+            html5QrCodeScanner.start(
+                { facingMode: "environment" }, config, 
+                (decodedText) => {
+                    if (emPausaLeitura) return;
+                    emPausaLeitura = true;
+                    
+                    // Coloca o valor no input e chama o direcionador de tela
+                    document.getElementById('campoCodigo').value = decodedText;
+                    avancarParaFormulario(decodedText);
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { position: tipo === 'bar' ? 'none' : 'right', labels: { color: '#9ca3af', boxWidth: 12, font: { size: 10 } } } 
-                    },
-                    scales: tipo === 'bar' ? { y: { ticks: { color: '#9ca3af' } }, x: { ticks: { color: '#9ca3af' } } } : {}
-                }
-            });
-            setInstanciaCallback(novaInstancia);
+                (errorMessage) => {}
+            ).catch(err => console.error("Erro câmera:", err));
+        }
+
+        function verificarEnterScanner(event) {
+            if (event.key === 'Enter') { 
+                event.preventDefault(); 
+                if(event.target.value.trim()) avancarParaFormulario(event.target.value); 
+            }
+        }
+
+        function verificarTamanhoScanner(valor) {
+            if (valor.trim().length >= 13) { 
+                avancarParaFormulario(valor.trim()); 
+            }
+        }
+
+        // --- SISTEMA DE TRANSIÇÃO E VALIDAÇÃO DE TELAS ---
+        function avancarParaFormulario(codigo) {
+            codigo = codigo.trim();
+            document.getElementById("txtCodigoExibido").innerText = codigo;
+
+            // Faz a validação contra o banco local
+            const prod = baseProdutos[codigo];
+            const card = document.getElementById('cardCadastro');
+            const statusTxt = document.getElementById('txtStatusCadastro');
+
+            if (prod) {
+                produtoEncontrado = true;
+                card.className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
+                statusTxt.innerText = "Dados do Cadastro Localizado";
+                statusTxt.className = "text-xs font-bold text-blue-500 uppercase tracking-wider block";
+
+                document.getElementById('txtItemEDescricao').value = prod.item + (prod.descricao ? " - " + prod.descricao : "");
+                document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
+                document.getElementById('txtFamilia').value = prod.familia;
+                document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                
+                document.getElementById('txtItemEDescricao').dataset.itemBruto = prod.item;
+                document.getElementById('txtItemEDescricao').dataset.descricaoBruta = prod.descricao;
+                document.getElementById('txtItemEDescricao').dataset.fornecedorReal = prod.fornecedor;
+                document.getElementById('txtItemEDescricao').dataset.linhaReal = prod.linha;
+                
+                calcularTotalFinanceiro();
+            } else {
+                produtoEncontrado = false;
+                card.className = "p-4 bg-red-50 rounded-xl border border-red-200 space-y-3";
+                statusTxt.innerText = "⚠️ ATENÇÃO: Produto não encontrado no cadastro!";
+                statusTxt.className = "text-xs font-bold text-red-600 uppercase tracking-wider block";
+
+                document.getElementById('txtItemEDescricao').value = "PRODUTO NÃO CADASTRADO";
+                document.getElementById('txtFornecedor').value = "-";
+                document.getElementById('txtFamilia').value = "-";
+                document.getElementById('txtCusto').value = "0,00";
+                document.getElementById('txtTotalFinanceiro').value = "0,00";
+            }
+
+            // Transiciona visualmente os painéis de forma imediata
+            document.getElementById("etapaScanner").classList.add("hidden");
+            document.getElementById("etapaFormulario").classList.remove("hidden");
+            
+            // Foca automaticamente no campo de quantidade para agilizar o processo
+            setTimeout(() => { document.getElementById("campoQtd").select(); }, 100);
+        }
+
+        function voltarParaScanner() {
+            // Limpa dados temporários e inputs
+            document.getElementById('campoCodigo').value = '';
+            document.getElementById('campoQtd').value = '1';
+            document.getElementById('campoValidade').value = '';
+            
+            // Troca as telas de volta
+            document.getElementById("etapaFormulario").classList.add("hidden");
+            document.getElementById("etapaScanner").classList.remove("hidden");
+            
+            // Libera o semáforo da câmera para voltar a bipar
+            emPausaLeitura = false;
+            
+            setTimeout(() => { document.getElementById("campoCodigo").focus(); }, 100);
+        }
+
+        function calcularTotalFinanceiro() {
+            const custoTexto = document.getElementById('txtCusto').value;
+            const qtd = parseInt(document.getElementById('campoQtd').value) || 0;
+            if (custoTexto && produtoEncontrado) {
+                const custoNum = parseFloat(custoTexto.replace('.', '').replace(',', '.'));
+                document.getElementById('txtTotalFinanceiro').value = (custoNum * qtd).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            }
+        }
+
+        function salvarColeta() {
+            const btn = document.getElementById('btnSalvar');
+            const codigo = document.getElementById("txtCodigoExibido").innerText.trim();
+            const validadeInput = document.getElementById('campoValidade').value;
+            const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
+
+            if (!codigo || quantidade <= 0 || !validadeInput) { alert("Preencha todos os campos corretamente (Falta data ou quantidade)."); return; }
+
+            const [ano, mes, dia] = validadeInput.split('-');
+            const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
+
+            let payload = {
+                loja: lojaSessao, usuario: usuarioLogado, codigoBarras: codigo, validade: dataValidadeFormatada, quantidade: quantidade
+            };
+
+            if (produtoEncontrado) {
+                payload.item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
+                payload.descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
+                payload.fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
+                payload.linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
+                payload.familia = document.getElementById('txtFamilia').value;
+                payload.totalPerda = document.getElementById('txtTotalFinanceiro').value;
+            } else {
+                payload.item = "NÃO CADASTRADO"; payload.descricao = ""; payload.fornecedor = ""; payload.linha = ""; payload.familia = ""; payload.totalPerda = "0,00";
+            }
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Gravando na Planilha...";
+
+            fetch(WEB_APP_URL, {
+                method: "POST", mode: "no-cors",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams(payload).toString()
+            })
+            .then(() => { 
+                alert(`✅ Sucesso! Registro salvo para a filial ${lojaSessao}.`); 
+                voltarParaScanner(); 
+            })
+            .catch(err => { console.error(err); alert("❌ Erro de conexão ao tentar salvar."); })
+            .finally(() => { btn.disabled = false; btn.innerText = "💾 Salvar Coleta"; });
         }
     </script>
 </body>
