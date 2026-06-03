@@ -556,7 +556,7 @@
             });
         }
 
-        function ejecutarFiltrosTabela() {
+        function executarFiltrosTabela() {
             filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
             filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
             filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
@@ -728,65 +728,161 @@
             });
 
             // 3. Fornecedores
-            let fornMap = {};
-            baseParaGraficos.forEach(i => fornMap[i.fornecedor] = (fornMap[i.fornecedor] || 0) + i.totalPerda);
-            let labelsForn = Object.keys(fornMap).sort((a,b) => fornMap[b] - fornMap[a]).slice(0, 7);
+let fornMap = {};
+baseParaGraficos.forEach(i => {
+    fornMap[i.fornecedor] = (fornMap[i.fornecedor] || 0) + i.totalPerda;
+});
 
-            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `Filtro ativo: ${filtrosAtivos.fornecedor}` : "Top 7 Fornecedores";
+let labelsForn = Object.keys(fornMap)
+    .sort((a,b) => fornMap[b] - fornMap[a])
+    .slice(0, 10);
 
-            if(instanciasGraficos.fornecedores) instanciasGraficos.fornecedores.destroy();
-            instanciasGraficos.fornecedores = new Chart(document.getElementById("chartFornecedores"), {
-                type: 'doughnut',
-                data: {
-                    labels: labelsForn,
-                    datasets: [{
-                        data: labelsForn.map(k => fornMap[k]),
-                        backgroundColor: '#60a5fa', borderRadius: 4
-                    }]
+document.getElementById("lblFiltroForn").innerText =
+    filtrosAtivos.fornecedor
+        ? `Filtro ativo: ${filtrosAtivos.fornecedor}`
+        : "Top 10 Fornecedores";
+
+if(instanciasGraficos.fornecedores)
+    instanciasGraficos.fornecedores.destroy();
+
+instanciasGraficos.fornecedores = new Chart(
+    document.getElementById("chartFornecedores"),
+    {
+        type: 'doughnut',
+        data: {
+            labels: labelsForn,
+            datasets: [{
+                data: labelsForn.map(k => fornMap[k]),
+                backgroundColor: [
+                    '#3b82f6',
+                    '#10b981',
+                    '#f59e0b',
+                    '#ef4444',
+                    '#8b5cf6',
+                    '#06b6d4',
+                    '#84cc16',
+                    '#f97316',
+                    '#ec4899',
+                    '#6366f1'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'right',
+                    labels: {
+                        color: '#ffffff',
+                        font: {
+                            size: 11
+                        }
+                    }
                 },
-                options: { 
-                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { grid: { color: '#374151' } }, y: { grid: { display: false } } },
-                    onClick: (e, elementos) => {
-                        if (elementos.length > 0) {
-                            const idx = elementos[0].index;
-                            alternarFiltroCard('fornecedor', labelsForn[idx]);
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': R$ ' +
+                            context.raw.toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2
+                            });
                         }
                     }
                 }
-            });
-
-            // 4. Linhas
-            let linhaMap = {};
-            baseParaGraficos.forEach(i => linhaMap[i.linha] = (linhaMap[i.linha] || 0) + i.totalPerda);
-            let labelsLinha = Object.keys(linhaMap).sort((a,b) => linhaMap[b] - linhaMap[a]).slice(0, 7);
-
-            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `Filtro ativo: ${filtrosAtivos.linha}` : "Top 7 Categorias";
-
-            if(instanciasGraficos.lines) instanciasGraficos.lines.destroy();
-            instanciasGraficos.lines = new Chart(document.getElementById("chartLinhas"), {
-                type: 'doughnut',
-                data: {
-                    labels: labelsLinha,
-                    datasets: [{
-                        data: labelsLinha.map(k => linhaMap[k]),
-                        backgroundColor: '#34d399', borderRadius: 4
-                    }]
-                },
-                options: { 
-                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { grid: { color: '#374151' } }, y: { grid: { display: false } } },
-                    onClick: (e, elementos) => {
-                        if (elementos.length > 0) {
-                            const idx = elementos[0].index;
-                            alternarFiltroCard('linha', labelsLinha[idx]);
-                        }
-                    }
+            },
+            onClick: (e, elementos) => {
+                if (elementos.length > 0) {
+                    const idx = elementos[0].index;
+                    alternarFiltroCard(
+                        'fornecedor',
+                        labelsForn[idx]
+                    );
                 }
-            });
+            }
         }
+    }
+);
+            // 4. Linhas
+let linhaMap = {};
+baseParaGraficos.forEach(i => {
+    linhaMap[i.linha] = (linhaMap[i.linha] || 0) + i.totalPerda;
+});
+
+let labelsLinha = Object.keys(linhaMap)
+    .sort((a,b) => linhaMap[b] - linhaMap[a])
+    .slice(0, 10);
+
+document.getElementById("lblFiltroLinha").innerText =
+    filtrosAtivos.linha
+        ? `Filtro ativo: ${filtrosAtivos.linha}`
+        : "Top 10 Linhas";
+
+if(instanciasGraficos.lines)
+    instanciasGraficos.lines.destroy();
+
+instanciasGraficos.lines = new Chart(
+    document.getElementById("chartLinhas"),
+    {
+        type: 'doughnut',
+        data: {
+            labels: labelsLinha,
+            datasets: [{
+                data: labelsLinha.map(k => linhaMap[k]),
+                backgroundColor: [
+                    '#10b981',
+                    '#3b82f6',
+                    '#f59e0b',
+                    '#ef4444',
+                    '#8b5cf6',
+                    '#06b6d4',
+                    '#84cc16',
+                    '#f97316',
+                    '#ec4899',
+                    '#6366f1'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'right',
+                    labels: {
+                        color: '#ffffff',
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': R$ ' +
+                            context.raw.toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2
+                            });
+                        }
+                    }
+                }
+            },
+            onClick: (e, elementos) => {
+                if (elementos.length > 0) {
+                    const idx = elementos[0].index;
+                    alternarFiltroCard(
+                        'linha',
+                        labelsLinha[idx]
+                    );
+                }
+            }
+        }
+    }
+);
 
         function exportarParaExcel() {
             const dadosParaExportar = obterDadosFiltradosTabela();
