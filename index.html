@@ -35,89 +35,71 @@
         </div>
     </div>
 
-    <div id="secaoColetor" class="w-full max-w-xl bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hidden">
-        <div class="bg-blue-600 p-4 text-white flex justify-between items-center">
+    <div id="secaoColetor" class="w-full max-w-2xl bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hidden">
+        <div class="bg-blue-600 p-5 text-white flex justify-between items-center">
             <div>
-                <h1 class="text-lg font-bold tracking-tight">Coletor de Validades</h1>
-                <p class="text-xs text-blue-100 mt-0.5">Sessão: <span id="txtLojaAtiva" class="font-bold underline"></span> | Op: <span id="txtOperadorAtivo" class="font-bold"></span></p>
+                <h1 class="text-xl font-bold">Coletor de Validades</h1>
+                <p class="text-xs text-blue-100 mt-1">Sessão ativa: <span id="txtLojaAtiva" class="font-bold underline"></span> | Operador: <span id="txtOperadorAtivo" class="font-bold"></span></p>
             </div>
             <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
         </div>
 
-        <div id="etapaScanner" class="p-5 space-y-4">
-            <div class="text-center py-1">
-                <p class="text-sm font-bold text-gray-500 uppercase tracking-wide">Passo 1: Bipe ou digite o produto</p>
-            </div>
-
+        <div class="p-6 space-y-4">
             <div>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Scanner de Código de Barras Ativo</label>
                 <div id="leitorCameraContainer" class="p-2 bg-black rounded-xl overflow-hidden relative border border-gray-700 shadow-inner">
                     <div id="reader" class="w-full"></div>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Código de Barras Manual</label>
-                <input type="text" id="campoCodigo" onkeydown="verificarEnterScanner(event)" oninput="verificarTamanhoScanner(this.value)" placeholder="Digite e pressione Enter ou aguarde o bip..." class="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base font-mono font-bold text-center text-blue-600 tracking-wider">
-            </div>
-        </div>
-
-        <div id="etapaFormulario" class="p-5 space-y-4 hidden">
-            <div class="flex justify-between items-center border-b border-gray-100 pb-2">
-                <button onclick="voltarParaScanner()" class="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center space-x-1">
-                    <span>⬅️ Voltar / Cancelar</span>
-                </button>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Passo 2: Detalhes da Perda</p>
-            </div>
-
-            <div class="bg-gray-100 px-4 py-2 rounded-xl flex justify-between items-center">
-                <span class="text-xs font-semibold text-gray-500 uppercase">Código Coletado:</span>
-                <span id="txtCodigoExibido" class="font-mono font-bold text-gray-700 tracking-wide text-sm"></span>
+                <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras (Digitado ou Escaneado)</label>
+                <input type="text" id="campoCodigo" onkeydown="verificarEnterScanner(event)" oninput="verificarTamanhoScanner(this.value)" placeholder="O scanner preencherá aqui automaticamente" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
             </div>
 
             <div id="cardCadastro" class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3 transition-colors duration-300">
                 <span id="txtStatusCadastro" class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
-                
-                <div class="grid grid-cols-1 gap-1">
-                    <label class="block text-xs font-semibold text-gray-400 uppercase">Item / Descrição</label>
-                    <input type="text" id="txtItemEDescricao" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-bold text-sm focus:outline-none text-gray-700">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 pt-1">
+                <div class="grid grid-cols-1 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase">Fornecedor / Fabricante</label>
-                        <input type="text" id="txtFornecedor" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-semibold text-xs focus:outline-none text-gray-700">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase">Família</label>
-                        <input type="text" id="txtFamilia" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 text-xs focus:outline-none text-gray-600">
+                        <label class="block text-xs text-gray-500">Item / Descrição</label>
+                        <input type="text" id="txtItemEDescricao" readonly placeholder="Aguardando bip..." class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
                     </div>
                 </div>
-
-                <div class="grid grid-cols-2 gap-3 pt-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase">Custo Unitário (R$)</label>
-                        <input type="text" id="txtCusto" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-bold text-sm focus:outline-none text-gray-700">
+                        <label class="block text-xs text-gray-500">Fornecedor / Fabricante</label>
+                        <input type="text" id="txtFornecedor" readonly placeholder="Aguardando bip..." class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-400 uppercase">Total Perda (R$)</label>
-                        <input type="text" id="txtTotalFinanceiro" readonly class="w-full bg-transparent border-b border-gray-200 py-0.5 font-black text-sm focus:outline-none text-emerald-600">
+                        <label class="block text-xs text-gray-500">Família</label>
+                        <input type="text" id="txtFamilia" readonly placeholder="..." class="w-full bg-transparent border-b border-gray-300 py-1 text-sm focus:outline-none text-gray-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs text-gray-500">Custo Unitário (R$)</label>
+                        <input type="text" id="txtCusto" readonly placeholder="0,00" class="w-full bg-transparent border-b border-gray-300 py-1 font-bold text-sm focus:outline-none text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500">Total Perda Estimada (R$)</label>
+                        <input type="text" id="txtTotalFinanceiro" readonly placeholder="0,00" class="w-full bg-transparent border-b border-gray-300 py-1 font-black text-sm focus:outline-none text-emerald-600">
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-bold text-gray-600 mb-1">Quantidade</label>
-                    <input type="number" id="campoQtd" value="1" min="1" oninput="calcularTotalFinanceiro()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base font-bold text-center">
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Quantidade</label>
+                    <input type="number" id="campoQtd" value="1" min="1" oninput="calcularTotalFinanceiro()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-gray-600 mb-1">Data de Vencimento</label>
-                    <input type="date" id="campoValidade" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-semibold">
+                    <label class="block text-sm font-semibold text-gray-600 mb-1">Data de Vencimento</label>
+                    <input type="date" id="campoValidade" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
                 </div>
             </div>
 
             <div class="pt-2">
-                <button id="btnSalvar" onclick="salvarColeta()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center space-x-2 text-base tracking-wide">
+                <button id="btnSalvar" onclick="salvarColeta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center space-x-2">
                     <span>💾 Salvar Coleta</span>
                 </button>
             </div>
@@ -125,23 +107,27 @@
     </div>
 
     <script>
+        // URL da mesma planilha master, alterando a aba dinamicamente no código
         const BASE_PLANILHA_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv";
         const CADASTRO_URL = `${BASE_PLANILHA_URL}&sheet=Cadastro`;
         const USUARIOS_URL = `${BASE_PLANILHA_URL}&sheet=Usuarios`;
+        
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
         
         let baseProdutos = {};
-        let credenciaisLojas = {};
+        let credenciaisLojas = {}; // Objeto que vai armazenar os usuários carregados do Sheets
         let usuarioLogado = "";
         let lojaSessao = "";
         let html5QrCodeScanner = null;
         let produtoEncontrado = false;
         let emPausaLeitura = false;
 
+        // Dispara o carregamento das credenciais assim que abre a página
         window.onload = function() {
             carregarCredenciaisDaNuvem();
         };
 
+        // --- BUSCA OS USUÁRIOS DIRETAMENTE DO GOOGLE SHEETS ---
         function carregarCredenciaisDaNuvem() {
             fetch(USUARIOS_URL)
                 .then(response => response.text())
@@ -155,7 +141,7 @@
                     const idxSenha = cabecalho.indexOf('senha');
 
                     const select = document.getElementById("loginLoja");
-                    select.innerHTML = "";
+                    select.innerHTML = ""; // Limpa a mensagem de carregando
 
                     for (let i = 1; i < linhas.length; i++) {
                         if (!linhas[i].trim()) continue;
@@ -166,13 +152,18 @@
                         let senha = colunas[idxSenha];
 
                         if (loja && user && senha) {
+                            // Alimenta o objeto interno de validação
                             credenciaisLojas[loja] = { usuario: user, senha: senha };
+
+                            // Cria a opção no menu Dropdown do login de forma automática
                             const opt = document.createElement("option");
-                            opt.value = loja; opt.textContent = loja;
+                            opt.value = loja;
+                            opt.textContent = loja;
                             select.appendChild(opt);
                         }
                     }
 
+                    // Libera o botão de login após carregar tudo com sucesso
                     document.getElementById("txtStatusLogin").innerText = "Selecione sua loja e identifique-se";
                     const btnEntrar = document.getElementById("btnEntrar");
                     btnEntrar.disabled = false;
@@ -180,8 +171,9 @@
                     btnEntrar.className = "w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md mt-2 cursor-pointer";
                 })
                 .catch(err => {
-                    console.error("Erro credenciais:", err);
-                    alert("Falha crítica ao buscar tabela de acessos.");
+                    console.error("Erro ao carregar banco de usuários:", err);
+                    document.getElementById("txtStatusLogin").innerText = "⚠️ Erro ao sincronizar usuários com o Sheets.";
+                    alert("Falha crítica ao buscar tabela de acessos. Verifique se a aba 'Usuarios' existe e está correta.");
                 });
         }
 
@@ -190,14 +182,20 @@
             const usuarioDigitado = document.getElementById("loginUsuario").value.trim();
             const senhaDigitada = document.getElementById("loginSenha").value.trim();
 
-            if (!lojaSelecionada) { alert("Selecione uma loja válida."); return; }
+            if (!lojaSelecionada) {
+                alert("Por favor, selecione uma loja válida.");
+                return;
+            }
 
+            // 1. Regra Master Inviolável (Mantido fixo no código para suporte)
             if (usuarioDigitado === "admin" && senhaDigitada === "123") {
                 logarSucesso(lojaSelecionada, usuarioDigitado);
                 return;
             }
 
+            // 2. Consulta a tabela recém-carregada do Sheets
             const credencialLoja = credenciaisLojas[lojaSelecionada];
+
             if (credencialLoja && usuarioDigitado === credencialLoja.usuario && senhaDigitada === credencialLoja.senha) {
                 logarSucesso(lojaSelecionada, usuarioDigitado);
             } else {
@@ -243,6 +241,7 @@
                         let codigo = colunas[idxCod];
                         if (codigo) {
                             codigo = codigo.replace(/^["']|["']$/g, '').trim();
+                            
                             baseProdutos[codigo] = {
                                 item: colunas[idxItem] || '',
                                 descricao: colunas[idxDesc] || '',
@@ -254,14 +253,14 @@
                         }
                     }
                 })
-                .catch(err => console.error("Erro Cadastro:", err));
+                .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
 
         function ligarCameraAutomatica() {
             html5QrCodeScanner = new Html5Qrcode("reader");
             const config = { 
-                fps: 25, 
-                qrbox: (width, height) => { return { width: width * 0.85, height: height * 0.55 }; },
+                fps: 20, 
+                qrbox: (width, height) => { return { width: width * 0.85, height: height * 0.45 }; },
                 formatsToSupport: [ 
                     Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, 
                     Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.QR_CODE 
@@ -273,34 +272,26 @@
                 (decodedText) => {
                     if (emPausaLeitura) return;
                     emPausaLeitura = true;
-                    
-                    // Coloca o valor no input e chama o direcionador de tela
                     document.getElementById('campoCodigo').value = decodedText;
-                    avancarParaFormulario(decodedText);
+                    buscarProduto(decodedText);
+                    setTimeout(() => { emPausaLeitura = false; }, 2000);
                 },
                 (errorMessage) => {}
-            ).catch(err => console.error("Erro câmera:", err));
+            ).catch(err => console.error("Erro na câmera:", err));
         }
 
         function verificarEnterScanner(event) {
-            if (event.key === 'Enter') { 
-                event.preventDefault(); 
-                if(event.target.value.trim()) avancarParaFormulario(event.target.value); 
-            }
+            if (event.key === 'Enter') { event.preventDefault(); buscarProduto(event.target.value); }
         }
 
         function verificarTamanhoScanner(valor) {
-            if (valor.trim().length >= 13) { 
-                avancarParaFormulario(valor.trim()); 
-            }
+            if (valor.trim().length >= 13) { buscarProduto(valor.trim()); }
         }
 
-        // --- SISTEMA DE TRANSIÇÃO E VALIDAÇÃO DE TELAS ---
-        function avancarParaFormulario(codigo) {
+        function buscarProduto(codigo) {
             codigo = codigo.trim();
-            document.getElementById("txtCodigoExibido").innerText = codigo;
+            if (!codigo) { resetarCamposCadastro(); return; }
 
-            // Faz a validação contra o banco local
             const prod = baseProdutos[codigo];
             const card = document.getElementById('cardCadastro');
             const statusTxt = document.getElementById('txtStatusCadastro');
@@ -334,29 +325,17 @@
                 document.getElementById('txtCusto').value = "0,00";
                 document.getElementById('txtTotalFinanceiro').value = "0,00";
             }
-
-            // Transiciona visualmente os painéis de forma imediata
-            document.getElementById("etapaScanner").classList.add("hidden");
-            document.getElementById("etapaFormulario").classList.remove("hidden");
-            
-            // Foca automaticamente no campo de quantidade para agilizar o processo
-            setTimeout(() => { document.getElementById("campoQtd").select(); }, 100);
         }
 
-        function voltarParaScanner() {
-            // Limpa dados temporários e inputs
-            document.getElementById('campoCodigo').value = '';
-            document.getElementById('campoQtd').value = '1';
-            document.getElementById('campoValidade').value = '';
-            
-            // Troca as telas de volta
-            document.getElementById("etapaFormulario").classList.add("hidden");
-            document.getElementById("etapaScanner").classList.remove("hidden");
-            
-            // Libera o semáforo da câmera para voltar a bipar
-            emPausaLeitura = false;
-            
-            setTimeout(() => { document.getElementById("campoCodigo").focus(); }, 100);
+        function resetarCamposCadastro() {
+            produtoEncontrado = false;
+            document.getElementById('cardCadastro').className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
+            document.getElementById('txtStatusCadastro').innerText = "Dados do Cadastro Localizado";
+            document.getElementById('txtItemEDescricao').value = '';
+            document.getElementById('txtFornecedor').value = '';
+            document.getElementById('txtFamilia').value = '';
+            document.getElementById('txtCusto').value = '';
+            document.getElementById('txtTotalFinanceiro').value = '';
         }
 
         function calcularTotalFinanceiro() {
@@ -370,11 +349,11 @@
 
         function salvarColeta() {
             const btn = document.getElementById('btnSalvar');
-            const codigo = document.getElementById("txtCodigoExibido").innerText.trim();
+            const codigo = document.getElementById('campoCodigo').value.trim();
             const validadeInput = document.getElementById('campoValidade').value;
             const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
 
-            if (!codigo || quantidade <= 0 || !validadeInput) { alert("Preencha todos os campos corretamente (Falta data ou quantidade)."); return; }
+            if (!codigo || quantidade <= 0 || !validadeInput) { alert("Preencha todos os campos corretamente."); return; }
 
             const [ano, mes, dia] = validadeInput.split('-');
             const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
@@ -402,12 +381,17 @@
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: new URLSearchParams(payload).toString()
             })
-            .then(() => { 
-                alert(`✅ Sucesso! Registro salvo para a filial ${lojaSessao}.`); 
-                voltarParaScanner(); 
-            })
-            .catch(err => { console.error(err); alert("❌ Erro de conexão ao tentar salvar."); })
+            .then(() => { alert(`✅ Gravado na filial: ${lojaSessao}!`); resetarFormulario(); })
+            .catch(err => { console.error(err); alert("❌ Erro de conexão."); })
             .finally(() => { btn.disabled = false; btn.innerText = "💾 Salvar Coleta"; });
+        }
+
+        function resetarFormulario() {
+            document.getElementById('campoCodigo').value = '';
+            document.getElementById('campoQtd').value = '1';
+            document.getElementById('campoValidade').value = '';
+            buscarProduto('');
+            emPausaLeitura = false;
         }
     </script>
 </body>
