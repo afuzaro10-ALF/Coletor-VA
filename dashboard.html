@@ -3,547 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pro - Controle de Validade</title>
+    <title>Validades e Perdas</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
 
-    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
+    <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 sticky top-0 z-40 shadow-md">
         <div>
-            <h1 class="text-2xl font-black text-blue-400 tracking-tight">Painel de Validade</h1>
-            <p class="text-xs text-gray-400 mt-1">Dados consolidados em tempo real (Apenas Vencimentos Futuros)</p>
+            <h1 class="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                <span class="p-1.5 bg-orange-600 rounded-lg text-sm">📊</span> VALIDADES E PERDAS
+            </h1>
+            <p class="text-xs text-gray-400 mt-0.5">Visão consolidada e inteligência de estoque</p>
         </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="limparTodosFiltros()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-semibold text-gray-300 rounded-lg border border-gray-700 transition-all cursor-pointer">
+                Limpar Filtros
+            </button>
+            <div class="h-6 w-px bg-gray-800 hidden md:block"></div>
+            <select id="filtroLoja" onchange="definirFiltroSelect('loja', this.value)" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-3 py-1.5 text-gray-200 outline-none focus:border-orange-500 cursor-pointer">
+                <option value="">Todas as Lojas</option>
+            </select>
+            <select id="filtroFornecedor" onchange="definirFiltroSelect('fornecedor', this.value)" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-3 py-1.5 text-gray-200 outline-none focus:border-orange-500 cursor-pointer">
+                <option value="">Todos os Fornecedores</option>
+            </select>
+            <select id="filtroLinha" onchange="definirFiltroSelect('linha', this.value)" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-3 py-1.5 text-gray-200 outline-none focus:border-orange-500 cursor-pointer">
+                <option value="">Todas as Linhas</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="flex-1 p-4 lg:p-6 grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
         
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto justify-end">
-            <div class="w-full sm:w-64">
-                <label for="filtroLojaSuperior" class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Filtrar por Loja Principal:</label>
-                <select id="filtroLojaSuperior" onchange="alterarFiltroLojaSuperior(this.value)" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-3 py-2 text-xs font-semibold text-gray-100 focus:outline-none focus:border-blue-500 transition">
-                    <option value="">✨ Todas as Lojas</option>
-                </select>
-            </div>
+        <div class="xl:col-span-1 flex flex-col gap-4 h-full">
             
-            <div class="flex items-center space-x-2 w-full sm:w-auto pt-4 sm:pt-0">
-                <button onclick="limparTodosFiltros()" id="btnLimparFiltros" class="hidden px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500">
-                    ❌ Limpar Filtros
-                </button>
-                <button onclick="window.location.href='index.html?tela=scanner'" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-xs font-bold text-white transition shadow-md whitespace-nowrap">
-                    ⬅️ Abrir Coletor
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="loader" class="text-center py-20 max-w-7xl mx-auto bg-gray-800 rounded-2xl border border-gray-700 p-6 shadow-xl">
-        <div id="loaderIcon" class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
-        <p id="loaderTexto" class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
-    </div>
-
-    <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
-        
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Mapeado R$</span>
-                <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
-            </div>
-            
-            <div onclick="alternarFiltroCard('vencimento', 'urgencia')" id="cardUrgencia" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (≤ 45d)</span>
-                    <span id="dotUrg" class="h-2 w-2 rounded-full bg-transparent"></span>
+            <div class="grid grid-cols-2 gap-3">
+                <div onclick="alternarFiltroCard('vencimento', null)" id="cardTotal" class="col-span-2 bg-gray-900 p-4 rounded-xl border border-orange-500/30 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">💰 Mapeamento Realizado</span>
+                        <span id="dotTotal" class="h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_8px_#f97316]"></span>
+                    </div>
+                    <span id="kpiTotalRs" class="text-2xl font-black text-white mt-2">R$ 0,00</span>
                 </div>
-                <span id="kpiUrgencia" class="text-xl font-black text-red-400 mt-2">0 itens</span>
-            </div>
 
-            <div onclick="alternarFiltroCard('vencimento', '3meses')" id="card3Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Vence &le; 3 Meses</span>
-                    <span id="dot3m" class="h-2 w-2 rounded-full bg-transparent"></span>
+                <div onclick="alternarFiltroCard('vencimento', 'urgencia')" id="cardUrgencia" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (≤45d)</span>
+                        <span id="dotUrg" class="h-2 w-2 rounded-full bg-transparent"></span>
+                    </div>
+                    <span id="kpiUrgencia" class="text-xl font-black text-red-400 mt-2">0 itens</span>
                 </div>
-                <span id="kpi3Meses" class="text-xl font-black text-amber-300 mt-2">R$ 0,00</span>
-            </div>
 
-            <div onclick="alternarFiltroCard('vencimento', '6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Vence &le; 6 Meses</span>
-                    <span id="dot6m" class="h-2 w-2 rounded-full bg-transparent"></span>
+                <div onclick="alternarFiltroCard('vencimento', '3meses')" id="card3Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-yellow-500 transition-all duration-200">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] font-bold text-yellow-400 uppercase tracking-wider">⏳ Vence ≤ 3 Meses</span>
+                        <span id="dot3m" class="h-2 w-2 rounded-full bg-transparent"></span>
+                    </div>
+                    <span id="kpi3Meses" class="text-xl font-black text-yellow-300 mt-2">R$ 0,00</span>
                 </div>
-                <span id="kpi6Meses" class="text-xl font-black text-orange-300 mt-2">R$ 0,00</span>
+
+                <div onclick="alternarFiltroCard('vencimento', '6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">📅 Vence 3 a 6 Meses</span>
+                        <span id="dot6m" class="h-2 w-2 rounded-full bg-transparent"></span>
+                    </div>
+                    <span id="kpi6Meses" class="text-xl font-black text-orange-300 mt-2">R$ 0,00</span>
+                </div>
+
+                <div class="bg-gray-900/50 p-3 rounded-xl border border-gray-800/80 flex flex-col justify-between">
+                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">📦 Qtd Itens</span>
+                    <span id="kpiBarrasUnicos" class="text-base font-bold text-gray-300 mt-1">0</span>
+                </div>
+                <div class="bg-gray-900/50 p-3 rounded-xl border border-gray-800/80 flex flex-col justify-between">
+                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">🔢 Total Unidades</span>
+                    <span id="kpiUnidades" class="text-base font-bold text-gray-300 mt-1">0</span>
+                </div>
+                <div class="bg-gray-900/50 p-3 rounded-xl border border-gray-800/80 flex flex-col justify-between col-span-2">
+                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">🏪 Lojas com Ocorrências</span>
+                    <span id="kpiLojas" class="text-base font-bold text-gray-300 mt-1">0</span>
+                </div>
             </div>
 
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cód. Barras Únicos</span>
-                <span id="kpiBarrasUnicos" class="text-xl font-black text-purple-300 mt-2">0</span>
-            </div>
-            
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qtd Total Itens</span>
-                <span id="kpiUnidades" class="text-xl font-black text-purple-400 mt-2">0</span>
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex-1 flex flex-col min-h-[280px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-400">📅 Cronograma de Perdas</h3>
+                    <button id="btnLimparCronograma" onclick="definirFiltroSelect('cronogramaMesAno', null)" class="text-[10px] text-orange-400 hover:underline hidden cursor-pointer">
+                        Limpar mês
+                    </button>
+                </div>
+                <div id="listaCronograma" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                    </div>
             </div>
 
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas</span>
-                <span id="kpiLojas" class="text-xl font-black text-gray-200 mt-2">0</span>
-            </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
-                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
-                <div class="h-64 relative">
-                    <canvas id="chartCronograma"></canvas>
-                </div>
-            </div>
-
-            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
-                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Mapeamento Vencimento (R$) por Loja / Filial</h3>
-                <div class="h-64 relative">
-                    <canvas id="chartLojas"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Fornecedores (R$)</span>
-                    <span id="lblFiltroForn" class="text-[10px] text-blue-400 lowercase italic"></span>
-                </h3>
-                <div class="h-56 relative"><canvas id="chartFornecedores"></canvas></div>
-            </div>
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Linhas (R$)</span>
-                    <span id="lblFiltroLinha" class="text-[10px] text-emerald-400 lowercase italic"></span>
-                </h3>
-                <div class="h-56 relative"><canvas id="chartLinhas"></canvas></div>
-            </div>
-        </div>
-
-        <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
-            <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div class="xl:col-span-3 bg-gray-900 border border-gray-800 rounded-xl flex flex-col h-[calc(100vh-120px)] min-h-[500px]">
+            <div class="p-4 border-b border-gray-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Visão analítica com plano de ação real baseado das datas do coletor</p>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-white">📦 Itens em Risco Crítico</h2>
+                    <p class="text-xs text-gray-400 mt-0.5" id="txtContadorLinhas">Listando 0 registros</p>
                 </div>
-                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    <button id="btnExportarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition duration-200 shadow-md border border-emerald-500/30">
-                        Exportar Excel
-                    </button>
-                    <button id="btnWhatsFiltro" onclick="enviarFiltroWhatsApp()" style="background-color: #25d366; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 5px;">
-                        🟢 Enviar WhatsApp
-                    </button>
-                    <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold whitespace-nowrap"></span>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="buscaTabela" oninput="filtrarPorTexto(this.value)" placeholder="Buscar por código, descrição..." class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-3 py-1.5 w-full sm:w-64 text-gray-200 outline-none focus:border-orange-500">
                 </div>
             </div>
-            <div class="overflow-x-auto max-h-[550px] overflow-y-auto custom-scroll">
+
+            <div class="flex-1 overflow-auto">
                 <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-gray-900 text-gray-400 font-bold border-b border-gray-700">
-                            <th class="p-3 w-32">Vencimento</th>
-                            <th class="p-3 w-40">Status Ação</th>
-                            <th class="p-3 w-28">Loja</th>
-                            <th class="p-3 w-32">Código de Barras</th>
-                            <th class="p-3">Item / Descrição</th>
-                            <th class="p-3 w-40">Linha</th>
-                            <th class="p-3 w-44">Fornecedor</th>
-                            <th class="p-3 w-16 text-center">Qtd</th>
-                            <th class="p-3 w-28 text-right">Total Perda</th>
-                        </tr>
-                        <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-20">
-                            <th class="p-2">
-                                <div class="flex gap-1">
-                                    <select id="thFiltroMes" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
-                                        <option value="">Mês</option>
-                                        <option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option>
-                                        <option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option>
-                                        <option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option>
-                                        <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
-                                    </select>
-                                    <select id="thFiltroAno" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
-                                        <option value="">Ano</option>
-                                    </select>
-                                </div>
-                            </th>
-                            <th class="p-2">
-                                <select id="thFiltroStatus" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
-                                    <option value="">Todos os Status</option>
-                                    <option value="Tratar item com Urgência">🚨 Urgência (≤ 45d)</option>
-                                    <option value="Tratar item">⚠️ Tratar (≤ 90d)</option>
-                                    <option value="Acompanhar Tratativas">📅 Acompanhar (≤ 180d)</option>
-                                    <option value="Item Mapeado">🔍 Mapeado (&gt; 180d)</option>
-                                </select>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-loja" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-loja')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-codigo" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-codigo')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-item" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-item')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Todos os Itens</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-linha" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-linha')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-fornecedor" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-fornecedor')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute right-0 mt-1 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2"></th>
-                            <th class="p-2"></th>
+                    <thead class="bg-gray-950/80 text-gray-400 uppercase font-semibold border-b border-gray-800 sticky top-0 z-10 backdrop-blur-sm">
+                        <tr>
+                            <th class="p-3 text-center">Status</th>
+                            <th class="p-3">Loja</th>
+                            <th class="p-3">Código</th>
+                            <th class="p-3">Descrição</th>
+                            <th class="p-3">Fornecedor / Linha</th>
+                            <th class="p-3 text-center">Validade</th>
+                            <th class="p-3 text-right">Dias Rest.</th>
+                            <th class="p-3 text-right">Qtd</th>
+                            <th class="p-3 text-right">Total Possível Perda</th>
                         </tr>
                     </thead>
-                    <tbody id="corpoTabelaPerdas" class="divide-y divide-gray-700/50"></tbody>
+                    <tbody id="corpoTabela" class="divide-y divide-gray-800/50">
+                        </tbody>
                 </table>
             </div>
         </div>
-    </div>
+
+    </main>
 
     <script>
-        const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
+        // Dados brutos injetados pelo AppSheet
+        const dadosBrutos = [
+            <<Start: SELECT(Base[id], TRUE)>><<If: [Dias Restantes] <= 180>>
+            {
+                loja: "<<[loja]>>",
+                codigo: "<<[codigo]>>",
+                descricao: "<<[descricao]>>",
+                fornecedor: "<<[fornecedor]>>",
+                linha: "<<[linha]>>",
+                validadeStr: "<<[validade]>>",
+                diasRestantes: Number("<<[Dias Restantes]>>") || 0,
+                quantidade: Number("<<[quantidade]>>") || 0,
+                totalPerda: Number("<<[total perda]>>") || 0,
+                mes: "<<[Mês Validade]>>",
+                ano: "<<[Ano Validade]>>"
+            },
+            <<EndIf>><<End>>
+        ];
 
-        let dadosBrutos = [];
-        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, cronogramaMesAno: null };
-        let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", linha: "", fornecedor: "" };
-        
-        let instanciasGraficos = { cronograma: null, lojas: null, fornecedores: null, lines: null };
-
-        window.onload = function() {
-            carregarDadosDaPlanilha();
-            document.addEventListener("click", function(e) {
-                if (!e.target.closest(".target-dropdown")) {
-                    fecharTodosDropdownisCustomizados();
-                }
-            });
-            document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
+        // Estado Global de Filtros
+        const filtrosAtivos = {
+            loja: null,
+            fornecedor: null,
+            linha: null,
+            vencimento: null, // null, 'urgencia', '3meses', '6meses'
+            cronogramaMesAno: null, // "MM/AAAA"
+            buscaTexto: ""
         };
 
-        function carregarDadosDaPlanilha() {
-            fetch(URL_COLETAS)
-                .then(res => {
-                    if (!res.ok) throw new Error("Erro HTTP: " + res.status);
-                    return res.text();
-                })
-                .then(csv => {
-                    if (csv.includes("<!DOCTYPE") || csv.includes("login") || csv.length < 50) {
-                        exibirMensagemErro("⚠️ Ajuste o compartilhamento da planilha para: 'Qualquer pessoa com o link pode ler'.");
-                        return;
-                    }
-                    processarCsvBruto(csv);
-                    popularSeletorLojas();
-                    popularFiltrosSuspensosTabela();
-                    document.getElementById("loader").classList.add("hidden");
-                    document.getElementById("conteudoDash").classList.remove("hidden");
-                    renderizarDashboard();
-                })
-                .catch(err => {
-                    exibirMensagemErro("❌ Falha de Conexão: Verifique o link do arquivo Sheets ou seu acesso à internet.");
+        // Inicialização do Painel
+        window.addEventListener("DOMContentLoaded", () => {
+            configurarFiltrosIniciais();
+            processarEAtualizarTudo();
+        });
+
+        // Configura as opções únicas nas tags select
+        function configurarFiltrosIniciais() {
+            const lojas = new Set();
+            const fornecedores = new Set();
+            const linhas = new Set();
+
+            dadosBrutos.forEach(d => {
+                if(d.loja) lojas.add(d.loja);
+                if(d.fornecedor) fornecedores.add(d.fornecedor);
+                if(d.linha) linhas.add(d.linha);
+            });
+
+            const preencherSelect = (id, conjunto) => {
+                const el = document.getElementById(id);
+                Array.from(conjunto).sort().forEach(val => {
+                    let opt = document.createElement("option");
+                    opt.value = val;
+                    opt.innerText = val;
+                    el.appendChild(opt);
                 });
+            };
+
+            preencherSelect("filtroLoja", lojas);
+            preencherSelect("filtroFornecedor", fornecedores);
+            preencherSelect("filtroLinha", linhas);
         }
 
-        function exibirMensagemErro(mensagem) {
-            document.getElementById("loaderIcon").classList.add("hidden");
-            const txtErro = document.getElementById("loaderTexto");
-            txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
-            txtErro.innerText = message = mensagem;
+        // Define os filtros vindos dos dropdowns
+        function definirFiltroSelect(campo, valor) {
+            filtrosAtivos[campo] = valor || null;
+            processarEAtualizarTudo();
         }
 
-        function tratarNumeroBrasil(texto) {
-            if (!texto) return 0;
-            let limpo = String(texto).replace(/^["']|["']$/g, '').trim();
-            limpo = limpo.replace(/\./g, '').replace(',', '.');
-            let n = parseFloat(limpo);
-            return isNaN(n) ? 0 : n;
-        }
-
-        function encontrarIndexColuna(cabecalho, nomesPossiveis) {
-            for (let nome of nomesPossiveis) {
-                let idx = cabecalho.indexOf(nome.toLowerCase());
-                if (idx !== -1) return idx;
+        // Controla o clique nos cards superiores de vencimento
+        function alternarFiltroCard(campo, valor) {
+            if (filtrosAtivos[campo] === valor) {
+                filtrosAtivos[campo] = null; // desmarca se clicar de novo
+            } else {
+                filtrosAtivos[campo] = valor;
             }
-            return -1;
+            processarEAtualizarTudo();
         }
 
-        function processarCsvBruto(text) {
-            const linhas = text.split(/\r?\n/);
-            if (linhas.length < 2) return;
-
-            const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+        // Controla a caixa de pesquisa por texto
+        function filtrarPorTexto(texto) {
+            filtrosAtivos.buscaTexto = texto.toLowerCase().trim();
             
-            const idxLoja = encontrarIndexColuna(cabecalho, ['loja', 'filial']);
-            const idxCod = encontrarIndexColuna(cabecalho, ['código de barras', 'codigo', 'barras', 'sku']);
-            const idxItem = encontrarIndexColuna(cabecalho, ['item/produto', 'item', 'produto', 'nome']);
-            const idxDesc = encontrarIndexColuna(cabecalho, ['descrição', 'descricao']);
-            const idxForn = encontrarIndexColuna(cabecalho, ['fornecedor', 'fabricante']);
-            const idxLinha = encontrarIndexColuna(cabecalho, ['linha']);
-            const idxQtd = encontrarIndexColuna(cabecalho, ['quantidade', 'qtd']);
-            const idxValidade = encontrarIndexColuna(cabecalho, ['data de vencimento', 'vencimento', 'validade']);
-            const idxTotalPerda = encontrarIndexColuna(cabecalho, ['total perda (r$)', 'total perda', 'perda', 'valor']);
-
-            dadosBrutos = [];
-            const hojeCorte = new Date();
-            hojeCorte.setHours(0, 0, 0, 0);
-
-            for (let i = 1; i < linhas.length; i++) {
-                if (!linhas[i].trim()) continue;
-                
-                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
-                
-                let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
-                let perdaNum = idxTotalPerda !== -1 ? tratarNumeroBrasil(colunas[idxTotalPerda]) : 0;
-                
-                let dataValidadeObj = null;
-                let dataTexto = (idxValidade !== -1 && colunas[idxValidade]) ? colunas[idxValidade].trim() : "";
-                let mesTexto = "";
-                let anoTexto = "";
-
-                if (dataTexto) {
-                    let partes = [];
-                    if (dataTexto.includes("/")) {
-                        partes = dataTexto.split("/");
-                        if (partes.length === 3) {
-                            dataValidadeObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-                            mesTexto = partes[1].padStart(2, '0');
-                            anoTexto = partes[2];
-                        }
-                    } else if (dataTexto.includes("-")) {
-                        partes = dataTexto.split("-");
-                        if (partes.length === 3) {
-                            dataValidadeObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-                            mesTexto = partes[1].padStart(2, '0');
-                            anoTexto = partes[0];
-                        }
-                    }
-                }
-
-                if (dataValidadeObj && isNaN(dataValidadeObj.getTime())) dataValidadeObj = null;
-
-                if (dataValidadeObj && dataValidadeObj >= hojeCorte) {
-                    const diffTempo = dataValidadeObj.getTime() - hojeCorte.getTime();
-                    const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
-                    
-                    let statusAcao = "";
-                    let classeBadge = "";
-                    
-                    if (diasRestantes <= 45) {
-                        statusAcao = "Tratar item com Urgência";
-                        classeBadge = "bg-red-500/20 text-red-400 border border-red-500/30";
-                    } else if (diasRestantes <= 90) {
-                        statusAcao = "Tratar item";
-                        classeBadge = "bg-orange-500/20 text-orange-400 border border-orange-500/30";
-                    } else if (diasRestantes <= 180) {
-                        statusAcao = "Acompanhar Tratativas";
-                        classeBadge = "bg-blue-500/20 text-blue-400 border border-blue-500/30";
-                    } else {
-                        statusAcao = "Item Mapeado";
-                        classeBadge = "bg-gray-700/50 text-gray-400 border border-gray-600/30";
-                    }
-
-                    dadosBrutos.push({
-                        loja: idxLoja !== -1 ? (colunas[idxLoja] || "Não Identificada") : "Não Identificada",
-                        codigo: idxCod !== -1 ? colunas[idxCod] : "S/C",
-                        item: idxItem !== -1 ? (colunas[idxItem] || "Item Sem Nome") : "Item Sem Nome",
-                        descricao: idxDesc !== -1 ? (colunas[idxDesc] || "") : "",
-                        fornecedor: idxForn !== -1 ? (colunas[idxForn] || "Sem Fornecedor") : "Sem Fornecedor",
-                        linha: idxLinha !== -1 ? (colunas[idxLinha] || "Sem Linha") : "Sem Linha",
-                        quantidade: qtdNum,
-                        validade: dataValidadeObj,
-                        validadeTexto: dataTexto || "Sem Data",
-                        mes: mesTexto,
-                        ano: anoTexto,
-                        totalPerda: perdaNum,
-                        diasRestantes: diasRestantes,
-                        statusAcao: statusAcao,
-                        classeBadge: classeBadge
-                    });
-                }
-            }
-        }
-
-        function popularSeletorLojas() {
-            const seletor = document.getElementById("filtroLojaSuperior");
-            while(seletor.options.length > 1) seletor.remove(1);
-            const lojasUnicas = [...new Set(dadosBrutos.map(item => item.loja))].sort();
-            lojasUnicas.forEach(loja => {
-                const opt = document.createElement("option");
-                opt.value = loja; opt.innerText = "🏢 " + loja;
-                seletor.appendChild(opt);
-            });
-        }
-
-        function popularFiltrosSuspensosTabela() {
-            const anos = [...new Set(dadosBrutos.map(i => i.ano))].filter(Boolean).sort();
-            const selectAno = document.getElementById("thFiltroAno");
-            selectAno.innerHTML = '<option value="">Ano</option>';
-            anos.forEach(ano => {
-                const opt = document.createElement("option");
-                opt.value = ano; opt.innerText = ano; selectAno.appendChild(opt);
+            // Filtro rápido e performático direto na tabela sem reprocessar tudo
+            const dadosFiltrados = obterDadosFiltradosGlobais();
+            const dadosFinais = dadosFiltrados.filter(d => {
+                if(!filtrosAtivos.buscaTexto) return true;
+                return d.codigo.toLowerCase().includes(filtrosAtivos.buscaTexto) || 
+                       d.descricao.toLowerCase().includes(filtrosAtivos.buscaTexto) ||
+                       d.fornecedor.toLowerCase().includes(filtrosAtivos.buscaTexto);
             });
 
-            const lojas = [...new Set(dadosBrutos.map(i => i.loja))].filter(Boolean).sort();
-            const codigos = [...new Set(dadosBrutos.map(i => i.codigo))].filter(Boolean).sort();
-            const linhas = [...new Set(dadosBrutos.map(i => i.linha))].filter(Boolean).sort();
-            const fornecedores = [...new Set(dadosBrutos.map(i => i.fornecedor))].filter(Boolean).sort();
-            const itens = [...new Set(dadosBrutos.map(i => i.item))].filter(Boolean).sort();
-
-            construirOpcoesDropdownCustom("dropdown-loja", lojas, "loja", "Selecione...");
-            construirOpcoesDropdownCustom("dropdown-codigo", codigos, "codigo", "Selecione...");
-            construirOpcoesDropdownCustom("dropdown-item", itens, "item", "Todos os Itens");
-            construirOpcoesDropdownCustom("dropdown-linha", linhas, "linha", "Selecione...");
-            construirOpcoesDropdownCustom("dropdown-fornecedor", fornecedores, "fornecedor", "Selecione... ");
+            renderizarTabela(dadosFinais);
         }
 
-        function construirOpcoesDropdownCustom(idDropdown, arrayValores, chaveFiltro, labelPadrao) {
-            const container = document.getElementById(idDropdown);
-            const wrapper = container.querySelector(".opcoes-wrapper");
-            wrapper.innerHTML = "";
-
-            const divLimpar = document.createElement("div");
-            divLimpar.className = "px-2 py-1.5 hover:bg-gray-700 rounded cursor-pointer text-gray-400 italic transition";
-            divLimpar.innerText = "❌ Limpar Filtro";
-            divLimpar.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, "", labelPadrao, chaveFiltro);
-            wrapper.appendChild(divLimpar);
-
-            arrayValores.forEach(valor => {
-                const divOpt = document.createElement("div");
-                divOpt.className = "opcao-item px-2 py-1.5 hover:bg-blue-600 rounded cursor-pointer text-gray-200 transition truncate";
-                divOpt.innerText = valor; divOpt.setAttribute("data-valor", valor.toLowerCase());
-                divOpt.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, valor.toLowerCase(), valor, chaveFiltro);
-                wrapper.appendChild(divOpt);
-            });
-        }
-
-        function toggleDropdownCustomizado(idDropdown) {
-            const container = document.getElementById(idDropdown);
-            const lista = container.querySelector(".lista-container");
-            const inputPesquisa = container.querySelector("input");
-            const estaAtivo = !lista.classList.contains("hidden");
-            
-            fecharTodosDropdownisCustomizados();
-            if (!estaAtivo) {
-                lista.classList.remove("hidden");
-                inputPesquisa.value = "";
-                filtrarOpcoesDropdown(inputPesquisa);
-                setTimeout(() => inputPesquisa.focus(), 50);
-            }
-        }
-
-        function fecharTodosDropdownisCustomizados() {
-            document.querySelectorAll(".lista-container").forEach(el => el.classList.add("hidden"));
-        }
-
-        function filtrarOpcoesDropdown(input) {
-            const busca = input.value.toLowerCase().trim();
-            const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
-            const opcoes = wrapper.querySelectorAll(".opcao-item");
-            opcoes.forEach(opcao => {
-                const texto = opcao.getAttribute("data-valor");
-                if (texto.includes(busca)) opcao.classList.remove("hidden");
-                else opcao.classList.add("hidden");
-            });
-        }
-
-        function selecionarOpcaoDropdownCustom(idDropdown, valorArmazenar, textoExibir, chaveFiltro) {
-            const container = document.getElementById(idDropdown);
-            container.querySelector(".label").innerText = textoExibir;
-            filtrosCabecalhoTabela[chaveFiltro] = valorArmazenar;
-            fecharTodosDropdownisCustomizados();
-            renderizarDashboard();
-        }
-
-        function alterarFiltroLojaSuperior(valor) {
-            filtrosAtivos.loja = valor ? valor : null;
-            renderizarDashboard();
-        }
-
-        function alternarFiltroCard(tipo, valor) {
-            if (tipo === 'vencimento') {
-                filtrosAtivos.vencimento = (filtrosAtivos.vencimento === valor) ? null : valor;
-            }
-            renderizarDashboard();
-        }
-
-        function filtrarGraficoDinamico(tipo, valor) {
-            if (tipo === 'fornecedor') {
-                filtrosAtivos.fornecedor = (filtrosAtivos.fornecedor === valor) ? null : valor;
-            } else if (tipo === 'linha') {
-                filtrosAtivos.linha = (filtrosAtivos.linha === valor) ? null : valor;
-            } else if (tipo === 'cronograma') {
-                filtrosAtivos.cronogramaMesAno = (filtrosAtivos.cronogramaMesAno === valor) ? null : valor;
-            }
-            renderizarDashboard();
-        }
-
-        function executarFiltrosTabela() {
-            filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
-            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
-            filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
-            renderizarDashboard();
-        }
-
+        // Limpa totalmente a paginação/filtros
         function limparTodosFiltros() {
-            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, cronogramaMesAno: null };
-            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", linha: "", fornecedor: "" };
-            
-            document.getElementById("filtroLojaSuperior").value = "";
-            document.getElementById("thFiltroMes").value = "";
-            document.getElementById("thFiltroAno").value = "";
-            document.getElementById("thFiltroStatus").value = "";
+            filtrosAtivos.loja = null;
+            filtrosAtivos.fornecedor = null;
+            filtrosAtivos.linha = null;
+            filtrosAtivos.vencimento = null;
+            filtrosAtivos.cronogramaMesAno = null;
+            filtrosAtivos.buscaTexto = "";
 
-            document.querySelectorAll(".target-dropdown").forEach(drop => {
-                const lbl = drop.id === "dropdown-item" ? "Todos os Itens" : "Selecione...";
-                drop.querySelector(".label").innerText = lbl;
-            });
+            document.getElementById("filtroLoja").value = "";
+            document.getElementById("filtroFornecedor").value = "";
+            document.getElementById("filtroLinha").value = "";
+            document.getElementById("buscaTabela").value = "";
 
-            renderizarDashboard();
+            processarEAtualizarTudo();
         }
 
+        // Retorna o array bruto aplicando os filtros relacionais estruturais
         function obterDadosFiltradosGlobais() {
             return dadosBrutos.filter(d => {
                 if (filtrosAtivos.loja && d.loja !== filtrosAtivos.loja) return false;
@@ -556,63 +265,38 @@
                 if (filtrosAtivos.vencimento) {
                     if (filtrosAtivos.vencimento === 'urgencia' && d.diasRestantes > 45) return false;
                     if (filtrosAtivos.vencimento === '3meses' && d.diasRestantes > 90) return false;
-                    if (filtrosAtivos.vencimento === '6meses' && d.diasRestantes > 180) return false;
+                    // ALTERAÇÃO SOLICITADA: Filtra estritamente o intervalo entre maior que 3 meses e menor ou igual a 6 meses
+                    if (filtrosAtivos.vencimento === '6meses' && (d.diasRestantes <= 90 || d.diasRestantes > 180)) return false;
                 }
                 return true;
             });
         }
 
-        function renderizarDashboard() {
-            const dadosCardsEGraficos = obterDadosFiltradosGlobais();
+        // Orquestrador Central de Atualização de UI
+        function processarEAtualizarTudo() {
+            const dadosFiltrados = obterDadosFiltradosGlobais();
 
-            const dadosTabelaFinal = dadosCardsEGraficos.filter(d => {
-                if (filtrosCabecalhoTabela.mes && d.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && d.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && d.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && d.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && d.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && d.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && d.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && d.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-                return true;
+            // 1. Atualiza os Visores Superiores com base no contexto atual
+            calcularEExibirKPIs(dadosFiltrados);
+
+            // 2. Monta o Painel de Cronograma com base no contexto atual
+            gerarPainelCronograma(dadosFiltrados);
+
+            // 3. Gerencia o destaque visual dos cards
+            atualizarEstiloCards();
+
+            // 4. Filtra por texto final e renderiza a tabela principal
+            const dadosFinais = dadosFiltrados.filter(d => {
+                if(!filtrosAtivos.buscaTexto) return true;
+                return d.codigo.toLowerCase().includes(filtrosAtivos.buscaTexto) || 
+                       d.descricao.toLowerCase().includes(filtrosAtivos.buscaTexto) ||
+                       d.fornecedor.toLowerCase().includes(filtrosAtivos.buscaTexto);
             });
 
-            atualizarBotoesEDestaquesCards();
-            calcularEExibirKPIs(dadosCardsEGraficos);
-            
-            atualizarGraficoCronograma(dadosCardsEGraficos);
-            atualizarGraficoLojas(dadosCardsEGraficos);
-            atualizarGraficoFornecedores(dadosCardsEGraficos);
-            atualizarGraficoLinhas(dadosCardsEGraficos);
-
-            montarCorpoTabelaHTML(dadosTabelaFinal);
+            renderizarTabela(dadosFinais);
         }
 
-        function atualizarBotoesEDestaquesCards() {
-            const temFiltroAtivo = Object.values(filtrosAtivos).some(v => v !== null) || Object.values(filtrosCabecalhoTabela).some(v => v !== "");
-            document.getElementById("btnLimparFiltros").className = temFiltroAtivo 
-                ? "px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500 block" 
-                : "hidden";
-
-            document.getElementById("cardUrgencia").className = (filtrosAtivos.vencimento === 'urgencia')
-                ? "bg-red-950/40 p-4 rounded-xl border-2 border-red-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200"
-                : "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200";
-            document.getElementById("dotUrg").className = (filtrosAtivos.vencimento === 'urgencia') ? "h-2 w-2 rounded-full bg-red-500 animate-pulse" : "h-2 w-2 rounded-full bg-transparent";
-
-            document.getElementById("card3Meses").className = (filtrosAtivos.vencimento === '3meses')
-                ? "bg-amber-950/40 p-4 rounded-xl border-2 border-amber-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200"
-                : "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200";
-            document.getElementById("dot3m").className = (filtrosAtivos.vencimento === '3meses') ? "h-2 w-2 rounded-full bg-amber-400 animate-pulse" : "h-2 w-2 rounded-full bg-transparent";
-
-            document.getElementById("card6Meses").className = (filtrosAtivos.vencimento === '6meses')
-                ? "bg-orange-950/40 p-4 rounded-xl border-2 border-orange-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200"
-                : "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200";
-            document.getElementById("dot6m").className = (filtrosAtivos.vencimento === '6meses') ? "h-2 w-2 rounded-full bg-orange-400 animate-pulse" : "h-2 w-2 rounded-full bg-transparent";
-
-            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `Filtro: ${filtrosAtivos.fornecedor}` : "";
-            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `Filtro: ${filtrosAtivos.linha}` : "";
-        }
-
+        // Processa somatórias e indicadores inteligentes
         function calcularEExibirKPIs(dados) {
             let totalRs = 0; let qtdUrg = 0; let rs3m = 0; let rs6m = 0; let totalUnidades = 0;
             let barrasUnicos = new Set(); let lojasAtivas = new Set();
@@ -625,7 +309,8 @@
 
                 if (d.diasRestantes <= 45) qtdUrg++;
                 if (d.diasRestantes <= 90) rs3m += d.totalPerda;
-                if (d.diasRestantes <= 180) rs6m += d.totalPerda;
+                // ALTERAÇÃO SOLICITADA: Soma apenas itens estritamente dentro do intervalo de 3 a 6 meses
+                if (d.diasRestantes > 90 && d.diasRestantes <= 180) rs6m += d.totalPerda;
             });
 
             document.getElementById("kpiTotalRs").innerText = "R$ " + totalRs.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -637,244 +322,129 @@
             document.getElementById("kpiLojas").innerText = lojasAtivas.size;
         }
 
-        function montarCorpoTabelaHTML(dados) {
-            const tbody = document.getElementById("corpoTabelaPerdas");
-            document.getElementById("txtContagemLinhas").innerText = `${dados.length} registros`;
-            tbody.innerHTML = "";
+        // Constrói as barras de cronograma mensais dinamicamente
+        function gerarPainelCronograma(dados) {
+            const cronoMap = {};
+            
+            // Agrupa valores por Mês/Ano
+            dados.forEach(d => {
+                if(!d.mes || !d.ano) return;
+                let chave = `${d.mes}/${d.ano}`;
+                if(!cronoMap[chave]) {
+                    cronoMap[chave] = { valor: 0, mesNum: Number(d.mes), anoNum: Number(d.ano) };
+                }
+                cronoMap[chave].valor += d.totalPerda;
+            });
 
-            if (dados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-500 font-bold bg-gray-800/20">Nenhum registro localizado nos parâmetros informados.</td></tr>`;
+            // Ordena cronologicamente
+            const listaOrdenada = Object.keys(cronoMap).map(k => ({ chave: k, ...cronoMap[k] }))
+                .sort((a,b) => (a.anoNum - b.anoNum) || (a.mesNum - b.mesNum));
+
+            const maxValor = Math.max(...listaOrdenada.map(o => o.valor), 1);
+            const container = document.getElementById("listaCronograma");
+            container.innerHTML = "";
+
+            if(listaOrdenada.length === 0) {
+                container.innerHTML = `<div class="text-xs text-gray-500 text-center py-8">Nenhum dado de cronograma disponível.</div>`;
+                document.getElementById("btnLimparCronograma").classList.add("hidden");
+                return;
+            }
+
+            if(filtrosAtivos.cronogramaMesAno) {
+                document.getElementById("btnLimparCronograma").classList.remove("hidden");
+            } else {
+                document.getElementById("btnLimparCronograma").classList.add("hidden");
+            }
+
+            listaOrdenada.forEach(item => {
+                const pct = (item.valor / maxValor) * 100;
+                const estaAtivo = filtrosAtivos.cronogramaMesAno === item.chave;
+
+                let itemDiv = document.createElement("div");
+                itemDiv.onclick = () => definirFiltroSelect('cronogramaMesAno', item.chave);
+                itemDiv.className = `p-2 rounded-lg cursor-pointer transition-all flex flex-col gap-1 border ${estaAtivo ? 'bg-orange-950/40 border-orange-500/50' : 'bg-gray-800/40 border-transparent hover:bg-gray-800'}`;
+                
+                itemDiv.innerHTML = `
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold ${estaAtivo ? 'text-orange-400' : 'text-gray-300'}">${item.chave}</span>
+                        <span class="font-mono text-gray-400">R$ ${item.valor.toLocaleString('pt-BR', {maximumFractionDigits:0})}</span>
+                    </div>
+                    <div class="w-full bg-gray-900 h-1.5 rounded-full overflow-hidden border border-gray-800/50">
+                        <div class="h-full bg-gradient-to-r from-orange-600 to-amber-500 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        }
+
+        // Gerencia bordas e dots indicadores de filtros superiores
+        function atualizarEstiloCards() {
+            const resgatarCard = (id, dotId, ativo, corBorda) => {
+                const card = document.getElementById(id);
+                const dot = document.getElementById(dotId);
+                if(ativo) {
+                    card.style.borderColor = corBorda;
+                    dot.className = `h-2 w-2 rounded-full shadow-[0_0_8px_currentColor]`;
+                    dot.style.color = corBorda;
+                    dot.style.backgroundColor = corBorda;
+                } else {
+                    card.style.borderColor = "";
+                    dot.className = `h-2 w-2 rounded-full bg-transparent`;
+                }
+            };
+
+            resgatarCard("cardTotal", "dotTotal", !filtrosAtivos.vencimento, "#f97316");
+            resgatarCard("cardUrgencia", "dotUrg", filtrosAtivos.vencimento === 'urgencia', "#ef4444");
+            resgatarCard("card3Meses", "dot3m", filtrosAtivos.vencimento === '3meses', "#fde047");
+            resgatarCard("card6Meses", "dot6m", filtrosAtivos.vencimento === '6meses', "#fdba74");
+        }
+
+        // Alimenta o HTML da tabela principal
+        function renderizarTabela(dados) {
+            const corpo = document.getElementById("corpoTabela");
+            corpo.innerHTML = "";
+
+            document.getElementById("txtContadorLinhas").innerText = `Listando ${dados.length} registro(s)`;
+
+            if(dados.length === 0) {
+                corpo.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="p-8 text-center text-gray-500 italic">
+                            Nenhum registro encontrado para as combinações de filtros selecionadas.
+                        </td>
+                    </tr>
+                `;
                 return;
             }
 
             dados.forEach(d => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-700/40 border-b border-gray-800/60 text-gray-300 font-medium transition duration-150">
-                        <td class="p-3 font-mono text-gray-200">
-                            <strong>${d.validadeTexto}</strong><br>
-                            <span class="text-[10px] text-gray-400 font-normal">(${d.diasRestantes} dias rest.)</span>
-                        </td>
-                        <td class="p-3">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider block text-center ${d.classeBadge}">
-                                ${d.statusAcao}
-                            </span>
-                        </td>
-                        <td class="p-3 text-gray-400 font-bold">${d.loja}</td>
-                        <td class="p-3 font-mono text-blue-400 font-semibold">${d.codigo}</td>
-                        <td class="p-3">
-                            <div class="text-gray-100 font-black text-sm">${d.item}</div>
-                            <div class="text-[11px] text-gray-400 max-w-xs truncate font-normal">${d.descricao}</div>
-                        </td>
-                        <td class="p-3 text-purple-400 font-bold">${d.linha}</td>
-                        <td class="p-3 text-gray-400 font-medium truncate max-w-[140px]">${d.fornecedor}</td>
-                        <td class="p-3 text-center font-black text-blue-300 text-sm">${d.quantidade}</td>
-                        <td class="p-3 text-right font-mono text-emerald-400 font-black text-sm">R$ ${d.totalPerda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    </tr>
+                let statusBadge = "";
+                if (d.diasRestantes <= 45) {
+                    statusBadge = `<span class="px-2 py-0.5 rounded-md bg-red-950 text-red-400 font-bold border border-red-800 text-[10px]">CRÍTICO</span>`;
+                } else if (d.diasRestantes <= 90) {
+                    statusBadge = `<span class="px-2 py-0.5 rounded-md bg-yellow-950 text-yellow-400 font-bold border border-yellow-800 text-[10px]">ALERTA</span>`;
+                } else {
+                    statusBadge = `<span class="px-2 py-0.5 rounded-md bg-blue-950 text-blue-400 font-bold border border-blue-800 text-[10px]">STÁVEL</span>`;
+                }
+
+                let tr = document.createElement("tr");
+                tr.className = "hover:bg-gray-900/40 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3 text-center">${statusBadge}</td>
+                    <td class="p-3 font-semibold text-gray-300">${d.loja}</td>
+                    <td class="p-3 font-mono text-gray-400">${d.codigo}</td>
+                    <td class="p-3 font-medium text-white max-w-xs truncate" title="${d.descricao}">${d.descricao}</td>
+                    <td class="p-3 text-gray-400 max-w-xs truncate">
+                        <span class="block text-gray-300 font-medium">${d.fornecedor}</span>
+                        <span class="block text-[10px] text-gray-500">${d.linha}</span>
+                    </td>
+                    <td class="p-3 text-center font-mono font-medium text-gray-300">${d.validadeStr}</td>
+                    <td class="p-3 text-right font-mono font-bold ${d.diasRestantes <= 45 ? 'text-red-400' : 'text-gray-300'}">${d.diasRestantes} d</td>
+                    <td class="p-3 text-right font-mono text-gray-300">${d.quantidade}</td>
+                    <td class="p-3 text-right font-mono font-bold text-orange-400">R$ ${d.totalPerda.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;
+                corpo.appendChild(tr);
             });
-        }
-
-        function atualizarGraficoCronograma(dados) {
-            let mapa = {};
-            dados.forEach(d => {
-                let mAno = `${d.mes}/${d.ano}`;
-                if (d.mes && d.ano) mapa[mAno] = (mapa[mAno] || 0) + d.totalPerda;
-            });
-
-            let labelsOrdenados = Object.keys(mapa).sort((a, b) => {
-                let [mA, aA] = a.split('/').map(Number); let [mB, aB] = b.split('/').map(Number);
-                return aA !== aB ? aA - aB : mA - mB;
-            });
-            let valores = labelsOrdenados.map(l => mapa[l]);
-
-            if (instanciasGraficos.cronograma) {
-                instanciasGraficos.cronograma.data.labels = labelsOrdenados;
-                instanciasGraficos.cronograma.data.datasets[0].data = valores;
-                instanciasGraficos.cronograma.update();
-            } else {
-                let ctx = document.getElementById('chartCronograma').getContext('2d');
-                instanciasGraficos.cronograma = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labelsOrdenados,
-                        datasets: [{
-                            label: 'Perda Projetada (R$)', data: valores,
-                            borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            fill: true, tension: 0.25, borderWidth: 3
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        onClick: (e, elementos) => {
-                            if (elementos.length > 0) {
-                                let index = elementos[0].index;
-                                filtrarGraficoDinamico('cronograma', labelsOrdenados[index]);
-                            }
-                        },
-                        scales: { y: { grid: { color: '#374151' } }, x: { grid: { color: '#374151' } } }
-                    }
-                });
-            }
-        }
-
-        function atualizarGraficoLojas(dados) {
-            let mapa = {};
-            dados.forEach(d => { mapa[d.loja] = (mapa[d.loja] || 0) + d.totalPerda; });
-
-            let labels = Object.keys(mapa).sort((a,b) => mapa[b] - mapa[a]);
-            let valores = labels.map(l => mapa[l]);
-
-            if (instanciasGraficos.lojas) {
-                instanciasGraficos.lojas.data.labels = labels;
-                instanciasGraficos.lojas.data.datasets[0].data = valores;
-                instanciasGraficos.lojas.update();
-            } else {
-                let ctx = document.getElementById('chartLojas').getContext('2d');
-                instanciasGraficos.lojas = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{ data: valores, backgroundColor: '#10b981', borderRadius: 6 }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { grid: { color: '#374151' } }, x: { grid: { display: false } } }
-                    }
-                });
-            }
-        }
-
-        function atualizarGraficoFornecedores(dados) {
-            let mapa = {};
-            dados.forEach(d => { mapa[d.fornecedor] = (mapa[d.fornecedor] || 0) + d.totalPerda; });
-
-            let labels = Object.keys(mapa).sort((a,b) => mapa[b] - mapa[a]).slice(0, 5);
-            let valores = labels.map(l => mapa[l]);
-
-            if (instanciasGraficos.fornecedores) {
-                instanciasGraficos.fornecedores.data.labels = labels;
-                instanciasGraficos.fornecedores.data.datasets[0].data = valores;
-                instanciasGraficos.fornecedores.update();
-            } else {
-                let ctx = document.getElementById('chartFornecedores').getContext('2d');
-                instanciasGraficos.fornecedores = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{ data: valores, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'] }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 10 } } } },
-                        onClick: (e, el) => {
-                            if(el.length > 0) filtrarGraficoDinamico('fornecedor', labels[el[0].index]);
-                        }
-                    }
-                });
-            }
-        }
-
-        function atualizarGraficoLinhas(dados) {
-            let mapa = {};
-            dados.forEach(d => { mapa[d.linha] = (mapa[d.linha] || 0) + d.totalPerda; });
-
-            let labels = Object.keys(mapa).sort((a,b) => mapa[b] - mapa[a]).slice(0, 5);
-            let valores = labels.map(l => mapa[l]);
-
-            if (instanciasGraficos.lines) {
-                instanciasGraficos.lines.data.labels = labels;
-                instanciasGraficos.lines.data.datasets[0].data = valores;
-                instanciasGraficos.lines.update();
-            } else {
-                let ctx = document.getElementById('chartLinhas').getContext('2d');
-                instanciasGraficos.lines = new Chart(ctx, {
-                    type: 'polarArea',
-                    data: {
-                        labels: labels,
-                        datasets: [{ data: valores, backgroundColor: ['rgba(16, 185, 129, 0.6)', 'rgba(245, 158, 11, 0.6)', 'rgba(59, 130, 246, 0.6)', 'rgba(139, 92, 246, 0.6)', 'rgba(239, 68, 68, 0.6)'] }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 10 } } } },
-                        scales: { r: { grid: { color: '#374151' }, ticks: { display: false } } },
-                        onClick: (e, el) => {
-                            if(el.length > 0) filtrarGraficoDinamico('linha', labels[el[0].index]);
-                        }
-                    }
-                });
-            }
-        }
-
-        function exportarParaExcel() {
-            const dadosAtuais = obterDadosFiltradosGlobais().filter(d => {
-                if (filtrosCabecalhoTabela.mes && d.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && d.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && d.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && d.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && d.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && d.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && d.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && d.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-                return true;
-            });
-
-            if (dadosAtuais.length === 0) { alert("Sem dados ativos para exportação."); return; }
-
-            const matrizExcel = dadosAtuais.map(d => ({
-                "Vencimento": d.validadeTexto,
-                "Dias Restantes": d.diasRestantes,
-                "Status Ação": d.statusAcao,
-                "Loja Principal": d.loja,
-                "Código de Barras": d.codigo,
-                "ID Item": d.item,
-                "Descrição Comercial": d.descricao,
-                "Linha": d.linha,
-                "Fornecedor": d.fornecedor,
-                "Quantidade Física": d.quantidade,
-                "Custo Perda Total R$": d.totalPerda
-            }));
-
-            const planilhaWs = XLSX.utils.json_to_sheet(matrizExcel);
-            const livroWb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(livroWb, planilhaWs, "Validades_Filtradas");
-            XLSX.writeFile(livroWb, `Relatorio_Validade_LossPrevention_${new Date().toISOString().substring(0,10)}.xlsx`);
-        }
-
-        function enviarFiltroWhatsApp() {
-            const dadosAtuais = obterDadosFiltradosGlobais().filter(d => {
-                if (filtrosCabecalhoTabela.mes && d.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && d.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && d.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && d.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && d.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && d.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && d.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && d.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-                return true;
-            });
-
-            if(dadosAtuais.length === 0) { alert("Nenhum item localizado no filtro atual para envio."); return; }
-
-            let totalPrejuizo = dadosAtuais.reduce((acc, d) => acc + d.totalPerda, 0);
-            let textoMsg = `*📊 RELATÓRIO DIÁRIO - CRONOGRAMA DE VENCIMENTOS*\n`;
-            textoMsg += `_Filtro aplicado contendo ${dadosAtuais.length} ocorrências mapeadas._\n`;
-            textoMsg += `-----------------------------------------------\n`;
-            textoMsg += `*💰 Montante Total em Risco:* R$ ${totalPrejuizo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\n`;
-
-            dadosAtuais.slice(0, 15).forEach(d => {
-                textoMsg += `• *Venc.:* ${d.validadeTexto} (${d.diasRestantes}d) | *Loja:* ${d.loja}\n`;
-                textoMsg += `  *Item:* ${d.item} - ${d.descricao}\n`;
-                textoMsg += `  *Linha:* ${d.linha} | *Qtd:* ${d.quantidade} un. | *Perda:* R$ ${d.totalPerda.toFixed(2)}\n`;
-                textoMsg += `  *Status:* _${d.statusAcao.toUpperCase()}_\n\n`;
-            });
-
-            if(dadosAtuais.length > 15) {
-                textoMsg += `_+ mais ${dadosAtuais.length - 15} itens listados na planilha consolidada._\n`;
-            }
-
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoMsg)}`, '_blank');
         }
     </script>
 </body>
