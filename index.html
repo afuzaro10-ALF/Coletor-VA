@@ -14,908 +14,455 @@
             <span class="text-4xl">🔒</span>
             <h2 class="text-2xl font-black text-blue-600 mt-2">Coletor de Validade<br>Acesso Restrito</h2>
             <p id="txtStatusLogin" class="text-sm text-gray-400 mt-1">Sincronizando credenciais da nuvem...</p>
-
         </div>
-
         
-
         <div class="space-y-3">
-
             <div>
-
                 <label class="block text-sm font-semibold text-gray-600 mb-1">Selecione sua Loja</label>
-
                 <select id="loginLoja" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
-
                     <option value="">Carregando lojas...</option>
-
                 </select>
-
             </div>
-
             <div>
-
                 <label class="block text-sm font-semibold text-gray-600 mb-1">Usuário</label>
-
                 <input type="text" id="loginUsuario" placeholder="Digite seu usuário" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
-
             </div>
-
             <div>
-
                 <label class="block text-sm font-semibold text-gray-600 mb-1">Senha</label>
-
                 <input type="password" id="loginSenha" placeholder="••••••••" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium">
-
             </div>
-
-            <button id="btnEntrar" onclick="autenticar()" disabled class="w-full py-3 bg-gray-400 text-white font-bold rounded-xl transition shadow-md mt-2 cursor-not-allowed">Aguarde o Carregamento...</button>
-
+            <button id="btnEntrar" onclick="autenticar()" disabled class="w-full py-3 bg-gray-400 text-white font-bold rounded-xl transition shadow-md mt-2 cursor-not-allowed">
+                Aguarde o Carregamento...
+            </button>
         </div>
-
     </div>
-
-
 
     <div id="secaoColetor" class="w-full max-w-2xl bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hidden">
-
         <div class="bg-blue-600 p-5 text-white flex justify-between items-center">
-
             <div>
-
                 <h1 class="text-xl font-bold">Coletor de Validade</h1>
-
                 <p class="text-xs text-blue-100 mt-1">Sessão ativa: <span id="txtLojaAtiva" class="font-bold underline"></span> | Operador: <span id="txtOperadorAtivo" class="font-bold"></span></p>
-
             </div>
-
             <div class="flex space-x-2">
-
                 <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
-
                 <button onclick="efetuarLogout()" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs font-semibold transition">🚪 Sair</button>
-
             </div>
-
         </div>
-
-
 
         <div class="p-6 space-y-4">
-
-            
-
             <div id="etapaScanner" class="space-y-4">
-
                 <div>
-
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Scanner de Código de Barras Ativo</label>
-
                     <div id="leitorCameraContainer" class="p-2 bg-black rounded-xl overflow-hidden relative border border-gray-700 shadow-inner">
-
                         <div id="reader" class="w-full"></div>
-
                     </div>
-
                 </div>
-
-
 
                 <div>
-
                     <label class="block text-sm font-semibold text-gray-600 mb-1">Código de Barras (Digitado ou Escaneado)</label>
-
                     <input type="text" id="campoCodigo" onkeydown="verificarEnterScanner(event)" oninput="verificarTamanhoScanner(this.value)" placeholder="O scanner preencherá aqui automaticamente" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-mono font-bold text-blue-600">
-
                 </div>
-
             </div>
-
-
 
             <div id="etapaFormulario" class="space-y-4 hidden">
-
-                
-
                 <button onclick="voltarParaScanner()" class="text-xs text-blue-600 hover:underline font-semibold flex items-center space-x-1">
-
                     <span>← Voltar e Escanear Outro</span>
-
                 </button>
 
-
-
                 <div id="cardCadastro" class="p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3 transition-colors duration-300">
-
                     <span id="txtStatusCadastro" class="text-xs font-bold text-blue-500 uppercase tracking-wider block">Dados do Cadastro Localizado</span>
-
                     
-
                     <div class="border-b border-gray-200 pb-2">
-
                         <label class="block text-xs text-gray-500">Código de Barras Coletado</label>
-
                         <input type="text" id="txtCodigoExibicao" readonly class="w-full bg-transparent py-0.5 font-mono font-black text-sm text-blue-700 focus:outline-none">
-
                     </div>
-
-
 
                     <div class="grid grid-cols-1 gap-3">
-
                         <div>
-
                             <label class="block text-xs text-gray-500">Item / Descrição</label>
-
                             <input type="text" id="txtItemEDescricao" readonly class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
-
                         </div>
-
                     </div>
-
+                    
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-
                         <div>
-
                             <label class="block text-xs text-gray-500">Fornecedor / Fabricante</label>
-
                             <input type="text" id="txtFornecedor" readonly class="w-full bg-transparent border-b border-gray-300 py-1 font-semibold text-sm focus:outline-none text-gray-700">
-
                         </div>
-
                         <div>
-
                             <label class="block text-xs text-gray-500">Família</label>
-
                             <input type="text" id="txtFamilia" readonly class="w-full bg-transparent border-b border-gray-300 py-1 text-sm focus:outline-none text-gray-600">
-
                         </div>
-
                     </div>
-
+                    
                     <div class="grid grid-cols-2 gap-3 pt-1">
-
                         <div>
-
                             <label class="block text-xs text-gray-500">Custo Unitário (R$)</label>
-
                             <input type="text" id="txtCusto" readonly class="w-full bg-transparent border-b border-gray-300 py-1 font-bold text-sm focus:outline-none text-gray-700">
-
                         </div>
-
                         <div>
-
                             <label class="block text-xs text-gray-500">Total Perda Estimada (R$)</label>
-
                             <input type="text" id="txtTotalFinanceiro" readonly class="w-full bg-transparent border-b border-gray-300 py-1 font-black text-sm focus:outline-none text-emerald-600">
-
                         </div>
-
                     </div>
-
                 </div>
-
-
 
                 <div class="grid grid-cols-2 gap-4">
-
                     <div>
-
                         <label class="block text-sm font-semibold text-gray-600 mb-1">Quantidade</label>
-
                         <input type="number" id="campoQtd" value="1" min="1" oninput="calcularTotalFinanceiro()" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
-
                     </div>
-
                     <div>
-
                         <label class="block text-sm font-semibold text-gray-600 mb-1">Data de Vencimento</label>
-
                         <input type="date" id="campoValidade" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">
-
                     </div>
-
                 </div>
-
-
 
                 <div class="pt-2">
-
                     <button id="btnSalvar" onclick="salvarColeta()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-md flex items-center justify-center space-x-2">
-
                         <span>💾 Salvar Coleta</span>
-
                     </button>
-
                 </div>
-
             </div>
-
-
-
         </div>
-
     </div>
 
-
-
     <script>
-
         const BASE_PLANILHA_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv";
-
         const CADASTRO_URL = `${BASE_PLANILHA_URL}&sheet=Cadastro`;
-
         const USUARIOS_URL = `${BASE_PLANILHA_URL}&sheet=Usuarios`;
-
         
-
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
-
         
-
         let baseProdutos = {};
-
         let credenciaisLojas = {}; 
-
         let usuarioLogado = "";
-
         let lojaSessao = "";
-
         let html5QrCodeScanner = null;
-
         let produtoEncontrado = false;
-
         let emPausaLeitura = false;
 
-
-
         window.onload = function() {
-
             const lojaSalva = localStorage.getItem("coletor_loja");
-
             const usuarioSalvo = localStorage.getItem("coletor_usuario");
-
             
-
             const urlParams = new URLSearchParams(window.location.search);
-
             const forcarTela = urlParams.get('tela');
 
-
-
             if (lojaSalva && usuarioSalvo) {
-
                 logarSucesso(lojaSalva, usuarioSalvo, true);
-
             } else if (forcarTela === 'scanner') {
-
                 alert("Sessão expirada ou não identificada. Por favor, faça login.");
-
             }
-
             
-
             carregarCredenciaisDaNuvem();
-
         };
 
-
-
         function carregarCredenciaisDaNuvem() {
-
             fetch(USUARIOS_URL)
-
                 .then(response => response.text())
-
                 .then(text => {
-
                     const linhas = text.split(/\r?\n/);
-
                     if (linhas.length < 2) return;
 
-
-
                     const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
-
                     const idxLoja = cabecalho.indexOf('loja');
-
                     const idxUser = cabecalho.indexOf('usuario');
-
                     const idxSenha = cabecalho.indexOf('senha');
 
-
-
                     const select = document.getElementById("loginLoja");
-
                     if (!select) return; 
-
                     select.innerHTML = ""; 
 
-
-
                     for (let i = 1; i < linhas.length; i++) {
-
                         if (!linhas[i].trim()) continue;
-
                         const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
-
                         
-
                         let loja = colunas[idxLoja];
-
                         let user = colunas[idxUser];
-
                         let senha = colunas[idxSenha];
 
-
-
                         if (loja && user && senha) {
-
-                            credenciaisLojas[loja] = { usuario: user, senha: senha };
-
-
+                            credenciaisLojas[loja] = { usuario: user, senate: senha };
 
                             const opt = document.createElement("option");
-
                             opt.value = loja;
-
                             opt.textContent = loja;
-
                             select.appendChild(opt);
-
                         }
-
                     }
 
-
-
                     const txtStatus = document.getElementById("txtStatusLogin");
-
                     if (txtStatus) txtStatus.innerText = "Selecione sua loja e identifique-se";
-
                     
-
                     const btnEntrar = document.getElementById("btnEntrar");
-
                     if (btnEntrar) {
-
                         btnEntrar.disabled = false;
-
                         btnEntrar.innerText = "Entrar no Sistema";
-
                         btnEntrar.className = "w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-md mt-2 cursor-pointer";
-
                     }
-
                 })
-
                 .catch(err => {
-
                     console.error("Erro ao carregar banco de usuários:", err);
-
                     const txtStatus = document.getElementById("txtStatusLogin");
-
                     if (txtStatus) txtStatus.innerText = "⚠️ Erro ao sincronizar usuários com o Sheets.";
-
                 });
-
         }
 
-
-
         function autenticar() {
-
             const lojaSelecionada = document.getElementById("loginLoja").value;
-
             const usuarioDigitado = document.getElementById("loginUsuario").value.trim();
-
             const senhaDigitada = document.getElementById("loginSenha").value.trim();
 
-
-
             if (!lojaSelecionada) {
-
                 alert("Por favor, selecione uma loja válida.");
-
                 return;
-
             }
-
-
 
             if (usuarioDigitado === "admin" && senhaDigitada === "123") {
-
                 logarSucesso(lojaSelecionada, usuarioDigitado);
-
                 return;
-
             }
-
-
 
             const credencialLoja = credenciaisLojas[lojaSelecionada];
 
-
-
             if (credencialLoja && usuarioDigitado === credencialLoja.usuario && senhaDigitada === credencialLoja.senha) {
-
                 logarSucesso(lojaSelecionada, usuarioDigitado);
-
             } else {
-
                 alert("❌ Usuário ou senha incorretos para a loja selecionada!");
-
             }
-
         }
-
-
 
         function logarSucesso(loja, usuario, veioDoCache = false) {
-
             usuarioLogado = usuario;
-
             lojaSessao = loja;
 
-
-
             localStorage.setItem("coletor_loja", loja);
-
             localStorage.setItem("coletor_usuario", usuario);
 
-
-
             document.getElementById("txtLojaAtiva").innerText = lojaSessao;
-
             document.getElementById("txtOperadorAtivo").innerText = usuarioLogado;
 
-
-
             document.body.classList.remove("flex", "items-center", "justify-center", "min-h-screen");
-
             document.getElementById("secaoLogin").classList.add("hidden");
-
             document.getElementById("secaoColetor").classList.remove("hidden");
-
             
-
             inicializarBaseCadastro();
-
             
-
             if (!html5QrCodeScanner) {
-
                 ligarCameraAutomatica();
-
             }
-
         }
-
-
 
         function efetuarLogout() {
-
             localStorage.removeItem("coletor_loja");
-
             localStorage.removeItem("coletor_usuario");
-
             window.location.href = window.location.pathname; 
-
         }
-
-
 
         function inicializarBaseCadastro() {
-
             fetch(CADASTRO_URL)
-
                 .then(response => response.text())
-
                 .then(text => {
-
                     const linhas = text.split(/\r?\n/);
-
                     if (linhas.length < 2) return;
 
-
-
                     const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
-
                     const idxCod = cabecalho.indexOf('codigo');
-
                     const idxItem = cabecalho.indexOf('item');
-
                     const idxDesc = cabecalho.indexOf('descricao');
-
                     const idxForn = cabecalho.indexOf('fornecedor');
-
                     const idxLinha = cabecalho.indexOf('linha');
-
                     const idxFam = cabecalho.indexOf('familia');
-
                     const idxCusto = cabecalho.indexOf('custo');
 
-
-
                     for (let i = 1; i < linhas.length; i++) {
-
                         if (!linhas[i].trim()) continue;
-
                         const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
-
                         
-
                         let codigo = colunas[idxCod];
-
                         if (codigo) {
-
                             codigo = codigo.replace(/^["']|["']$/g, '').trim();
-
                             
-
                             baseProdutos[codigo] = {
-
                                 item: colunas[idxItem] || '',
-
                                 descricao: colunas[idxDesc] || '',
-
                                 fornecedor: colunas[idxForn] || '',
-
                                 linha: colunas[idxLinha] || '',
-
                                 familia: colunas[idxFam] || '',
-
                                 custo: colunas[idxCusto] ? parseFloat(colunas[idxCusto].replace(/\./g, '').replace(',', '.')) || 0 : 0
-
                             };
-
                         }
-
                     }
-
                 })
-
                 .catch(err => console.error("Erro ao ler aba Cadastro:", err));
-
         }
-
-
 
         function ligarCameraAutomatica() {
-
             html5QrCodeScanner = new Html5Qrcode("reader");
-
             const config = { 
-
                 fps: 9, 
-
                 qrbox: (width, height) => { return { width: width * 0.85, height: height * 0.45 }; },
-
                 formatsToSupport: [ 
-
                     Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, 
-
                     Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.QR_CODE 
-
                 ]
-
             };
 
-
-
             html5QrCodeScanner.start(
-
                 { facingMode: "environment" }, config, 
-
                 (decodedText) => {
-
                     if (emPausaLeitura) return;
 
-
-
                     const codigoLimpo = decodedText.trim();
-
                     if (codigoLimpo.length < 7) return;
 
-
-
                     emPausaLeitura = true;
-
                     document.getElementById('campoCodigo').value = codigoLimpo;
-
                     buscarProduto(codigoLimpo);
-
                 },
-
                 (errorMessage) => {}
-
             ).catch(err => console.error("Erro na câmera:", err));
-
         }
-
-
 
         function verificarEnterScanner(event) {
-
             if (event.key === 'Enter') { event.preventDefault(); buscarProduto(event.target.value); }
-
         }
-
-
 
         function verificarTamanhoScanner(valor) {
-
             if (valor.trim().length >= 13) { buscarProduto(valor.trim()); }
-
         }
-
-
 
         function avancarParaFormulario() {
-
             document.getElementById("etapaScanner").classList.add("hidden");
-
             document.getElementById("etapaFormulario").classList.remove("hidden");
-
         }
-
-
 
         function voltarParaScanner() {
-
             document.getElementById("etapaFormulario").classList.add("hidden");
-
             document.getElementById("etapaScanner").classList.remove("hidden");
-
             document.getElementById('campoCodigo').value = '';
-
             resetarCamposCadastro();
-
             emPausaLeitura = false;
-
         }
 
-
-
         function buscarProduto(codigo) {
-
-            codigo = codigo.trim();
-
+            codigo = code = codigo.trim();
             if (!codigo) { resetarCamposCadastro(); return; }
-
-
-
-            // Preenche o novo campo de exibição com o código coletado
 
             document.getElementById('txtCodigoExibicao').value = codigo;
 
-
-
             const prod = baseProdutos[codigo];
-
             const card = document.getElementById('cardCadastro');
-
             const statusTxt = document.getElementById('txtStatusCadastro');
 
-
-
             if (prod) {
-
                 produtoEncontrado = true;
-
                 card.className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
-
                 statusTxt.innerText = "Dados do Cadastro Localizado";
-
                 statusTxt.className = "text-xs font-bold text-blue-500 uppercase tracking-wider block";
 
-
-
                 document.getElementById('txtItemEDescricao').value = prod.item + (prod.descricao ? " - " + prod.descricao : "");
-
                 document.getElementById('txtFornecedor').value = prod.fornecedor + (prod.linha ? " - " + prod.linha : "");
-
                 document.getElementById('txtFamilia').value = prod.familia;
-
                 document.getElementById('txtCusto').value = prod.custo.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
                 
-
                 document.getElementById('txtItemEDescricao').dataset.itemBruto = prod.item;
-
                 document.getElementById('txtItemEDescricao').dataset.descricaoBruta = prod.descricao;
-
                 document.getElementById('txtItemEDescricao').dataset.fornecedorReal = prod.fornecedor;
-
                 document.getElementById('txtItemEDescricao').dataset.linhaReal = prod.linha;
-
                 
-
                 calcularTotalFinanceiro();
-
             } else {
-
                 produtoEncontrado = false;
-
                 card.className = "p-4 bg-red-50 rounded-xl border border-red-200 space-y-3";
-
                 statusTxt.innerText = "⚠️ ATENÇÃO: Produto não encontrado no cadastro!";
-
                 statusTxt.className = "text-xs font-bold text-red-600 uppercase tracking-wider block";
 
-
-
                 document.getElementById('txtItemEDescricao').value = "PRODUTO NÃO CADASTRADO";
-
                 document.getElementById('txtFornecedor').value = "-";
-
                 document.getElementById('txtFamilia').value = "-";
-
                 document.getElementById('txtCusto').value = "0,00";
-
                 document.getElementById('txtTotalFinanceiro').value = "0,00";
-
             }
-
-
 
             avancarParaFormulario();
-
         }
-
-
 
         function resetarCamposCadastro() {
-
             produtoEncontrado = false;
-
             document.getElementById('txtCodigoExibicao').value = '';
-
             document.getElementById('cardCadastro').className = "p-4 bg-blue-50 rounded-xl border border-blue-200 space-y-3";
-
             document.getElementById('txtStatusCadastro').innerText = "Dados do Cadastro Localizado";
-
             document.getElementById('txtItemEDescricao').value = '';
-
             document.getElementById('txtFornecedor').value = '';
-
             document.getElementById('txtFamilia').value = '';
-
             document.getElementById('txtCusto').value = '';
-
             document.getElementById('txtTotalFinanceiro').value = '';
-
         }
-
-
 
         function calcularTotalFinanceiro() {
-
             const custoTexto = document.getElementById('txtCusto').value;
-
             const qtd = parseInt(document.getElementById('campoQtd').value) || 0;
-
             if (custoTexto && produtoEncontrado) {
-
                 const custoNum = parseFloat(custoTexto.replace('.', '').replace(',', '.'));
-
                 document.getElementById('txtTotalFinanceiro').value = (custoNum * qtd).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-
             }
-
         }
 
-
-
         function salvarColeta() {
-
             const btn = document.getElementById('btnSalvar');
-
             const codigo = document.getElementById('campoCodigo').value.trim();
-
             const validadeInput = document.getElementById('campoValidade').value;
-
             const quantidade = parseInt(document.getElementById('campoQtd').value) || 0;
-
-
 
             if (!codigo || quantidade <= 0 || !validadeInput) { alert("Preencha todos os campos corretamente."); return; }
 
-
-
             const [ano, mes, dia] = validadeInput.split('-');
-
             const dataValidadeFormatada = `${dia}/${mes}/${ano}`;
 
-
-
             let payload = {
-
                 loja: lojaSessao, usuario: usuarioLogado, codigoBarras: codigo, validade: dataValidadeFormatada, quantidade: quantidade
-
             };
 
-
-
             if (produtoEncontrado) {
-
                 payload.item = document.getElementById('txtItemEDescricao').dataset.itemBruto || '';
-
                 payload.descricao = document.getElementById('txtItemEDescricao').dataset.descricaoBruta || '';
-
                 payload.fornecedor = document.getElementById('txtItemEDescricao').dataset.fornecedorReal || '';
-
                 payload.linha = document.getElementById('txtItemEDescricao').dataset.linhaReal || '';
-
                 payload.familia = document.getElementById('txtFamilia').value;
-
                 payload.totalPerda = document.getElementById('txtTotalFinanceiro').value;
-
             } else {
-
                 payload.item = "NÃO CADASTRADO"; payload.descricao = ""; payload.fornecedor = ""; payload.linha = ""; payload.familia = ""; payload.totalPerda = "0,00";
-
             }
 
-
-
             btn.disabled = true;
-
             btn.innerText = "⏳ Gravando na Planilha...";
 
-
-
             fetch(WEB_APP_URL, {
-
                 method: "POST", mode: "no-cors",
-
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-
                 body: new URLSearchParams(payload).toString()
-
             })
-
             .then(() => { 
-
                 alert(`✅ Gravado na filial: ${lojaSessao}!`); 
-
                 resetarFormulario(); 
-
             })
-
             .catch(err => { 
-
                 console.error(err); 
-
                 alert("❌ Erro de conexão."); 
-
             })
-
             .finally(() => { 
-
                 btn.disabled = false; 
-
                 btn.innerText = "💾 Salvar Coleta"; 
-
             });
-
         }
-
-
 
         function resetarFormulario() {
-
             document.getElementById('campoQtd').value = '1';
-
             document.getElementById('campoValidade').value = '';
-
             voltarParaScanner();
-
         }
-
     </script>
-
 </body>
-
-</html> 
-
+</html>
