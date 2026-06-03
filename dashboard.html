@@ -918,14 +918,17 @@
             texto += `--------------------------------------------------\n`;
             texto += `🚨 *ITENS EM DESTAQUE OPERACIONAL:*\n\n`;
 
-            dadosFinais.slice(0, 15).forEach((item, index) => {
-                texto += `*${index + 1}) Loja:* ${item.loja}\n`;
-                texto += `• *Item:* ${item.item}\n`;
-                texto += `• *EAN:* ${item.codigo}\n`;
-                texto += `• *Vencimento:* ${item.validadeTexto} (_${item.diasRestantes} dias rest._)\n`;
-                texto += `• *Qtd:* ${item.quantidade} un | *Perda:* ${formatarMoedaBrl(item.totalPerda)}\n`;
-                texto += `• *Ação:* _${item.statusAcao.toUpperCase()}_\n\n`;
-            });
+dadosFinais.slice(0, 15).forEach((item, index) => {
+    texto += `*${index + 1}) Loja:* ${item.loja}\n`;
+    texto += `• *Item:* ${item.item}\n`;
+    texto += `• *Descrição:* ${item.descricao || "Não informada"}\n`;
+    texto += `• *Fornecedor:* ${item.fornecedor || "Não informado"}\n`;
+    texto += `• *EAN:* ${item.codigo}\n`;
+    texto += `• *Vencimento:* ${item.validadeTexto} (_${item.diasRestantes} dias rest._)\n`;
+    texto += `• *Qtd:* ${item.quantidade} un\n`;
+    texto += `• *Perda:* ${formatarMoedaBrl(item.totalPerda)}\n`;
+    texto += `• *Ação:* _${item.statusAcao.toUpperCase()}_\n\n`;
+});
 
             if(dadosFinais.length > 15) {
                 texto += `... e mais *${dadosFinais.length - 15}* itens listados no painel completo.`;
