@@ -47,7 +47,7 @@
 
     <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
         
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Mapeado R$</span>
                 <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
@@ -80,6 +80,11 @@
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qtd Total Itens</span>
                 <span id="kpiUnidades" class="text-xl font-black text-purple-400 mt-2">0</span>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cód. Barras Únicos</span>
+                <span id="kpiBarrasUnicos" class="text-xl font-black text-purple-300 mt-2">0</span>
             </div>
 
             <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
@@ -239,10 +244,9 @@
         const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
 
         let dadosBrutos = [];
-        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
+        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null, cronogramaMesAno: null };
         let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
         
-        // Instâncias globais dos gráficos Chart.js
         let instanciasGraficos = { cronograma: null, lojas: null, fornecedores: null, linhas: null, familias: null };
 
         window.onload = function() {
@@ -474,9 +478,9 @@
             const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
             const opcoes = wrapper.querySelectorAll(".opcao-item");
             opcoes.forEach(opcao => {
-                const texto = opcao.getAttribute("data-valor");
+                const texto = opacity = opcao.getAttribute("data-valor");
                 if (texto.includes(busca)) opcao.classList.remove("hidden");
-                else classList.add("hidden");
+                else opcao.classList.add("hidden");
             });
         }
 
@@ -510,7 +514,7 @@
         }
 
         function limparTodosFiltros() {
-            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
+            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null, cronogramaMesAno: null };
             filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
             
             document.getElementById("filtroLojaSuperior").value = "";
@@ -528,19 +532,22 @@
 
         function filtrarDados() {
             return dadosBrutos.filter(item => {
-                // Filtros Superiores / Cards e Gráficos Interativos
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
                 if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
                 if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
                 if (filtrosAtivos.familiaGrafico && item.familia !== filtrosAtivos.familiaGrafico) return false;
                 
+                if (filtrosAtivos.cronogramaMesAno) {
+                    const chaveItem = `${item.mes}/${item.ano}`;
+                    if (chaveItem !== filtrosAtivos.cronogramaMesAno) return false;
+                }
+
                 if (filtrosAtivos.vencimento) {
                     if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
                     if (filtrosAtivos.vencimento === '3meses' && item.diasRestantes > 90) return false;
                     if (filtrosAtivos.vencimento === '6meses' && item.diasRestantes > 180) return false;
                 }
 
-                // Filtros das Colunas da Tabela Analítica
                 if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
                 if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
                 if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
@@ -555,22 +562,15 @@
 
         function renderizarDashboard() {
             const dadosFiltrados = filtrarDados();
-            
-            // Exibir/Ocultar botão de limpar filtros
             const temFiltroAtivo = Object.values(filtrosAtivos).some(v => v !== null) || Object.values(filtrosCabecalhoTabela).some(v => v !== "");
             document.getElementById("btnLimparFiltros").classList.toggle("hidden", !temFiltroAtivo);
 
-            // Atualizar KPIs
             atualizarKPIs(dadosFiltrados);
-
-            // Renderizar/Atualizar os 5 Gráficos Integrados
             renderizarGraficoCronograma(dadosFiltrados);
             renderizarGraficoLojas(dadosFiltrados);
             renderizarGraficoFornecedores(dadosFiltrados);
             renderizarGraficoLinhas(dadosFiltrados);
             renderizarGraficoFamilias(dadosFiltrados);
-
-            // Atualizar Tabela Analítica
             renderizarTabela(dadosFiltrados);
         }
 
@@ -581,11 +581,15 @@
             let total3MesesRs = 0;
             let total6MesesRs = 0;
             let lojasAtivas = new Set();
+            
+            // Lógica sem repetição para o contador de EAN único
+            let eanUnicos = new Set();
 
             dados.forEach(i => {
                 totalRs += i.totalPerda;
                 totalUnidades += i.quantidade;
                 lojasAtivas.add(i.loja);
+                if (i.codigo && i.codigo !== "S/C") eanUnicos.add(i.codigo.toString().trim());
 
                 if (i.diasRestantes <= 45) itensUrgentes++;
                 if (i.diasRestantes <= 90) total3MesesRs += i.totalPerda;
@@ -598,14 +602,16 @@
             document.getElementById("kpi6Meses").innerText = total6MesesRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById("kpiUnidades").innerText = totalUnidades.toLocaleString('pt-BR');
             document.getElementById("kpiLojas").innerText = lojasAtivas.size;
+            
+            // Insere a contagem única sem duplicados na UI
+            document.getElementById("kpiBarrasUnicos").innerText = eanUnicos.size.toLocaleString('pt-BR');
 
-            // Destaques nos cards se houver filtros de tempo ativos
             document.getElementById("cardUrgencia").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === 'urgencia' ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200`;
             document.getElementById("card3Meses").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === '3meses' ? 'border-amber-500 ring-1 ring-amber-500' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200`;
             document.getElementById("card6Meses").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === '6meses' ? 'border-orange-500 ring-1 ring-orange-500' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200`;
         }
 
-        // 1. CORREÇÃO DA LINHA DO TEMPO: Agrupamento Dinâmico Reativo por Mês/Ano
+        // LÓGICA E EVENTOS DE CLIQUE DA LINHA DO TEMPO CRONOGRAMA
         function renderizarGraficoCronograma(dados) {
             const agrupado = {};
             dados.forEach(i => {
@@ -632,7 +638,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Mapeamento Mês R$',
+                            label: 'Evolução Perda R$',
                             data: valores,
                             borderColor: '#3b82f6',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -641,24 +647,32 @@
                             borderWidth: 3
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        onClick: (e, elementos) => {
+                            if (elementos.length > 0) {
+                                const idx = elementos[0].index;
+                                const mesAnoClick = instanciasGraficos.cronograma.data.labels[idx];
+                                alternarFiltroCard('cronogramaMesAno', mesAnoClick);
+                            }
+                        },
+                        onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; }
+                    }
                 });
             }
         }
 
-        // 2. SOLUÇÃO COMPLETA: Ordenação Decrescente de Lojas (Maior R$ para Esquerda)
+        // LÓGICA DE ORDENAÇÃO DECOLUNAS E EVENTO DE CLIQUE POR FILIAL
         function renderizarGraficoLojas(dados) {
             const agrupado = {};
-            dados.forEach(i => {
-                agrupado[i.loja] = (agrupado[i.loja] || 0) + i.totalPerda;
-            });
+            dados.forEach(i => { agrupado[i.loja] = (agrupado[i.loja] || 0) + i.totalPerda; });
 
-            // Converte para array de objetos para possibilitar ordenação estável
             let listaOrdenada = Object.keys(agrupado).map(loja => {
                 return { nomeLoja: loja, totalPerda: agrupado[loja] };
             });
 
-            // Ordena em ordem decrescente (b - a)
+            // Ordenação decrescente solicitada pelo valor financeiro
             listaOrdenada.sort((a, b) => b.totalPerda - a.totalPerda);
 
             const labels = listaOrdenada.map(item => item.nomeLoja);
@@ -675,7 +689,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Mapeamento por Loja (R$)',
+                            label: 'Perda Estimada por Loja (R$)',
                             data: valores,
                             backgroundColor: '#10b981',
                             borderRadius: 6
@@ -684,18 +698,25 @@
                     options: { 
                         responsive: true, 
                         maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } }
+                        scales: { y: { beginAtZero: true } },
+                        onClick: (e, elementos) => {
+                            if (elementos.length > 0) {
+                                const idx = elementos[0].index;
+                                const lojaClick = instanciasGraficos.lojas.data.labels[idx];
+                                alternarFiltroCard('loja', lojaClick);
+                            }
+                        },
+                        onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; }
                     }
                 });
             }
         }
 
+        // INTERATIVIDADE NO GRÁFICO DE FORNECEDORES
         function renderizarGraficoFornecedores(dados) {
             const agrupado = {};
             dados.forEach(i => { agrupado[i.fornecedor] = (agrupado[i.fornecedor] || 0) + i.totalPerda; });
-            
             let lista = Object.keys(agrupado).map(f => ({ nome: f, valor: agrupado[f] })).sort((a,b) => b.valor - a.valor).slice(0, 7);
-            
             const labels = lista.map(i => i.nome);
             const valores = lista.map(i => i.valor);
 
@@ -723,18 +744,18 @@
                                 const fornClick = instanciasGraficos.fornecedores.data.labels[idx];
                                 alternarFiltroCard('fornecedor', fornClick);
                             }
-                        }
+                        },
+                        onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; }
                     }
                 });
             }
         }
 
+        // INTERATIVIDADE NO GRÁFICO DE LINHAS COMERCIAIS
         function renderizarGraficoLinhas(dados) {
             const agrupado = {};
             dados.forEach(i => { agrupado[i.linha] = (agrupado[i.linha] || 0) + i.totalPerda; });
-            
             let lista = Object.keys(agrupado).map(l => ({ nome: l, valor: agrupado[l] })).sort((a,b) => b.valor - a.valor).slice(0, 7);
-            
             const labels = lista.map(i => i.nome);
             const valores = lista.map(i => i.valor);
 
@@ -762,18 +783,18 @@
                                 const linhaClick = instanciasGraficos.linhas.data.labels[idx];
                                 alternarFiltroCard('linha', linhaClick);
                             }
-                        }
+                        },
+                        onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; }
                     }
                 });
             }
         }
 
+        // INTERATIVIDADE NO GRÁFICO DE FAMÍLIAS DE PRODUTO
         function renderizarGraficoFamilias(dados) {
             const agrupado = {};
             dados.forEach(i => { agrupado[i.familia] = (agrupado[i.familia] || 0) + i.totalPerda; });
-            
             let lista = Object.keys(agrupado).map(f => ({ nome: f, valor: agrupado[f] })).sort((a,b) => b.valor - a.valor).slice(0, 5);
-            
             const labels = lista.map(i => i.nome);
             const valores = lista.map(i => i.valor);
 
@@ -802,7 +823,8 @@
                                 const famClick = instanciasGraficos.familias.data.labels[idx];
                                 alternarFiltroCard('familiaGrafico', famClick);
                             }
-                        }
+                        },
+                        onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; }
                     }
                 });
             }
@@ -811,16 +833,13 @@
         function renderizarTabela(dados) {
             const tbody = document.getElementById("corpoTabelaPerdas");
             tbody.innerHTML = "";
-            
             document.getElementById("txtContagemLinhas").innerText = `${dados.length} registros exibidos`;
 
-            // Ordenação natural por criticidade de dias restantes (menor prazo primeiro)
             dados.sort((a, b) => a.diasRestantes - b.diasRestantes);
 
             dados.forEach(item => {
                 const tr = document.createElement("tr");
                 tr.className = "hover:bg-gray-700/40 border-b border-gray-800 transition text-gray-300";
-                
                 tr.innerHTML = `
                     <td class="p-3 font-semibold text-gray-200">${item.validadeTexto}</td>
                     <td class="p-3"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${item.classeBadge}">${item.statusAcao}</span></td>
@@ -837,10 +856,7 @@
 
         function exportarParaExcel() {
             const dadosFiltrados = filtrarDados();
-            if (dadosFiltrados.length === 0) {
-                alert("Nenhum dado disponível para exportar no filtro atual.");
-                return;
-            }
+            if (dadosFiltrados.length === 0) return alert("Nenhum dado disponível para exportar.");
 
             const matrizParaExcel = dadosFiltrados.map(i => ({
                 'Vencimento': i.validadeTexto,
@@ -859,31 +875,23 @@
             XLSX.writeFile(wb, "Relatorio_Validades_Dashboard.xlsx");
         }
 
-        // 3. SEGURANÇA E PROTEÇÃO CONTRA UNDEFINED NO BOTÃO WHATSAPP
         function enviarFiltroWhatsApp() {
             const dadosFiltrados = filtrarDados();
-            
-            // Separa os dados em arrays específicos garantindo a integridade
             const itensCriticos45 = dadosFiltrados.filter(i => i.diasRestantes <= 45);
             const itensAlerta90 = dadosFiltrados.filter(i => i.diasRestantes > 45 && i.diasRestantes <= 90);
 
-            // Executa a formatação protegida
             const stringMensagem = gerarTextoParaWhatsApp(itensCriticos45, itensAlerta90);
-            
-            // Link de envio do WhatsApp
             const urlWhats = `https://api.whatsapp.com/send?text=${encodeURIComponent(stringMensagem)}`;
             window.open(urlWhats, '_blank');
         }
 
         function gerarTextoParaWhatsApp(itensCriticos45 = [], itensAlerta90 = []) {
-            // Garante instâncias de arrays se caírem como nulos/undefined por chamadas externas
             itensCriticos45 = itensCriticos45 || [];
             itensAlerta90 = itensAlerta90 || [];
 
             let texto = "*🚨 ALERTA DE VALIDADES – CONSOLIDADO DIÁRIO*\n\n" +
                         "Prezados, bom dia.\n\n" +
-                        "Segue abaixo a relação dos itens identificados pelas lojas com vencimento nos próximos 3 meses, " +
-                        "incluindo destaque para os produtos mais críticos, com vencimento em até 45 dias.\n\n" +
+                        "Segue abaixo a relação dos itens identificados pelas lojas com vencimento nos próximos 3 meses, com destaque para os produtos mais críticos (vencimento em até 45 dias).\n\n" +
                         "----------------------------------------\n\n" +
                         "*⚠️ URGÊNCIA (≤ 45 DIAS) – CRÍTICO*\n";
                         
@@ -891,12 +899,7 @@
                 texto += "_Nenhum item nesta faixa._\n";
             } else {
                 itensCriticos45.forEach(item => {
-                    let loja = item.loja || "Não Identificada";
-                    let desc = item.item || "Sem Descrição";
-                    let cod = item.codigo || "S/C";
-                    let data = item.validadeTexto || "Vazio";
-                    let qtd = item.quantidade || 0;
-                    texto += `• *${loja}* - ${desc} (${cod}) | Venc: *${data}* | Qtd: ${qtd}\n`;
+                    texto += `• *${item.loja || "N/I"}* - ${item.item || "S/D"} (\`${item.codigo || "S/C"}\`) | Venc: *${item.validadeTexto || "Vazio"}* | Qtd: ${item.quantidade || 0}\n`;
                 });
             }
 
@@ -906,12 +909,7 @@
                 texto += "_Nenhum item nesta faixa._\n";
             } else {
                 itensAlerta90.forEach(item => {
-                    let loja = item.loja || "Não Identificada";
-                    let desc = item.item || "Sem Descrição";
-                    let cod = item.codigo || "S/C";
-                    let data = item.validadeTexto || "Vazio";
-                    let qtd = item.quantidade || 0;
-                    texto += `• *${loja}* - ${desc} (${cod}) | Venc: *${data}* | Qtd: ${qtd}\n`;
+                    texto += `• *${item.loja || "N/I"}* - ${item.item || "S/D"} (\`${item.codigo || "S/C"}\`) | Venc: *${item.validadeTexto || "Vazio"}* | Qtd: ${item.quantidade || 0}\n`;
                 });
             }
 
