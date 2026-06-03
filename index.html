@@ -41,7 +41,10 @@
                 <h1 class="text-xl font-bold">Coletor de Validades</h1>
                 <p class="text-xs text-blue-100 mt-1">Sessão ativa: <span id="txtLojaAtiva" class="font-bold underline"></span> | Operador: <span id="txtOperadorAtivo" class="font-bold"></span></p>
             </div>
-            <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
+            <div class="flex space-x-2">
+                <button onclick="window.location.href='dashboard.html'" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-semibold transition">Ver Dashboard</button>
+                <button onclick="efetuarLogout()" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded-lg text-xs font-semibold transition">🚪 Sair</button>
+            </div>
         </div>
 
         <div class="p-6 space-y-4">
@@ -121,8 +124,20 @@
         let produtoEncontrado = false;
         let emPausaLeitura = false;
 
+        // Executado ao abrir a página
         window.onload = function() {
             carregarCredenciaisDaNuvem();
+            
+            // VERIFICAÇÃO AUTOMÁTICA DE SESSÃO JÁ EXISTENTE
+            const lojaSalva = localStorage.getItem("coletor_loja");
+            const usuarioSalvo = localStorage.getItem("coletor_usuario");
+            
+            if (lojaSalva && usuarioSalvo) {
+                // Se já existe login salvo, pula a tela de login após carregar a base
+                setTimeout(() => {
+                    logarSucesso(lojaSalva, usuarioSalvo, true); // true indica que veio do cache
+                }, 500); 
+            }
         };
 
         function carregarCredenciaisDaNuvem() {
@@ -195,9 +210,14 @@
             }
         }
 
-        function logarSucesso(loja, usuario) {
+        // Atualizado com salvamento em cache (localStorage)
+        function logarSucesso(loja, usuario, veioDoCache = false) {
             usuarioLogado = usuario;
             lojaSessao = loja;
+
+            // Salva no navegador para não perder ao recarregar ou navegar
+            localStorage.setItem("coletor_loja", loja);
+            localStorage.setItem("coletor_usuario", usuario);
 
             document.getElementById("txtLojaAtiva").innerText = lojaSessao;
             document.getElementById("txtOperadorAtivo").innerText = usuarioLogado;
@@ -208,6 +228,13 @@
             
             inicializarBaseCadastro();
             ligarCameraAutomatica();
+        }
+
+        // Nova função para caso o operador precise deslogar manualmente
+        function efetuarLogout() {
+            localStorage.removeItem("coletor_loja");
+            localStorage.removeItem("coletor_usuario");
+            window.location.reload(); // Recarrega a página de volta na tela de login
         }
 
         function inicializarBaseCadastro() {
@@ -228,7 +255,7 @@
 
                     for (let i = 1; i < linhas.length; i++) {
                         if (!linhas[i].trim()) continue;
-                        const colunas = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                         
                         let codigo = colunas[idxCod];
                         if (codigo) {
@@ -248,11 +275,10 @@
                 .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
 
-        // --- ALTERADO: AJUSTE DE ESTABILIDADE DO SCANNER ---
         function ligarCameraAutomatica() {
             html5QrCodeScanner = new Html5Qrcode("reader");
             const config = { 
-                fps: 9, // Reduzido de 20 para 9: evita leituras afobadas e dá tempo para o foco da câmera agir
+                fps: 9, 
                 qrbox: (width, height) => { return { width: width * 0.85, height: height * 0.45 }; },
                 formatsToSupport: [ 
                     Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, 
@@ -267,7 +293,6 @@
 
                     const codigoLimpo = decodedText.trim();
 
-                    // Trava de tamanho mínimo: rejeita leituras parciais de códigos de barras (EAN-8 / EAN-13 / CODE-128)
                     if (codigoLimpo.length < 7) {
                         console.warn("Leitura ignorada (muito curta/cortada):", codigoLimpo);
                         return;
@@ -277,7 +302,6 @@
                     document.getElementById('campoCodigo').value = codigoLimpo;
                     buscarProduto(codigoLimpo);
                     
-                    // Mantém a pausa de 2 segundos para o operador afastar o produto lido da câmera
                     setTimeout(() => { emPausaLeitura = false; }, 2000);
                 },
                 (errorMessage) => {}
