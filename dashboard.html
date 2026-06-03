@@ -53,7 +53,7 @@
                 <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
             </div>
             
-            <div onclick="alternarFiltroCard('urgencia')" id="cardUrgencia" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200">
+            <div onclick="alternarFiltroCard('vencimento', 'urgencia')" id="cardUrgencia" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200">
                 <div class="flex justify-between items-start">
                     <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência ≤ 45d </span>
                     <span id="dotUrg" class="h-2 w-2 rounded-full bg-transparent"></span>
@@ -61,7 +61,7 @@
                 <span id="kpiUrgencia" class="text-xl font-black text-red-400 mt-2">0 itens</span>
             </div>
 
-            <div onclick="alternarFiltroCard('3meses')" id="card3Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200">
+            <div onclick="alternarFiltroCard('vencimento', '3meses')" id="card3Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200">
                 <div class="flex justify-between items-start">
                     <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">⚠️ Tratar >45 e ≤ 90d </span>
                     <span id="dot3m" class="h-2 w-2 rounded-full bg-transparent"></span>
@@ -69,7 +69,7 @@
                 <span id="kpi3Meses" class="text-xl font-black text-amber-300 mt-2">R$ 0,00</span>
             </div>
 
-            <div onclick="alternarFiltroCard('6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
+            <div onclick="alternarFiltroCard('vencimento', '6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
                 <div class="flex justify-between items-start">
                     <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">📅 Acomp >90 e ≤ 180d </span>
                     <span id="dot6m" class="h-2 w-2 rounded-full bg-transparent"></span>
@@ -142,7 +142,7 @@
                     <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold whitespace-nowrap"></span>
                 </div>
             </div>
-            <div class="overflow-x-auto max-h-[550px] overflow-y-auto custom-scroll">
+            <div class="overflow-x-auto max-h-[550px] overflow-y-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-gray-900 text-gray-400 font-bold border-b border-gray-700">
@@ -172,13 +172,13 @@
                                 </div>
                             </th>
                             <th class="p-2">
-                                <select id="thFiltroStatus" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
-                                    <option value="">Todos os Status</option>
-                                    <option value="Tratar item com Urgência">🚨 Urgência (≤ 45d)</option>
-                                    <option value="Tratar item">⚠️ Tratar (>45 & ≤ 90d)</option>
-                                    <option value="Acompanhar Tratativas">📅 Acompanhar (> 90 & ≤ 180d)</option>
-                                    <option value="Item Mapeado">🔍 Mapeado (&gt; 180d)</option>
-                                </select>
+<select id="thFiltroStatus" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
+    <option value="">Todos os Status</option>
+    <option value="Tratar item com Urgência">🚨 Urgência (≤ 45d)</option>
+    <option value="Tratar item">⚠️ Tratar (>45 & ≤ 90d)</option>
+    <option value="Acompanhar Tratativas">📅 Acompanhar (> 90 & ≤ 180d)</option>
+    <option value="Item Mapeado">🔍 Mapeado (&gt; 180d)</option>
+</select>
                             </th>
                             <th class="p-2 relative">
                                 <div id="dropdown-loja" class="relative target-dropdown">
@@ -249,9 +249,10 @@
         const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
 
         let dadosBrutos = [];
-        let filtrosAtivos = { cardUrgencia: null, lojaSuperior: "" };
+        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, cronogramaMesAno: null };
         let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", linha: "", fornecedor: "" };
-        let instanciasGraficos = { cronograma: null, lojas: null, fornecedores: null, linhas: null };
+        
+        let instanciasGraficos = { cronograma: null, lojas: null, fornecedores: null, lines: null };
 
         window.onload = function() {
             carregarDadosDaPlanilha();
@@ -260,6 +261,7 @@
                     fecharTodosDropdownisCustomizados();
                 }
             });
+            document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
         };
 
         function carregarDadosDaPlanilha() {
@@ -289,7 +291,7 @@
             document.getElementById("loaderIcon").classList.add("hidden");
             const txtErro = document.getElementById("loaderTexto");
             txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
-            txtErro.innerText = mensagem;
+            txtErro.innerText = message;
         }
 
         function tratarNumeroBrasil(texto) {
@@ -369,24 +371,19 @@
                     
                     let statusAcao = "";
                     let classeBadge = "";
-                    let cardGrupo = "";
                     
                     if (diasRestantes <= 45) {
                         statusAcao = "Tratar item com Urgência";
                         classeBadge = "bg-red-500/20 text-red-400 border border-red-500/30";
-                        cardGrupo = "urgencia";
                     } else if (diasRestantes <= 90) {
                         statusAcao = "Tratar item";
                         classeBadge = "bg-orange-500/20 text-orange-400 border border-orange-500/30";
-                        cardGrupo = "3meses";
                     } else if (diasRestantes <= 180) {
                         statusAcao = "Acompanhar Tratativas";
                         classeBadge = "bg-blue-500/20 text-blue-400 border border-blue-500/30";
-                        cardGrupo = "6meses";
                     } else {
                         statusAcao = "Item Mapeado";
                         classeBadge = "bg-gray-700/50 text-gray-400 border border-gray-600/30";
-                        cardGrupo = "mapeado";
                     }
 
                     dadosBrutos.push({
@@ -405,8 +402,7 @@
                         totalPerda: perdaNum,
                         diasRestantes: diasRestantes,
                         statusAcao: statusAcao,
-                        classeBadge: classeBadge,
-                        cardGrupo: cardGrupo
+                        classeBadge: classeBadge
                     });
                 }
             }
@@ -461,7 +457,7 @@
                 const divOpt = document.createElement("div");
                 divOpt.className = "opcao-item px-2 py-1.5 hover:bg-blue-600 rounded cursor-pointer text-gray-200 transition truncate";
                 divOpt.innerText = valor; divOpt.setAttribute("data-valor", valor.toLowerCase());
-                divOpt.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, valor, valor, chaveFiltro);
+                divOpt.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, valor.toLowerCase(), valor, chaveFiltro);
                 wrapper.appendChild(divOpt);
             });
         }
@@ -489,47 +485,57 @@
             const busca = input.value.toLowerCase().trim();
             const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
             const opcoes = wrapper.querySelectorAll(".opcao-item");
-            opcoes.forEach(opt => {
-                const txt = opt.getAttribute("data-valor");
-                if (txt.includes(busca)) {
-                    opt.classList.remove("hidden");
-                } else {
-                    opt.classList.add("hidden");
-                }
+            opcoes.forEach(opcao => {
+                const texto = opcao.getAttribute("data-valor");
+                if (texto.includes(busca)) opcao.classList.remove("hidden");
+                else opcao.classList.add("hidden");
             });
         }
 
-        function selecionarOpcaoDropdownCustom(idDropdown, valor, label, chaveFiltro) {
+        function selecionarOpcaoDropdownCustom(idDropdown, valorArmazenar, textoExibir, chaveFiltro) {
             const container = document.getElementById(idDropdown);
-            container.querySelector(".label").innerText = label;
-            filtrosCabecalhoTabela[chaveFiltro] = valor;
+            container.querySelector(".label").innerText = textoExibir;
+            filtrosCabecalhoTabela[chaveFiltro] = valorArmazenar;
             fecharTodosDropdownisCustomizados();
             renderizarDashboard();
         }
 
-        function alterarFiltroLojaSuperior(valor) {
-            filtrosAtivos.lojaSuperior = valor;
-            verificarVisibilidadeBotaoLimpar();
+        function alterarFiltroLojaSuperior(lojaSelecionada) {
+            filtrosAtivos.loja = lojaSelecionada ? lojaSelecionada : null;
             renderizarDashboard();
         }
 
-        function alternarFiltroCard(grupo) {
-            if (filtrosAtivos.cardUrgencia === grupo) {
-                filtrosAtivos.cardUrgencia = null;
+        function alternarFiltroCard(tipo, valor) {
+            if (filtrosAtivos.vencimento === valor) {
+                filtrosAtivos.vencimento = null;
             } else {
-                filtrosAtivos.cardUrgencia = grupo;
+                filtrosAtivos.vencimento = valor;
             }
+            renderizarDashboard();
+        }
+
+        function limparTodosFiltros() {
+            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, cronogramaMesAno: null };
+            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", linha: "", fornecedor: "" };
             
-            ["cardUrgencia", "card3Meses", "card6Meses"].forEach(id => {
-                document.getElementById(id).classList.remove("border-blue-500", "ring-2", "ring-blue-500/20");
+            document.getElementById("filtroLojaSuperior").value = "";
+            document.getElementById("thFiltroMes").value = "";
+            document.getElementById("thFiltroAno").value = "";
+            document.getElementById("thFiltroStatus").value = "";
+            
+            const dropdowns = [
+                { id: "dropdown-loja", label: "Selecione..." },
+                { id: "dropdown-codigo", label: "Selecione..." },
+                { id: "dropdown-item", label: "Todos os Itens" },
+                { id: "dropdown-linha-topo", label: "Selecione..." },
+                { id: "dropdown-forn-topo", label: "Selecione..." }
+            ];
+
+            dropdowns.forEach(d => {
+                const el = document.getElementById(d.id);
+                if (el) el.querySelector(".label").innerText = d.label;
             });
 
-            if (filtrosAtivos.cardUrgencia) {
-                let idCard = grupo === "urgencia" ? "cardUrgencia" : grupo === "3meses" ? "card3Meses" : "card6Meses";
-                document.getElementById(idCard).classList.add("border-blue-500", "ring-2", "ring-blue-500/20");
-            }
-
-            verificarVisibilidadeBotaoLimpar();
             renderizarDashboard();
         }
 
@@ -537,223 +543,356 @@
             filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
             filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
             filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
-            verificarVisibilidadeBotaoLimpar();
             renderizarDashboard();
         }
 
-        function verificarVisibilidadeBotaoLimpar() {
-            const temFiltroAtivo = filtrosAtivos.lojaSuperior !== "" || 
-                                   filtrosAtivos.cardUrgencia !== null ||
-                                   Object.values(filtrosCabecalhoTabela).some(v => v !== "");
-            
-            const btn = document.getElementById("btnLimparFiltros");
-            if (temFiltroAtivo) {
-                btn.classList.remove("hidden");
-            } else {
-                btn.classList.add("hidden");
-            }
-        }
-
-        function limparTodosFiltros() {
-            filtrosAtivos.lojaSuperior = "";
-            filtrosAtivos.cardUrgencia = null;
-            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", linha: "", fornecedor: "" };
-
-            document.getElementById("filtroLojaSuperior").value = "";
-            document.getElementById("thFiltroMes").value = "";
-            document.getElementById("thFiltroAno").value = "";
-            document.getElementById("thFiltroStatus").value = "";
-
-            document.getElementById("dropdown-loja").querySelector(".label").innerText = "Selecione...";
-            document.getElementById("dropdown-codigo").querySelector(".label").innerText = "Selecione...";
-            document.getElementById("dropdown-item").querySelector(".label").innerText = "Todos os Itens";
-            document.getElementById("dropdown-linha-topo").querySelector(".label").innerText = "Selecione...";
-            document.getElementById("dropdown-forn-topo").querySelector(".label").innerText = "Selecione...";
-
-            ["cardUrgencia", "card3Meses", "card6Meses"].forEach(id => {
-                document.getElementById(id).classList.remove("border-blue-500", "ring-2", "ring-blue-500/20");
-            });
-
-            verificarVisibilidadeBotaoLimpar();
-            renderizarDashboard();
-        }
-
-        function filtrarDados() {
+        function obterDadosFiltrados() {
             return dadosBrutos.filter(item => {
-                if (filtrosAtivos.lojaSuperior && item.loja !== filtrosAtivos.lojaSuperior) return false;
-                if (filtrosAtivos.cardUrgencia && item.cardGrupo !== filtrosAtivos.cardUrgencia) return false;
+                if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
+                
+                if (filtrosAtivos.vencimento) {
+                    if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
+                    if (filtrosAtivos.vencimento === '3meses' && item.diasRestantes > 90) return false;
+                    if (filtrosAtivos.vencimento === '6meses' && item.diasRestantes > 180) return false;
+                }
+
+                if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
+                if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
+
+                if (filtrosAtivos.cronogramaMesAno) {
+                    const mesAnoItem = `${item.mes}/${item.ano}`;
+                    if (mesAnoItem !== filtrosAtivos.cronogramaMesAno) return false;
+                }
+
                 if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
                 if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
                 if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && item.linha !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && item.fornecedor !== filtrosCabecalhoTabela.fornecedor) return false;
+                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
+                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
+                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
+                if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
+                if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
+
                 return true;
             });
         }
 
         function renderizarDashboard() {
-            const dadosFiltrados = filtrarDados();
+            const dadosFiltrados = obterDadosFiltrados();
+            
+            let temFiltroVerdadeiro = filtrosAtivos.loja || filtrosAtivos.vencimento || filtrosAtivos.fornecedor || 
+                                     filtrosAtivos.linha || filtrosAtivos.cronogramaMesAno || filtrosCabecalhoTabela.mes || 
+                                     filtrosCabecalhoTabela.ano || filtrosCabecalhoTabela.status || filtrosCabecalhoTabela.loja || 
+                                     filtrosCabecalhoTabela.codigo || filtrosCabecalhoTabela.item || filtrosCabecalhoTabela.linha || 
+                                     filtrosCabecalhoTabela.fornecedor;
 
-            // Calcular KPIs Gerais Baseado nos Filtros Atuais
-            let totalRs = 0, qtdUrgencia = 0, total3m = 0, total6m = 0, qtdTotalItens = 0;
-            let barrasUnicos = new Set(), lojasAtivas = new Set();
+            const btnLimpar = document.getElementById("btnLimparFiltros");
+            if (temFiltroVerdadeiro) btnLimpar.classList.remove("hidden");
+            else btnLimpar.classList.add("hidden");
 
-            dadosFiltrados.forEach(i => {
-                totalRs += i.totalPerda;
-                qtdTotalItens += i.quantidade;
-                barrasUnicos.add(i.codigo);
-                lojasAtivas.add(i.loja);
-
-                if (i.cardGrupo === "urgencia") qtdUrgencia++;
-                if (i.cardGrupo === "3meses") total3m += i.totalPerda;
-                if (i.cardGrupo === "6meses") total6m += i.totalPerda;
-            });
-
-            // Atualizar os KPIs na tela
-            document.getElementById("kpiTotalRs").innerText = totalRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiUrgencia").innerText = `${qtdUrgencia} itens`;
-            document.getElementById("kpi3Meses").innerText = total3m.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpi6Meses").innerText = total6m.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiBarrasUnicos").innerText = barrasUnicos.size;
-            document.getElementById("kpiUnidades").innerText = qtdTotalItens;
-            document.getElementById("kpiLojas").innerText = lojasAtivas.size;
-
-            document.getElementById("txtContagemLinhas").innerText = `${dadosFiltrados.length} registros listados`;
-
-            // Renderizar Componentes Visuais
-            alimentarTabela(dadosFiltrados);
-            construirGraficos(dadosFiltrados);
+            atualizarKPIs(dadosFiltrados);
+            atualizarTabela(dadosFiltrados);
+            
+            atualizarGraficoCronograma(dadosFiltrados);
+            atualizarGraficoLojas(dadosFiltrados);
+            atualizarGraficoFornecedores(dadosFiltrados);
+            atualizarGraficoLinhas(dadosFiltrados);
         }
 
-        function alimentarTabela(dados) {
+        function atualizarKPIs(dados) {
+            let totalRs = 0;
+            let totalUrgenciaItens = 0;
+            let total3MesesRs = 0;
+            let total6MesesRs = 0;
+            let totalUnidades = 0;
+            let barrasUnicosSet = new Set();
+            let lojasAtivasSet = new Set();
+
+            dados.forEach(i => {
+                totalRs += i.totalPerda;
+                totalUnidades += i.quantidade;
+                if (i.codigo && i.codigo !== "S/C") barrasUnicosSet.add(i.codigo);
+                if (i.loja) lojasAtivasSet.add(i.loja);
+
+                if (i.diasRestantes <= 45) totalUrgenciaItens++;
+                if (i.diasRestantes <= 90) total3MesesRs += i.totalPerda;
+                if (i.diasRestantes <= 180) total6MesesRs += i.totalPerda;
+            });
+
+            document.getElementById("kpiTotalRs").innerText = totalRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpiUrgencia").innerText = `${totalUrgenciaItens} itens`;
+            document.getElementById("kpi3Meses").innerText = total3MesesRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpi6Meses").innerText = total6MesesRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpiBarrasUnicos").innerText = barrasUnicosSet.size;
+            document.getElementById("kpiUnidades").innerText = totalUnidades.toLocaleString('pt-BR');
+            document.getElementById("kpiLojas").innerText = lojasAtivasSet.size;
+
+            ajustarBordasDestaqueCards();
+        }
+
+        function ajustarBordasDestaqueCards() {
+            const resetCard = (id, cor) => {
+                const el = document.getElementById(id);
+                el.className = el.className.replace(/border-red-500|border-amber-500|border-orange-500/g, 'border-gray-700');
+                const dot = el.querySelector("span[id^='dot']");
+                dot.className = "h-2 w-2 rounded-full bg-transparent";
+            };
+
+            resetCard("cardUrgencia"); resetCard("card3Meses"); resetCard("card6Meses");
+
+            if (filtrosAtivos.vencimento === 'urgencia') {
+                document.getElementById("cardUrgencia").classList.replace("border-gray-700", "border-red-500");
+                document.getElementById("dotUrg").className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
+            } else if (filtrosAtivos.vencimento === '3meses') {
+                document.getElementById("card3Meses").classList.replace("border-gray-700", "border-amber-500");
+                document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-amber-500 animate-pulse";
+            } else if (filtrosAtivos.vencimento === '6meses') {
+                document.getElementById("card6Meses").classList.replace("border-gray-700", "border-orange-500");
+                document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-orange-500 animate-pulse";
+            }
+        }
+
+        function atualizarTabela(dados) {
             const tbody = document.getElementById("corpoTabelaPerdas");
             tbody.innerHTML = "";
 
+            // Organizar os dados por vencimento crescente (Mais próximo primeiro)
+            dados.sort((a, b) => {
+                if (!a.validade) return 1;
+                if (!b.validade) return -1;
+                return a.validade - b.validade;
+            });
+
+            document.getElementById("txtContagemLinhas").innerText = `${dados.length} Linhas Mapeadas`;
+
             if (dados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-500 font-medium bg-gray-800/30">Nenhum registro encontrado para os filtros atuais.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-500 italic font-medium bg-gray-800/20">Nenhum registro encontrado para a combinação de filtros aplicada.</td></tr>`;
                 return;
             }
 
             dados.forEach(item => {
                 const tr = document.createElement("tr");
-                tr.className = "hover:bg-gray-700/30 transition text-gray-300 border-b border-gray-800/60";
+                tr.className = "hover:bg-gray-700/40 transition border-b border-gray-800 text-gray-300";
+                
                 tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-400">${item.validadeTexto}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.classeBadge}">${item.statusAcao}</span></td>
-                    <td class="p-3 truncate max-w-[120px]" title="${item.loja}">${item.loja}</td>
-                    <td class="p-3 font-mono text-gray-400">${item.codigo}</td>
-                    <td class="p-3 font-medium text-gray-100 truncate max-w-[200px]" title="${item.item} - ${item.descricao}">${item.item}</td>
+                    <td class="p-3 font-semibold text-gray-200">${item.validadeTexto}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 text-[10px] font-bold rounded-md ${item.classeBadge}">${item.statusAcao}</span></td>
+                    <td class="p-3 font-medium text-gray-400">${item.loja}</td>
+                    <td class="p-3 text-gray-400 font-mono">${item.codigo}</td>
+                    <td class="p-3">
+                        <div class="font-bold text-gray-200">${item.item}</div>
+                        ${item.descricao ? `<div class="text-[10px] text-gray-500 truncate max-w-xs">${item.descricao}</div>` : ''}
+                    </td>
                     <td class="p-3 text-gray-400 truncate max-w-[120px]">${item.linha}</td>
-                    <td class="p-3 text-gray-400 truncate max-w-[140px]" title="${item.fornecedor}">${item.fornecedor}</td>
-                    <td class="p-3 text-center font-bold">${item.quantidade}</td>
-                    <td class="p-3 text-right font-bold text-emerald-400">${item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td class="p-3 text-gray-400 truncate max-w-[150px]">${item.fornecedor}</td>
+                    <td class="p-3 text-center font-bold text-blue-300">${item.quantidade}</td>
+                    <td class="p-3 text-right font-black text-emerald-400">${item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function construirGraficos(dados) {
-            // Destruir gráficos antigos para reconstrução limpa
-            Object.keys(instanciasGraficos).forEach(k => {
-                if (instanciasGraficos[k]) instanciasGraficos[k].destroy();
-            });
-
-            const configPadrao = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } },
-                    y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } }
-                }
-            };
-
-            // 1. Linha do Tempo (Agrupado por Mês/Ano)
-            let cronoMap = {};
+        function atualizarGraficoCronograma(dados) {
+            let agrupa = {};
             dados.forEach(i => {
-                if(i.mes && i.ano) {
-                    let chave = `${i.mes}/${i.ano}`;
-                    cronoMap[chave] = (cronoMap[chave] || 0) + i.totalPerda;
+                if(!i.mes || !i.ano) return;
+                let chave = `${i.mes}/${i.ano}`;
+                agrupa[chave] = (agrupa[chave] || 0) + i.totalPerda;
+            });
+
+            let labelsord = Object.keys(agrupa).sort((a,b) => {
+                let pa = a.split("/"), pb = b.split("/");
+                return new Date(pa[1], pa[0]-1) - new Date(pb[1], pb[0]-1);
+            });
+            let valores = labelsord.map(l => agrupa[l]);
+
+            if (instanciasGraficos.cronograma) instanciasGraficos.cronograma.destroy();
+
+            const ctx = document.getElementById("chartCronograma").getContext("2d");
+            instanciasGraficos.cronograma = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labelsord,
+                    datasets: [{
+                        label: 'Total Perda',
+                        data: valores,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#60a5fa',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
+                    },
+                    onClick: (e, elementos) => {
+                        if (elementos.length > 0) {
+                            const idx = elementos[0].index;
+                            const mesAno = labelsord[idx];
+                            filtrosAtivos.cronogramaMesAno = (filtrosAtivos.cronogramaMesAno === mesAno) ? null : mesAno;
+                            renderizarDashboard();
+                        }
+                    }
                 }
             });
-            let labelCrono = Object.keys(cronoMap).sort();
-            let valCrono = labelCrono.map(l => cronoMap[l]);
+        }
 
-            instanciasGraficos.cronograma = new Chart(document.getElementById("chartCronograma"), {
-                type: 'line',
-                data: { labels: labelCrono, datasets: [{ data: valCrono, borderColor: '#60a5fa', backgroundColor: 'rgba(96, 165, 250, 0.1)', fill: true, tension: 0.3 }] },
-                options: configPadrao
-            });
+        function atualizarGraficoLojas(dados) {
+            let agrupa = {};
+            dados.forEach(i => { agrupa[i.loja] = (agrupa[i.loja] || 0) + i.totalPerda; });
 
-            // 2. Gráfico Lojas
-            let lojaMap = {};
-            dados.forEach(i => lojaMap[i.loja] = (lojaMap[i.loja] || 0) + i.totalPerda);
-            let labelLoja = Object.keys(lojaMap);
-            let valLoja = labelLoja.map(l => lojaMap[l]);
+            let ordenado = Object.entries(agrupa).sort((a,b) => b[1] - a[1]);
+            let labels = ordenado.map(x => x[0]);
+            let valores = ordenado.map(x => x[1]);
 
-            instanciasGraficos.lojas = new Chart(document.getElementById("chartLojas"), {
+            if (instanciasGraficos.lojas) instanciasGraficos.lojas.destroy();
+
+            const ctx = document.getElementById("chartLojas").getContext("2d");
+            instanciasGraficos.lojas = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: labelLoja, datasets: [{ data: valLoja, backgroundColor: '#34d399', borderRadius: 6 }] },
-                options: configPadrao
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: valores,
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
+                    }
+                }
             });
+        }
 
-            // 3. Fornecedores Top 5
-            let fornMap = {};
-            dados.forEach(i => fornMap[i.fornecedor] = (fornMap[i.fornecedor] || 0) + i.totalPerda);
-            let topForn = Object.entries(fornMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
+        function atualizarGraficoFornecedores(dados) {
+            let agrupa = {};
+            dados.forEach(i => { agrupa[i.fornecedor] = (agrupa[i.fornecedor] || 0) + i.totalPerda; });
 
-            instanciasGraficos.fornecedores = new Chart(document.getElementById("chartFornecedores"), {
-                type: 'bar',
-                data: { labels: topForn.map(f => f[0]), datasets: [{ data: topForn.map(f => f[1]), backgroundColor: '#f43f5e', borderRadius: 4 }] },
-                options: { ...configPadrao, indexAxis: 'y' }
+            let ordenado = Object.entries(agrupa).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            let labels = ordenado.map(x => x[0]);
+            let valores = ordenado.map(x => x[1]);
+
+            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `filtrado: ${filtrosAtivos.fornecedor}` : "top 5 relevância";
+
+            if (instanciasGraficos.fornecedores) instanciasGraficos.fornecedores.destroy();
+
+            const ctx = document.getElementById("chartFornecedores").getContext("2d");
+            instanciasGraficos.fornecedores = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: valores,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 9 }, boxWidth: 10 } } },
+                    onClick: (e, elementos) => {
+                        if (elementos.length > 0) {
+                            const idx = elementos[0].index;
+                            const forn = labels[idx];
+                            filtrosAtivos.fornecedor = (filtrosAtivos.fornecedor === forn) ? null : forn;
+                            renderizarDashboard();
+                        }
+                    }
+                }
             });
+        }
 
-            // 4. Linhas Top 5
-            let linhaMap = {};
-            dados.forEach(i => linhaMap[i.linha] = (linhaMap[i.linha] || 0) + i.totalPerda);
-            let topLinhas = Object.entries(linhaMap).sort((a,b) => b[1] - a[1]).slice(0, 5);
+        function atualizarGraficoLinhas(dados) {
+            let agrupa = {};
+            dados.forEach(i => { agrupa[i.linha] = (agrupa[i.linha] || 0) + i.totalPerda; });
 
-            instanciasGraficos.linhas = new Chart(document.getElementById("chartLinhas"), {
-                type: 'bar',
-                data: { labels: topLinhas.map(l => l[0]), datasets: [{ data: topLinhas.map(l => l[1]), backgroundColor: '#fbbf24', borderRadius: 4 }] },
-                options: { ...configPadrao, indexAxis: 'y' }
+            let ordenado = Object.entries(agrupa).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            let labels = ordenado.map(x => x[0]);
+            let valores = ordenado.map(x => x[1]);
+
+            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `filtrado: ${filtrosAtivos.linha}` : "top 5 relevância";
+
+            if (instanciasGraficos.lines) instanciasGraficos.lines.destroy();
+
+            const ctx = document.getElementById("chartLinhas").getContext("2d");
+            instanciasGraficos.lines = new Chart(ctx, {
+                type: 'polarArea',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: valores,
+                        backgroundColor: ['rgba(16, 185, 129, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(139, 92, 246, 0.7)', 'rgba(239, 68, 68, 0.7)'],
+                        borderColor: '#1f2937'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { r: { grid: { color: '#374151' }, ticks: { display: false } } },
+                    plugins: { legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 9 }, boxWidth: 10 } } },
+                    onClick: (e, elementos) => {
+                        if (elementos.length > 0) {
+                            const idx = elementos[0].index;
+                            const lnh = labels[idx];
+                            filtrosAtivos.linha = (filtrosAtivos.linha === lnh) ? null : lnh;
+                            renderizarDashboard();
+                        }
+                    }
+                }
             });
         }
 
         function exportarParaExcel() {
-            const dadosFiltrados = filtrarDados();
-            if(dadosFiltrados.length === 0) return alert("Sem dados para exportar!");
+            const dados = obterDadosFiltrados();
+            if(dados.length === 0) { alert("Não há dados filtrados para exportar."); return; }
 
-            const matrizExcel = [['Vencimento', 'Status Ação', 'Loja', 'Código', 'Item/Descrição', 'Linha', 'Fornecedor', 'Quantidade', 'Total Perda (R$)']];
-            dadosFiltrados.forEach(i => {
-                matrizExcel.push([i.validadeTexto, i.statusAcao, i.loja, i.codigo, i.item, i.linha, i.fornecedor, i.quantidade, i.totalPerda]);
-            });
+            const mapeadoParaExcel = dados.map(i => ({
+                'Vencimento': i.validadeTexto,
+                'Status Ação': i.statusAcao,
+                'Loja/Filial': i.loja,
+                'Código de Barras': i.codigo,
+                'Item Descrição': i.item,
+                'Especificação': i.descricao,
+                'Linha': i.linha,
+                'Fornecedor': i.fornecedor,
+                'Família': i.familia,
+                'Quantidade': i.quantidade,
+                'Valor Total Perda (R$)': i.totalPerda
+            }));
 
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(matrizExcel);
-            XLSX.utils.book_append_sheet(wb, ws, "Validades");
-            XLSX.writeFile(wb, `Painel_Validade_${new Date().toISOString().slice(0,10)}.xlsx`);
+            const ws = XLSX.utils.json_to_sheet(mapeadoParaExcel);
+            XLSX.utils.book_append_sheet(wb, ws, "Validades Filtradas");
+            XLSX.writeFile(wb, `Validades_Mapeadas_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
         function enviarFiltroWhatsApp() {
-            const dadosFiltrados = filtrarDados();
-            if(dadosFiltrados.length === 0) return alert("Nenhum dado filtrado para envio!");
+            const dados = obterDadosFiltrados();
+            if (dados.length === 0) { alert("Sem dados para compartilhar."); return; }
 
-            let total = dadosFiltrados.reduce((acc, i) => acc + i.totalPerda, 0);
-            let msg = `*RESUMO DE VALIDADES - PAINEL OPERACIONAL*\n\n`;
-            msg += `*Loja:* ${filtrosAtivos.lojaSuperior || "Todas"}\n`;
-            msg += `*Registros:* ${dadosFiltrados.length} itens listados\n`;
-            msg += `*Valor Total R$:* ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}\n\n`;
-            msg += `*Principais Itens Críticos:*\n`;
+            let totalGeral = dados.reduce((acc, i) => acc + i.totalPerda, 0);
+            let msg = `*📢 RELATÓRIO PARCIAL DE VALIDADES*\n`;
+            msg += `_Gerado em: ${new Date().toLocaleDateString('pt-BR')}_\n`;
+            msg += `Total em risco: *${totalGeral.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}*\n`;
+            msg += `Itens listados: *${dados.length}*\n\n`;
+            msg += `*Principais itens de atenção:*\n`;
 
-            dadosFiltrados.slice(0, 8).forEach(i => {
-                msg += `- ${i.validadeTexto} | Qtd: ${i.quantidade} | R$ ${i.totalPerda.toFixed(2)} -> _${i.item.slice(0,25)}_\n`;
+            dados.slice(0, 15).forEach(i => {
+                msg += `• *${i.validadeTexto}* - ${i.item} (${i.quantidade} un) - _${i.loja}_\n`;
             });
 
-            if(dadosFiltrados.length > 8) msg += `\n... e mais ${dadosFiltrados.length - 8} itens no painel analítico.`;
+            if(dados.length > 15) msg += `\n_e mais ${dados.length - 15} itens na lista completa._`;
 
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
         }
