@@ -93,19 +93,26 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md flex flex-col justify-between">
+                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Distribuição por Status (R$)</h3>
+                <div class="h-64 relative flex items-center justify-center">
+                    <canvas id="chartRoscaStatus"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md lg:col-span-2">
                 <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
                 <div class="h-64 relative">
                     <canvas id="chartCronograma"></canvas>
                 </div>
             </div>
+        </div>
 
-            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
-                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Mapeamento Vencimento (R$) por Loja / Filial</h3>
-                <div class="h-64 relative">
-                    <canvas id="chartLojas"></canvas>
-                </div>
+        <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
+            <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Mapeamento Vencimento (R$) por Loja / Filial</h3>
+            <div class="h-64 relative">
+                <canvas id="chartLojas"></canvas>
             </div>
         </div>
 
@@ -255,7 +262,7 @@
         let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, cronogramaMesAno: null };
         let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", linha: "", fornecedor: "" };
         
-        let instanciasGraficos = { cronograma: null, lojas: null, fornecedores: null, lines: null };
+        let instanciasGraficos = { cronograma: null, lojas: null, fornecedores: null, lines: null, roscaStatus: null };
 
         window.onload = function() {
             carregarDadosDaPlanilha();
@@ -294,7 +301,7 @@
             document.getElementById("loaderIcon").classList.add("hidden");
             const txtErro = document.getElementById("loaderTexto");
             txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
-            txtErro.innerText = mensagem;
+            txtErro.innerText = message;
         }
 
         function tratarNumeroBrasil(texto) {
@@ -337,7 +344,6 @@
             for (let i = 1; i < linhas.length; i++) {
                 if (!linhas[i].trim()) continue;
                 
-                // CORREÇÃO AQUI: Mudado de lines[i] para linhas[i]
                 const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
                 let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
@@ -556,7 +562,7 @@
             });
         }
 
-        function ejecutarFiltrosTabela() {
+        function executarFiltrosTabela() {
             filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
             filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
             filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
@@ -590,7 +596,6 @@
                 else if (i.diasRestantes <= 180) total6M += i.totalPerda;
             });
 
-            // CORREÇÃO AQUI: Formatando o card de urgência como moeda real em vez de string estática
             document.getElementById("kpiTotalRs").innerText = "R$ " + totalPerda.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById("kpiUrgencia").innerText = "R$ " + totalUrgente.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById("kpi3Meses").innerText = "R$ " + total3M.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -667,6 +672,37 @@
 
         function renderizarGraficosGerais() {
             const baseParaGraficos = dadosBrutos.filter(i => !filtrosAtivos.loja || i.loja === filtrosAtivos.loja);
+
+            // NOVO: Cálculo e Atualização Dinâmica da Rosca de Status
+            let totalUrgente = 0, total3M = 0, total6M = 0, totalMapeado = 0;
+            baseParaGraficos.forEach(i => {
+                if (i.diasRestantes <= 45) totalUrgente += i.totalPerda;
+                else if (i.diasRestantes <= 90) total3M += i.totalPerda;
+                else if (i.diasRestantes <= 180) total6M += i.totalPerda;
+                else totalMapeado += i.totalPerda;
+            });
+
+            if(instanciasGraficos.roscaStatus) instanciasGraficos.roscaStatus.destroy();
+            instanciasGraficos.roscaStatus = new Chart(document.getElementById("chartRoscaStatus"), {
+                type: 'doughnut',
+                data: {
+                    labels: ['🚨 ≤ 45d', '⚠️ 45-90d', '📅 90-180d', '🔍 > 180d'],
+                    datasets: [{
+                        data: [totalUrgente, total3M, total6M, totalMapeado],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#f97316', '#4b5563'],
+                        borderWidth: 2,
+                        borderColor: '#1f2937'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } }
+                    },
+                    cutout: '65%'
+                }
+            });
 
             // 1. Cronograma
             let cronoMap = {};
