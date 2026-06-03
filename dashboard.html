@@ -142,6 +142,7 @@
                     <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold whitespace-nowrap"></span>
                 </div>
             </div>
+            
             <div class="overflow-x-auto max-h-[550px] overflow-y-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
@@ -214,6 +215,7 @@
                                     </div>
                                 </div>
                             </th>
+                            <th class="p-2"></th>
                             <th class="p-2 relative">
                                 <div id="dropdown-linha-topo" class="relative target-dropdown">
                                     <button onclick="toggleDropdownCustomizado('dropdown-linha-topo')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
@@ -259,7 +261,7 @@
             carregarDadosDaPlanilha();
             document.addEventListener("click", function(e) {
                 if (!e.target.closest(".target-dropdown")) {
-                    fecharTodosDropdownisCustomizados();
+                    fecharTodosDropdownsCustomizados();
                 }
             });
             document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
@@ -318,7 +320,7 @@
             const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
             
             const idxLoja = encontrarIndexColuna(cabecalho, ['loja', 'filial']);
-            const idxCod = encontrarIndexColuna(cabecalho, ['código de barras', 'codigo', 'barras', 'sku']);
+            const idxCod = encontrarIndexColuna(cabecalho, ['código de barras', 'codigo', 'barras', 'sku', 'ean']);
             const idxItem = encontrarIndexColuna(cabecalho, ['item/produto', 'item', 'produto', 'nome']);
             const idxDesc = encontrarIndexColuna(cabecalho, ['descrição', 'descricao']);
             const idxForn = encontrarIndexColuna(cabecalho, ['fornecedor', 'fabricante']);
@@ -335,6 +337,7 @@
             for (let i = 1; i < linhas.length; i++) {
                 if (!linhas[i].trim()) continue;
                 
+                // CORREÇÃO AQUI: Mudado de lines[i] para linhas[i]
                 const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                 
                 let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
@@ -466,46 +469,38 @@
         function toggleDropdownCustomizado(idDropdown) {
             const container = document.getElementById(idDropdown);
             const lista = container.querySelector(".lista-container");
-            const inputPesquisa = container.querySelector("input");
-            const estaAtivo = !lista.classList.contains("hidden");
-            
-            fecharTodosDropdownisCustomizados();
-            if (!estaAtivo) {
+            const estavaAberto = !lista.classList.contains("hidden");
+            fecharTodosDropdownsCustomizados();
+            if (!estavaAberto) {
                 lista.classList.remove("hidden");
-                inputPesquisa.value = "";
-                filtrarOpcoesDropdown(inputPesquisa);
-                setTimeout(() => inputPesquisa.focus(), 50);
+                const input = container.querySelector("input");
+                if (input) { input.value = ""; input.focus(); filtrarOpcoesDropdown(input); }
             }
         }
 
-        function fecharTodosDropdownisCustomizados() {
-            document.querySelectorAll(".lista-container").forEach(el => el.classList.add("hidden"));
+        function fecharTodosDropdownsCustomizados() {
+            document.querySelectorAll(".target-dropdown .lista-container").forEach(el => el.classList.add("hidden"));
         }
 
-        function filtrarOpcoesDropdown(input) {
-            const busca = input.value.toLowerCase().trim();
-            const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
-            const itens = wrapper.querySelectorAll(".opcao-item");
-            itens.forEach(item => {
-                const txt = item.getAttribute("data-valor") || "";
-                if (txt.includes(busca)) {
-                    item.classList.remove("hidden");
-                } else {
-                    item.classList.add("hidden");
-                }
+        function filtrarOpcoesDropdown(inputEl) {
+            const termo = inputEl.value.toLowerCase();
+            const wrapper = inputEl.nextElementSibling;
+            wrapper.querySelectorAll(".opcao-item").forEach(opt => {
+                const txt = opt.getAttribute("data-valor") || "";
+                opt.style.display = txt.includes(termo) ? "block" : "none";
             });
         }
 
-        function selecionarOpcaoDropdownCustom(idDropdown, valorTecnico, valorExibicao, chaveFiltro) {
+        function selecionarOpcaoDropdownCustom(idDropdown, valor, label, chaveFiltro) {
             const container = document.getElementById(idDropdown);
-            container.querySelector(".label").innerText = valorExibicao;
-            filtrosCabecalhoTabela[chaveFiltro] = valorTecnico;
-            fecharTodosDropdownisCustomizados();
+            container.querySelector(".label").innerText = label;
+            filtrosCabecalhoTabela[chaveFiltro] = valor;
+            fecharTodosDropdownsCustomizados();
             executarFiltrosTabela();
         }
 
-        function alterarFiltroLojaSuperior(valor) {
-            filtrosAtivos.loja = valor ? valor : null;
+        function alterarFiltroLojaSuperior(val) {
+            filtrosAtivos.loja = val || null;
             renderizarDashboard();
         }
 
@@ -527,111 +522,19 @@
             document.getElementById("thFiltroAno").value = "";
             document.getElementById("thFiltroStatus").value = "";
             
-            document.querySelectorAll(".target-dropdown").forEach(drop => {
-                const padrao = drop.id === "dropdown-item" ? "Todos os Itens" : "Selecione...";
-                drop.querySelector(".label").innerText = padrao;
-            });
+            document.getElementById("dropdown-loja").querySelector(".label").innerText = "Selecione...";
+            document.getElementById("dropdown-codigo").querySelector(".label").innerText = "Selecione...";
+            document.getElementById("dropdown-item").querySelector(".label").innerText = "Todos os Itens";
+            document.getElementById("dropdown-linha-topo").querySelector(".label").innerText = "Selecione...";
+            document.getElementById("dropdown-forn-topo").querySelector(".label").innerText = "Selecione...";
 
             renderizarDashboard();
         }
 
-        function formatarMoedaBrl(valor) {
-            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-
-        function aplicarFiltrosGlobais(dados) {
-            return dados.filter(item => {
+        function obterDadosFiltradosTabela() {
+            return dadosBrutos.filter(item => {
                 if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
-                if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
-                if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
-                if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
-                
-                if (filtrosAtivos.cronogramaMesAno) {
-                    let chaveComp = `${item.mes}/${item.ano}`;
-                    if (chaveComp !== filtrosAtivos.cronogramaMesAno) return false;
-                }
 
-                if (filtrosAtivos.vencimento) {
-                    if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
-                    if (filtrosAtivos.vencimento === '3meses' && (item.diasRestantes <= 45 || item.diasRestantes > 90)) return false;
-                    if (filtrosAtivos.vencimento === '6meses' && (item.diasRestantes <= 90 || item.diasRestantes > 180)) return false;
-                }
-                return true;
-            });
-        }
-
-        function renderizarDashboard() {
-            let alcancadosFiltroGlobal = aplicarFiltrosGlobais(dadosBrutos);
-
-            let totalMapeadoRs = 0;
-            let totalUrgenciaRs = 0;
-            let total3MesesRs = 0;
-            let total6MesesRs = 0;
-            let barrasUnicosSet = new Set();
-            let totalUnidadesItens = 0;
-            let lojasAtivasSet = new Set();
-
-            alcancadosFiltroGlobal.forEach(item => {
-                totalMapeadoRs += item.totalPerda;
-                barrasUnicosSet.add(item.codigo);
-                totalUnidadesItens += item.quantidade;
-                lojasAtivasSet.add(item.loja);
-                
-                if (item.diasRestantes <= 45) {
-                    totalUrgenciaRs += item.totalPerda;
-                } else if (item.diasRestantes <= 90) {
-                    total3MesesRs += item.totalPerda;
-                } else if (item.diasRestantes <= 180) {
-                    total6MesesRs += item.totalPerda;
-                }
-            });
-
-            document.getElementById("kpiTotalRs").innerText = formatarMoedaBrl(totalMapeadoRs);
-            document.getElementById("kpiUrgencia").innerText = formatarMoedaBrl(totalUrgenciaRs);
-            document.getElementById("kpi3Meses").innerText = formatarMoedaBrl(total3MesesRs);
-            document.getElementById("kpi6Meses").innerText = formatarMoedaBrl(total6MesesRs);
-            document.getElementById("kpiBarrasUnicos").innerText = barrasUnicosSet.size.toLocaleString('pt-BR');
-            document.getElementById("kpiUnidades").innerText = totalUnidadesItens.toLocaleString('pt-BR');
-            document.getElementById("kpiLojas").innerText = lojasAtivasSet.size;
-
-            gerenciarEstilosCardBordaAtiva();
-            
-            let temFiltroEmExecucao = Object.values(filtrosAtivos).some(v => v !== null) || Object.values(filtrosCabecalhoTabela).some(v => v !== "");
-            document.getElementById("btnLimparFiltros").style.display = temFiltroEmExecucao ? "inline-block" : "none";
-
-            atualizarGraficoCronograma(alcancadosFiltroGlobal);
-            atualizarGraficoLojas(alcancadosFiltroGlobal);
-            atualizarGraficoFornecedores(alcancadosFiltroGlobal);
-            atualizarGraficoLinhas(alcancadosFiltroGlobal);
-
-            executarFiltrosTabela();
-        }
-
-        function gerenciarEstilosCardBordaAtiva() {
-            const u = document.getElementById("cardUrgencia");
-            const m3 = document.getElementById("card3Meses");
-            const m6 = document.getElementById("card6Meses");
-            const dUrg = document.getElementById("dotUrg");
-            const d3m = document.getElementById("dot3m");
-            const d6m = document.getElementById("dot6m");
-
-            u.className = u.className.replace(" border-red-500 bg-red-950/20", " border-gray-700").replace(" border-gray-700", filtrosAtivos.vencimento === 'urgencia' ? " border-red-500 bg-red-950/20" : " border-gray-700");
-            m3.className = m3.className.replace(" border-amber-500 bg-amber-950/20", " border-gray-700").replace(" border-gray-700", filtrosAtivos.vencimento === '3meses' ? " border-amber-500 bg-amber-950/20" : " border-gray-700");
-            m6.className = m6.className.replace(" border-orange-500 bg-orange-950/20", " border-gray-700").replace(" border-gray-700", filtrosAtivos.vencimento === '6meses' ? " border-orange-500 bg-orange-950/20" : " border-gray-700");
-
-            dUrg.className = `h-2 w-2 rounded-full ${filtrosAtivos.vencimento === 'urgencia' ? 'bg-red-500 animate-pulse' : 'bg-transparent'}`;
-            d3m.className = `h-2 w-2 rounded-full ${filtrosAtivos.vencimento === '3meses' ? 'bg-amber-500 animate-pulse' : 'bg-transparent'}`;
-            d6m.className = `h-2 w-2 rounded-full ${filtrosAtivos.vencimento === '6meses' ? 'bg-orange-500 animate-pulse' : 'bg-transparent'}`;
-        }
-
-        function executarFiltrosTabela() {
-            filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
-            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
-            filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
-
-            let baseFiltrada = aplicarFiltrosGlobais(dadosBrutos);
-
-            let dadosFinaisTabela = baseFiltrada.filter(item => {
                 if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
                 if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
                 if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
@@ -640,209 +543,245 @@
                 if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
                 if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
                 if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
+
+                if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
+                if (filtrosAtivos.vencimento === '3meses' && (item.diasRestantes <= 45 || item.diasRestantes > 90)) return false;
+                if (filtrosAtivos.vencimento === '6meses' && (item.diasRestantes <= 90 || item.diasRestantes > 180)) return false;
+
+                if (filtrosAtivos.cronogramaMesAno && `${item.mes}/${item.ano}` !== filtrosAtivos.cronogramaMesAno) return false;
+                if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
+                if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
+
                 return true;
             });
-
-            document.getElementById("txtContagemLinhas").innerText = `${dadosFinaisTabela.length} registros listados`;
-            montarCorpoTabelaHtml(dadosFinaisTabela);
         }
 
-        function montarCorpoTabelaHtml(dados) {
+        function ejecutarFiltrosTabela() {
+            filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
+            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
+            filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
+            atualizarVisualizacaoTabelaEAlvos();
+        }
+
+        function renderizarDashboard() {
+            atualizarVisualizacaoTabelaEAlvos();
+            renderizarGraficosGerais();
+        }
+
+        function atualizarVisualizacaoTabelaEAlvos() {
+            const filtrados = obterDadosFiltradosTabela();
+            
+            let totalPerda = 0;
+            let totalUrgente = 0;
+            let total3M = 0;
+            let total6M = 0;
+            let totalQtd = 0;
+            let barrasUnicosSet = new Set();
+            let lojasAtivasSet = new Set();
+
+            filtrados.forEach(i => {
+                totalPerda += i.totalPerda;
+                totalQtd += i.quantidade;
+                barrasUnicosSet.add(i.codigo);
+                lojasAtivasSet.add(i.loja);
+
+                if (i.diasRestantes <= 45) totalUrgente += i.totalPerda;
+                else if (i.diasRestantes <= 90) total3M += i.totalPerda;
+                else if (i.diasRestantes <= 180) total6M += i.totalPerda;
+            });
+
+            // CORREÇÃO AQUI: Formatando o card de urgência como moeda real em vez de string estática
+            document.getElementById("kpiTotalRs").innerText = "R$ " + totalPerda.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById("kpiUrgencia").innerText = "R$ " + totalUrgente.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById("kpi3Meses").innerText = "R$ " + total3M.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById("kpi6Meses").innerText = "R$ " + total6M.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById("kpiBarrasUnicos").innerText = barrasUnicosSet.size;
+            document.getElementById("kpiUnidades").innerText = totalQtd.toLocaleString('pt-BR');
+            document.getElementById("kpiLojas").innerText = lojasAtivasSet.size;
+
+            const bLimpar = document.getElementById("btnLimparFiltros");
+            const temFiltroAtivo = Object.values(filtrosAtivos).some(x => x !== null) || Object.values(filtrosCabecalhoTabela).some(x => x !== "");
+            if (temFiltroAtivo) bLimpar.classList.remove("hidden");
+            else bLimpar.classList.add("hidden");
+
+            document.getElementById("cardUrgencia").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === 'urgencia' ? 'border-red-500 bg-red-950/10' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all`;
+            document.getElementById("card3Meses").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === '3meses' ? 'border-amber-500 bg-amber-950/10' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all`;
+            document.getElementById("card6Meses").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === '6meses' ? 'border-orange-500 bg-orange-950/10' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all`;
+
+            document.getElementById("txtContagemLinhas").innerText = `${filtrados.length} registros listados`;
+
             const tbody = document.getElementById("corpoTabelaPerdas");
             tbody.innerHTML = "";
 
-            if(dados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-gray-500 font-medium bg-gray-800/20">Nenhum item localizado para a combinação de filtros selecionada.</td></tr>`;
-                return;
-            }
-
-            dados.forEach(item => {
+            filtrados.forEach(item => {
                 const tr = document.createElement("tr");
-                tr.className = "hover:bg-gray-700/40 transition border-b border-gray-800/60 font-medium";
+                tr.className = "hover:bg-gray-700/30 border-b border-gray-800/60 transition duration-150";
                 tr.innerHTML = `
-                    <td class="p-3 text-gray-300 font-semibold">${item.validadeTexto} <span class="block text-[10px] text-gray-500 font-normal mt-0.5">${item.diasRestantes} dias rest.</span></td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold block text-center uppercase tracking-wide ${item.classeBadge}">${item.statusAcao}</span></td>
-                    <td class="p-3 text-gray-400 font-bold truncate max-w-[110px]">${item.loja}</td>
-                    <td class="p-3 text-gray-400 font-mono tracking-tight cursor-pointer hover:text-purple-400" onclick="filtrosAtivos.codigoBarras='${item.codigo}'; renderizarDashboard();">${item.codigo}</td>
-                    <td class="p-3 text-gray-200 font-bold max-w-xs truncate">
-                        <span class="block text-gray-100">${item.item}</span>
-                        ${item.descricao ? `<span class="block text-[10px] text-gray-400 font-normal truncate mt-0.5">${item.descricao}</span>` : ''}
-                    </td>
-                    <td class="p-3 text-gray-400 truncate max-w-[110px] cursor-pointer hover:text-emerald-400" onclick="filtrosAtivos.linha='${item.linha}'; renderizarDashboard();">${item.linha}</td>
-                    <td class="p-3 text-gray-400 truncate max-w-[130px] cursor-pointer hover:text-blue-400" onclick="filtrosAtivos.fornecedor='${item.fornecedor}'; renderizarDashboard();">${item.fornecedor}</td>
-                    <td class="p-3 text-center text-gray-300 font-bold">${item.quantidade}</td>
-                    <td class="p-3 text-right text-emerald-400 font-extrabold font-mono">${formatarMoedaBrl(item.totalPerda)}</td>
+                    <td class="p-3 font-semibold text-gray-300 whitespace-nowrap">${item.validadeTexto}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${item.classeBadge} whitespace-nowrap">${item.statusAcao}</span></td>
+                    <td class="p-3 text-gray-300 font-medium whitespace-nowrap">${item.loja}</td>
+                    <td class="p-3 font-mono text-gray-400 whitespace-nowrap">${item.codigo}</td>
+                    <td class="p-3 text-gray-200 font-semibold truncate max-w-xs" title="${item.item}">${item.item}</td>
+                    <td class="p-3 text-gray-400 truncate max-w-xs" title="${item.descricao}">${item.descricao}</td>
+                    <td class="p-3 text-gray-400 truncate max-w-xs">${item.linha}</td>
+                    <td class="p-3 text-gray-400 truncate max-w-xs" title="${item.fornecedor}">${item.fornecedor}</td>
+                    <td class="p-3 text-center text-purple-300 font-bold">${item.quantidade}</td>
+                    <td class="p-3 text-right font-bold text-emerald-400 font-mono">R$ ${item.totalPerda.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function atualizarGraficoCronograma(dados) {
-            let agorMesAno = {};
-            dados.forEach(i => {
-                if(!i.mes || !i.ano) return;
-                let c = `${i.mes}/${i.ano}`;
-                agorMesAno[c] = (agorMesAno[c] || 0) + i.totalPerda;
+        function enviarFiltroWhatsApp() {
+            const dadosFiltrados = obterDadosFiltradosTabela();
+
+            if (dadosFiltrados.length === 0) {
+                alert("Não há dados filtrados para enviar!");
+                return;
+            }
+
+            let mensagem = "📢 *RELATÓRIO DE VALIDADE DOS ITENS CORRENTES*\n";
+            mensagem += `📅 *Gerado em:* ${new Date().toLocaleDateString('pt-BR')}\n`;
+            mensagem += `📊 *Total de Itens:* ${dadosFiltrados.length}\n\n`;
+            mensagem += "----------------------------------------\n\n";
+
+            dadosFiltrados.forEach((item, index) => {
+                mensagem += `*${index + 1}) Loja:* ${item.loja}\n`;
+                mensagem += `• *EAN:* ${item.codigo}\n`;
+                mensagem += `• *Item:* ${item.item}\n`; 
+                if(item.descricao) mensagem += `• *Desc:* ${item.descricao}\n`;
+                mensagem += `• *Forn:* ${item.fornecedor}\n`; 
+                mensagem += `📅 *Vencimento:* ${item.validadeTexto} (_${item.diasRestantes} dias rest._)\n`;
+                mensagem += `• *Qtd:* ${item.quantidade} un | *Perda:* R$ ${item.totalPerda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+                mensagem += `• *Ação:* _${item.statusAcao.toUpperCase()}_\n\n`;
             });
 
-            let ordenados = Object.keys(agorMesAno).sort((a,b) => {
+            mensagem += "----------------------------------------\n";
+            mensagem += "👉 _Por favor, verificar e tratar os itens acima de acordo com a urgência._";
+
+            const urlUrlEncoded = encodeURIComponent(mensagem);
+            const urlWhatsApp = `https://api.whatsapp.com/send?text=${urlUrlEncoded}`;
+
+            window.open(urlWhatsApp, '_blank');
+        }
+
+        function renderizarGraficosGerais() {
+            const baseParaGraficos = dadosBrutos.filter(i => !filtrosAtivos.loja || i.loja === filtrosAtivos.loja);
+
+            // 1. Cronograma
+            let cronoMap = {};
+            baseParaGraficos.forEach(i => {
+                if(!i.mes || !i.ano) return;
+                let chave = `${i.mes}/${i.ano}`;
+                cronoMap[chave] = (cronoMap[chave] || 0) + i.totalPerda;
+            });
+            let cronoLojasOrdenadas = Object.keys(cronoMap).sort((a,b) => {
                 let pa = a.split("/"), pb = b.split("/");
                 return new Date(pa[1], pa[0]-1) - new Date(pb[1], pb[0]-1);
             });
-
-            let labels = ordenados;
-            let valores = ordenados.map(k => agorMesAno[k]);
-
+            
             if(instanciasGraficos.cronograma) instanciasGraficos.cronograma.destroy();
-
-            const ctx = document.getElementById('chartCronograma').getContext('2d');
-            instanciasGraficos.cronograma = new Chart(ctx, {
+            instanciasGraficos.cronograma = new Chart(document.getElementById("chartCronograma"), {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: cronoLojasOrdenadas,
                     datasets: [{
-                        label: 'Perda Projetada (R$)',
-                        data: valores,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.3,
-                        pointBackgroundColor: '#60a5fa',
-                        pointRadius: 4
+                        label: 'Perda Projetada R$',
+                        data: cronoLojasOrdenadas.map(k => cronoMap[k]),
+                        borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)',
+                        borderWidth: 3, tension: 0.3, fill: true
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
                     plugins: { legend: { display: false } },
-                    scales: {
-                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
-                    },
+                    scales: { y: { grid: { color: '#374151' } }, x: { grid: { display: false } } },
                     onClick: (e, elementos) => {
                         if (elementos.length > 0) {
-                            let idx = elementos[0].index;
-                            let mesAnoClicado = labels[idx];
-                            filtrosAtivos.cronogramaMesAno = filtrosAtivos.cronogramaMesAno === mesAnoClicado ? null : mesAnoClicado;
-                            renderizarDashboard();
+                            const idx = elementos[0].index;
+                            alternarFiltroCard('cronogramaMesAno', cronoLojasOrdenadas[idx]);
                         }
                     }
                 }
             });
-        }
 
-        function atualizarGraficoLojas(dados) {
-            let mapaLojas = {};
-            dados.forEach(i => mapaLojas[i.loja] = (mapaLojas[i.loja] || 0) + i.totalPerda);
-
-            let keysOrd = Object.keys(mapaLojas).sort((a,b) => mapaLojas[b] - mapaLojas[a]);
-            let labels = keysOrd;
-            let valores = keysOrd.map(k => mapaLojas[k]);
+            // 2. Lojas
+            let lojasMap = {};
+            baseParaGraficos.forEach(i => lojasMap[i.loja] = (lojasMap[i.loja] || 0) + i.totalPerda);
+            let labelsLojas = Object.keys(lojasMap).sort((a,b) => lojasMap[b] - lojasMap[a]);
 
             if(instanciasGraficos.lojas) instanciasGraficos.lojas.destroy();
-
-            const ctx = document.getElementById('chartLojas').getContext('2d');
-            instanciasGraficos.lojas = new Chart(ctx, {
+            instanciasGraficos.lojas = new Chart(document.getElementById("chartLojas"), {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: labelsLojas,
                     datasets: [{
-                        data: valores,
-                        backgroundColor: '#10b981',
-                        borderRadius: 6
+                        data: labelsLojas.map(k => lojasMap[k]),
+                        backgroundColor: '#10b981', borderRadius: 6
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
                     plugins: { legend: { display: false } },
-                    scales: {
-                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 } } }
-                    },
-                    onClick: (e, elementos) => {
-                        if (elementos.length > 0) {
-                            let idx = elementos[0].index;
-                            let lojaClicada = labels[idx];
-                            document.getElementById("filtroLojaSuperior").value = filtrosAtivos.loja === lojaClicada ? "" : lojaClicada;
-                            alterarFiltroLojaSuperior(document.getElementById("filtroLojaSuperior").value);
-                        }
-                    }
+                    scales: { y: { grid: { color: '#374151' } }, x: { grid: { display: false } } }
                 }
             });
-        }
 
-        function atualizarGraficoFornecedores(dados) {
-            let mapa = {};
-            dados.forEach(i => mapa[i.fornecedor] = (mapa[i.fornecedor] || 0) + i.totalPerda);
+            // 3. Fornecedores
+            let fornMap = {};
+            baseParaGraficos.forEach(i => fornMap[i.fornecedor] = (fornMap[i.fornecedor] || 0) + i.totalPerda);
+            let labelsForn = Object.keys(fornMap).sort((a,b) => fornMap[b] - fornMap[a]).slice(0, 7);
 
-            let keysOrd = Object.keys(mapa).sort((a,b) => mapa[b] - mapa[a]).slice(0, 5);
-            let labels = keysOrd;
-            let valores = keysOrd.map(k => mapa[k]);
-
-            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `filtrado: ${filtrosAtivos.fornecedor}` : "top 5 mais críticos";
+            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `Filtro ativo: ${filtrosAtivos.fornecedor}` : "Top 7 Fornecedores";
 
             if(instanciasGraficos.fornecedores) instanciasGraficos.fornecedores.destroy();
-
-            const ctx = document.getElementById('chartFornecedores').getContext('2d');
-            instanciasGraficos.fornecedores = new Chart(ctx, {
-                type: 'pie',
+            instanciasGraficos.fornecedores = new Chart(document.getElementById("chartFornecedores"), {
+                type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: labelsForn,
                     datasets: [{
-                        data: valores,
-                        backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981']
+                        data: labelsForn.map(k => fornMap[k]),
+                        backgroundColor: '#60a5fa', borderRadius: 4
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 10 } } } },
+                options: { 
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { color: '#374151' } }, y: { grid: { display: false } } },
                     onClick: (e, elementos) => {
                         if (elementos.length > 0) {
-                            let idx = elementos[0].index;
-                            let fornClicado = labels[idx];
-                            filtrosAtivos.fornecedor = filtrosAtivos.fornecedor === fornClicado ? null : fornClicado;
-                            renderizarDashboard();
+                            const idx = elementos[0].index;
+                            alternarFiltroCard('fornecedor', labelsForn[idx]);
                         }
                     }
                 }
             });
-        }
 
-        function atualizarGraficoLinhas(dados) {
-            let mapa = {};
-            dados.forEach(i => mapa[i.linha] = (mapa[i.linha] || 0) + i.totalPerda);
+            // 4. Linhas
+            let linhaMap = {};
+            baseParaGraficos.forEach(i => linhaMap[i.linha] = (linhaMap[i.linha] || 0) + i.totalPerda);
+            let labelsLinha = Object.keys(linhaMap).sort((a,b) => linhaMap[b] - linhaMap[a]).slice(0, 7);
 
-            let keysOrd = Object.keys(mapa).sort((a,b) => mapa[b] - mapa[a]).slice(0, 5);
-            let labels = keysOrd;
-            let valores = keysOrd.map(k => mapa[k]);
-
-            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `filtrado: ${filtrosAtivos.linha}` : "top 5 mais críticas";
+            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `Filtro ativo: ${filtrosAtivos.linha}` : "Top 7 Categorias";
 
             if(instanciasGraficos.lines) instanciasGraficos.lines.destroy();
-
-            const ctx = document.getElementById('chartLinhas').getContext('2d');
-            instanciasGraficos.lines = new Chart(ctx, {
-                type: 'doughnut',
+            instanciasGraficos.lines = new Chart(document.getElementById("chartLinhas"), {
+                type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: labelsLinha,
                     datasets: [{
-                        data: valores,
-                        backgroundColor: ['#10b981', '#06b6d4', '#f43f5e', '#eab308', '#a855f7']
+                        data: labelsLinha.map(k => linhaMap[k]),
+                        backgroundColor: '#34d399', borderRadius: 4
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 10 } } } },
+                options: { 
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { color: '#374151' } }, y: { grid: { display: false } } },
                     onClick: (e, elementos) => {
                         if (elementos.length > 0) {
-                            let idx = elementos[0].index;
-                            let linhaClicada = labels[idx];
-                            filtrosAtivos.linha = filtrosAtivos.linha === linhaClicada ? null : linhaClicada;
-                            renderizarDashboard();
+                            const idx = elementos[0].index;
+                            alternarFiltroCard('linha', labelsLinha[idx]);
                         }
                     }
                 }
@@ -850,89 +789,31 @@
         }
 
         function exportarParaExcel() {
-            let baseFiltrada = aplicarFiltrosGlobais(dadosBrutos);
-            let dadosFinais = baseFiltrada.filter(item => {
-                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-                return true;
-            });
-
-            if(dadosFinais.length === 0) {
-                alert("Não há dados na tabela atual para exportar!");
+            const dadosParaExportar = obterDadosFiltradosTabela();
+            if (dadosParaExportar.length === 0) {
+                alert("Não existem dados filtrados para exportar.");
                 return;
             }
 
-            let linhasExcel = dadosFinais.map(i => ({
+            const linhasPlanilha = dadosParaExportar.map(i => ({
                 "Vencimento": i.validadeTexto,
-                "Dias Restantes": i.diasRestantes,
                 "Status Ação": i.statusAcao,
-                "Loja / Filial": i.loja,
-                "Código de Barras": i.codigo,
-                "Item / Produto": i.item,
-                "Descrição Detalhada": i.descricao,
-                "Linha": i.linha,
+                "Loja": i.loja,
+                "Código Barras": i.codigo,
+                "Item": i.item,
+                "Descrição": i.descricao,
+                "Linha/Setor": i.linha,
                 "Fornecedor": i.fornecedor,
-                "Quantidade": i.quantidade,
-                "Total Perda (R$)": i.totalPerda
+                "Família": i.familia,
+                "Qtd Corrente": i.quantidade,
+                "Dias Restantes": i.diasRestantes,
+                "Valor Perda Total (R$)": i.totalPerda
             }));
 
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(linhasExcel);
-            XLSX.utils.book_append_sheet(wb, ws, "Perda Detalhada");
-            XLSX.writeFile(wb, `Planilha_Validades_Filtradas.xlsx`);
-        }
-
-        function enviarFiltroWhatsApp() {
-            let baseFiltrada = aplicarFiltrosGlobais(dadosBrutos);
-            let dadosFinais = baseFiltrada.filter(item => {
-                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-                return true;
-            });
-
-            if(dadosFinais.length === 0) {
-                alert("Nenhum item filtrado na tabela para gerar o relatório.");
-                return;
-            }
-
-            let totalGeralRs = dadosFinais.reduce((acc, curr) => acc + curr.totalPerda, 0);
-
-            let texto = `*📢 RELATÓRIO CONSOLIDADO DE VALIDADES*\n`;
-            texto += `_Gerado via Painel Operacional em tempo real_\n`;
-            texto += `--------------------------------------------------\n\n`;
-            texto += `📊 *Resumo da Listagem Atual:*\n`;
-            texto += `• Total de Registros: *${dadosFinais.length}*\n`;
-            texto += `• Valor Mapeado: *${formatarMoedaBrl(totalGeralRs)}*\n\n`;
-            texto += `--------------------------------------------------\n`;
-            texto += `🚨 *ITENS EM DESTAQUE OPERACIONAL:*\n\n`;
-
-            dadosFinais.slice(0, 15).forEach((item, index) => {
-                texto += `*${index + 1}) Loja:* ${item.loja}\n`;
-                texto += `• *Item:* ${item.item}\n`;
-                texto += `• *EAN:* ${item.codigo}\n`;
-                texto += `• *Vencimento:* ${item.validadeTexto} (_${item.diasRestantes} dias rest._)\n`;
-                texto += `• *Qtd:* ${item.quantidade} un | *Perda:* ${formatarMoedaBrl(item.totalPerda)}\n`;
-                texto += `• *Ação:* _${item.statusAcao.toUpperCase()}_\n\n`;
-            });
-
-            if(dadosFinais.length > 15) {
-                texto += `... e mais *${dadosFinais.length - 15}* itens listados no painel completo.`;
-            }
-
-            let urlWhatsApp = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
-            window.open(urlWhatsApp, '_blank');
+            const ws = XLSX.utils.json_to_sheet(linhasPlanilha);
+            XLSX.utils.book_append_sheet(wb, ws, "Validades Filtradas");
+            XLSX.writeFile(wb, `Relatorio_Perdas_Validade_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
     </script>
 </body>
