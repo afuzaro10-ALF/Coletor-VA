@@ -736,7 +736,7 @@
 
             if(instanciasGraficos.fornecedores) instanciasGraficos.fornecedores.destroy();
             instanciasGraficos.fornecedores = new Chart(document.getElementById("chartFornecedores"), {
-                type: 'bar',
+                type: 'doughnut',
                 data: {
                     labels: labelsForn,
                     datasets: [{
@@ -766,7 +766,7 @@
 
             if(instanciasGraficos.lines) instanciasGraficos.lines.destroy();
             instanciasGraficos.lines = new Chart(document.getElementById("chartLinhas"), {
-                type: 'bar',
+                type: 'doughnut',
                 data: {
                     labels: labelsLinha,
                     datasets: [{
