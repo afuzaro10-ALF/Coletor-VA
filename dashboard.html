@@ -33,9 +33,8 @@
                 <button onclick="limparTodosFiltros()" id="btnLimparFiltros" class="hidden px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500">
                     ❌ Limpar Filtros
                 </button>
-                
-                <button onclick="window.location.href='index.html'" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition text-sm flex items-center space-x-1">
-                    <span>⬅️ Abrir Coletor</span>
+                <button onclick="window.location.href='index.html?tela=scanner'" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-xs font-bold text-white transition shadow-md whitespace-nowrap">
+                    ⬅️ Abrir Coletor
                 </button>
             </div>
         </div>
@@ -133,7 +132,7 @@
             <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
                     <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Visão analítica com plano de ação real baseado das datas do coletor</p>
+                    <p class="text-xs text-gray-400 mt-0.5">Visão analítica com plano de ação real baseado nas datas do coletor</p>
                 </div>
                 <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
                     <button id="btnExportarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition duration-200 shadow-md border border-emerald-500/30">
@@ -278,7 +277,7 @@
             document.getElementById("loaderIcon").classList.add("hidden");
             const txtErro = document.getElementById("loaderTexto");
             txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
-            txtErro.innerText = mensagem;
+            txtErro.innerText = message || mensagem;
         }
 
         function tratarNumeroBrasil(texto) {
@@ -465,7 +464,362 @@
             document.querySelectorAll(".lista-container").forEach(el => el.classList.add("hidden"));
         }
 
-        // Fim parcial da query, o restante das funções continuaria aqui abaixo...
+        function filtrarOpcoesDropdown(input) {
+            const busca = input.value.toLowerCase().trim();
+            const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
+            const opcoes = wrapper.querySelectorAll(".opcao-item");
+            opcoes.forEach(opcao => {
+                const texto = opcao.getAttribute("data-valor");
+                if (texto.includes(busca)) opcao.classList.remove("hidden");
+                else opcao.classList.add("hidden");
+            });
+        }
+
+        function selecionarOpcaoDropdownCustom(idDropdown, valorArmazenar, textoExibir, chaveFiltro) {
+            const container = document.getElementById(idDropdown);
+            container.querySelector(".label").innerText = textoExibir;
+            filtrosCabecalhoTabela[chaveFiltro] = valorArmazenar;
+            fecharTodosDropdownisCustomizados();
+            renderizarDashboard();
+        }
+
+        function alterarFiltroLojaSuperior(lojaSelecionada) {
+            filtrosAtivos.loja = lojaSelecionada || null;
+            renderizarDashboard();
+        }
+
+        function executarFiltrosTabela() {
+            filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
+            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
+            filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
+            renderizarDashboard();
+        }
+
+        function obterDadosFiltradosGerais() {
+            return dadosBrutos.filter(item => {
+                if (filtrosAtivos.vencimento) {
+                    if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
+                    const mesesDiferenca = item.diasRestantes / 30.41;
+                    if (filtrosAtivos.vencimento === '3meses' && mesesDiferenca > 3) return false;
+                    // ALTERAÇÃO 2A: Se o filtro do card de 6 meses estiver ativo, ele filtra o limbo exclusivo (>3 e <=6)
+                    if (filtrosAtivos.vencimento === '6meses' && (mesesDiferenca <= 3 || mesesDiferenca > 6)) return false;
+                }
+                if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
+                if (filtrosAtivos.codigoBarras && item.codigo !== filtrosAtivos.codigoBarras) return false;
+                if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
+                if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
+                if (filtrosAtivos.familiaGrafico && item.familia !== filtrosAtivos.familiaGrafico) return false;
+
+                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
+                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
+                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
+                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
+                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
+                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
+                if (filtrosCabecalhoTabela.family && item.familia.toLowerCase() !== filtrosCabecalhoTabela.family) return false;
+
+                return true;
+            });
+        }
+
+        function renderizarDashboard() {
+            const dadosFiltrados = obterDadosFiltradosGerais();
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+
+            let somaFinanceira = 0, somaUnidades = 0, total3Meses = 0, total6MesesExclusivo = 0, totalUrgentes = 0;
+            let setLojas = new Set();
+
+            dadosFiltrados.forEach(item => {
+                somaUnidades += item.quantidade;
+                if(item.loja) setLojas.add(item.loja);
+                somaFinanceira += item.totalPerda;
+
+                const mesesDiferenca = item.diasRestantes / 30.41;
+
+                if (item.diasRestantes <= 45) totalUrgentes++;
+                
+                // Acumula tudo que é menor ou igual a 3 meses
+                if (mesesDiferenca <= 3) {
+                    total3Meses += item.totalPerda;
+                } 
+                // ALTERAÇÃO 2B: Isola perfeitamente apenas o intervalo maior que 3 meses e menor ou igual a 6 meses
+                else if (mesesDiferenca > 3 && mesesDiferenca <= 6) {
+                    total6MesesExclusivo += item.totalPerda;
+                }
+            });
+
+            document.getElementById("kpiTotalRs").innerText = somaFinanceira.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpiUrgencia").innerText = totalUrgentes + (totalUrgentes === 1 ? " item" : " itens");
+            document.getElementById("kpi3Meses").innerText = total3Meses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            // Aplica o valor filtrado e isolado no cartão correspondente
+            document.getElementById("kpi6Meses").innerText = total6MesesExclusivo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById("kpiUnidades").innerText = somaUnidades.toLocaleString('pt-BR');
+            document.getElementById("kpiLojas").innerText = setLojas.size;
+
+            document.getElementById("filtroLojaSuperior").value = filtrosAtivos.loja || "";
+
+            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `(filtrado: ${filtrosAtivos.fornecedor})` : "";
+            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `(filtrado: ${filtrosAtivos.linha})` : "";
+            document.getElementById("lblFiltroFamilia").innerText = filtrosAtivos.familiaGrafico ? `(filtrado: ${filtrosAtivos.familiaGrafico})` : "";
+
+            const temFiltroAtivo = filtrosAtivos.vencimento || filtrosAtivos.loja || filtrosAtivos.codigoBarras ||
+                                   filtrosAtivos.fornecedor || filtrosAtivos.linha || filtrosAtivos.familiaGrafico ||
+                                   filtrosCabecalhoTabela.mes || filtrosCabecalhoTabela.ano || filtrosCabecalhoTabela.status ||
+                                   filtrosCabecalhoTabela.loja || filtrosCabecalhoTabela.codigo || filtrosCabecalhoTabela.item || filtrosCabecalhoTabela.family;
+            
+            document.getElementById("btnLimparFiltros").className = temFiltroAtivo 
+                ? "px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500" : "hidden";
+
+            // Atualiza estados visuais dos Cards de Categoria
+            ajustarEstilosCardsKpi();
+
+            // AGRUPAMENTO CHAVE: Linha do tempo calculada de forma segura e responsiva
+            const agruparLojas = {}, agruparForn = {}, agruparLinhas = {}, agruparFamilias = {}, agruparCronograma = {};
+            const mesesNomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            
+            for(let i=0; i<12; i++) {
+                let m = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1);
+                agruparCronograma[mesesNomes[m.getMonth()] + "/" + String(m.getFullYear()).substring(2)] = 0;
+            }
+
+            dadosFiltrados.forEach(item => {
+                agruparLojas[item.loja] = (agruparLojas[item.loja] || 0) + item.totalPerda;
+                agruparForn[item.fornecedor] = (agruparForn[item.fornecedor] || 0) + item.totalPerda;
+                agruparLinhas[item.linha] = (agruparLinhas[item.linha] || 0) + item.totalPerda;
+                agruparFamilias[item.familia] = (agruparFamilias[item.familia] || 0) + item.totalPerda;
+
+                if (item.validade) {
+                    let chaveMes = mesesNomes[item.validade.getMonth()] + "/" + String(item.validade.getFullYear()).substring(2);
+                    if (agruparCronograma[chaveMes] !== undefined) agruparCronograma[chaveMes] += item.totalPerda;
+                }
+            });
+
+            // Montagem Dinâmica de todos os gráficos na Tela
+            montarGraficoCronograma(agruparCronograma);
+            montarGraficoLojas(agruparLojas);
+            
+            montarGraficoPizzaBarra("chartFornecedores", agruparForn, 'pie', chartFornecedores, 'fornecedor', (instance) => chartFornecedores = instance);
+            montarGraficoPizzaBarra("chartLinhas", agruparLinhas, 'doughnut', chartLinhas, 'linha', (instance) => chartLinhas = instance);
+            montarGraficoPizzaBarra("chartFamilias", agruparFamilias, 'bar', chartFamilias, 'familiaGrafico', (instance) => chartFamilias = instance);
+
+            montarTabelaEspecifica(dadosFiltrados);
+        }
+
+        function ajustarEstilosCardsKpi() {
+            document.getElementById("cardUrgencia").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200";
+            document.getElementById("card3Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200";
+            document.getElementById("card6Meses").className = "bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200";
+            document.getElementById("dotUrg").className = "h-2 w-2 rounded-full bg-transparent";
+            document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-transparent";
+            document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-transparent";
+
+            if (filtrosAtivos.vencimento === 'urgencia') {
+                document.getElementById("cardUrgencia").className = "bg-red-950/20 p-4 rounded-xl border border-red-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
+                document.getElementById("dotUrg").className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
+            } else if (filtrosAtivos.vencimento === '3meses') {
+                document.getElementById("card3Meses").className = "bg-amber-950/20 p-4 rounded-xl border border-amber-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
+                document.getElementById("dot3m").className = "h-2 w-2 rounded-full bg-amber-500 animate-pulse";
+            } else if (filtrosAtivos.vencimento === '6meses') {
+                document.getElementById("card6Meses").className = "bg-orange-950/20 p-4 rounded-xl border border-orange-500 shadow flex flex-col justify-between cursor-pointer transition-all duration-200";
+                document.getElementById("dot6m").className = "h-2 w-2 rounded-full bg-orange-500 animate-pulse";
+            }
+        }
+
+        function montarGraficoCronograma(objetoDados) {
+            if(chartCronograma) chartCronograma.destroy();
+            chartCronograma = new Chart(document.getElementById("chartCronograma"), {
+                type: 'line',
+                data: {
+                    labels: Object.keys(objetoDados),
+                    datasets: [{
+                        label: 'Valor Perda Estimada (R$)', 
+                        data: Object.values(objetoDados),
+                        borderColor: '#3b82f6', 
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3, 
+                        fill: true, 
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, 
+                        x: { grid: { display: false }, ticks: { color: '#9ca3af' } } 
+                    }
+                }
+            });
+        }
+
+        function montarGraficoLojas(objetoDados) {
+            if(chartLojas) chartLojas.destroy();
+            const labels = Object.keys(objetoDados);
+            const valores = Object.values(objetoDados);
+            const coresBarras = labels.map(loja => loja === filtrosAtivos.loja ? '#eab308' : '#10b981');
+
+            chartLojas = new Chart(document.getElementById("chartLojas"), {
+                type: 'bar',
+                data: {
+                    labels: labels, datasets: [{ data: valores, backgroundColor: coresBarras, borderRadius: 6 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } },
+                    onClick: (evt, elementos) => {
+                        if (elementos.length > 0) {
+                            const index = elementos[0].index;
+                            const lojaClicada = labels[index];
+                            filtrosAtivos.loja = (filtrosAtivos.loja === lojaClicada) ? null : lojaClicada;
+                            renderizarDashboard();
+                        }
+                    }
+                }
+            });
+        }
+
+        function montarGraficoPizzaBarra(idElemento, objetoDados, tipo, instanciaGrafico, chaveFiltro, setInstanciaCallback) {
+            if(instanciaGrafico) instanciaGrafico.destroy();
+            
+            const itensOrdenados = Object.entries(objetoDados).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const labels = itensOrdenados.map(i => i[0]);
+            const valores = itensOrdenados.map(i => i[1]);
+            const paletaCores = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+            
+            const coresFinais = labels.map((label, idx) => {
+                const filtroCorrente = filtrosAtivos[chaveFiltro];
+                if (filtroCorrente) {
+                    return label === filtroCorrente ? paletaCores[idx % paletaCores.length] : 'rgba(75, 85, 99, 0.2)';
+                }
+                return paletaCores[idx % paletaCores.length];
+            });
+
+            const novaInstancia = new Chart(document.getElementById(idElemento), {
+                type: tipo,
+                data: {
+                    labels: labels.length ? labels : ["Sem Lançamentos"],
+                    datasets: [{ data: valores.length ? valores : [0], backgroundColor: coresFinais, borderWidth: 1, borderColor: '#1f2937' }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: tipo === 'bar' ? 'none' : 'right', labels: { color: '#9ca3af', boxWidth: 12, font: { size: 10 } } } },
+                    scales: tipo === 'bar' ? { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } } : {},
+                    onClick: (evt, elementos) => {
+                        if (elementos.length > 0 && labels.length > 0) {
+                            const index = elementos[0].index;
+                            const itemClicado = labels[index];
+                            filtrosAtivos[chaveFiltro] = (filtrosAtivos[chaveFiltro] === itemClicado) ? null : itemClicado;
+                            renderizarDashboard();
+                        }
+                    }
+                }
+            });
+            setInstanciaCallback(novaInstancia);
+        }
+
+        function montarTabelaEspecifica(dadosFiltrados) {
+            const tabelaCorpo = document.getElementById("corpoTabelaPerdas");
+            tabelaCorpo.innerHTML = "";
+
+            const itensOrdenados = [...dadosFiltrados].sort((a,b) => (a.validade || 0) - (b.validade || 0));
+            document.getElementById("txtContagemLinhas").innerText = `${itensOrdenados.length} listados`;
+
+            itensOrdenados.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.className = filtrosAtivos.codigoBarras === item.codigo 
+                    ? "bg-blue-600/30 font-bold border-l-4 border-blue-500 hover:bg-blue-600/40 cursor-pointer transition"
+                    : "hover:bg-gray-700/50 cursor-pointer transition";
+                
+                tr.onclick = () => alternarFiltroTabela(item.codigo);
+
+                const vTxt = String(item.validadeTexto);
+                const clsBdg = String(item.classeBadge);
+                const stAt = String(item.statusAcao);
+                const lj = String(item.loja);
+                const cd = String(item.codigo);
+                const itm = String(item.item);
+                const dsc = String(item.descricao);
+                const fml = String(item.familia);
+                const qtd = String(item.quantidade);
+                const tPrd = item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-gray-300">${vTxt}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold block text-center uppercase tracking-wider ${clsBdg}">
+                            ${stAt}
+                        </span>
+                    </td>
+                    <td class="p-3"><span class="px-1.5 py-0.5 bg-gray-700 rounded text-gray-300 font-medium">${lj}</span></td>
+                    <td class="p-3 font-mono text-gray-400">${cd}</td>
+                    <td class="p-3 font-medium text-gray-100">${itm} <span class="text-gray-500 block text-[10px] font-normal">${dsc}</span></td>
+                    <td class="p-3 text-gray-400">${fml}</td>
+                    <td class="p-3 text-center font-bold text-gray-300">${qtd}</td>
+                    <td class="p-3 text-right font-black text-emerald-400">${tPrd}</td>
+                `;
+                tabelaCorpo.appendChild(tr);
+            });
+        }
+
+        function alternarFiltroCard(tipo, valor) {
+            filtrosAtivos[tipo] = (filtrosAtivos[tipo] === valor) ? null : valor;
+            renderizarDashboard();
+        }
+
+        function alternarFiltroTabela(codigo) {
+            filtrosAtivos.codigoBarras = (filtrosAtivos.codigoBarras === codigo) ? null : codigo;
+            renderizarDashboard();
+        }
+
+        function limparTodosFiltros() {
+            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
+            document.getElementById("thFiltroMes").value = "";
+            document.getElementById("thFiltroAno").value = "";
+            document.getElementById("thFiltroStatus").value = "";
+            
+            document.querySelector("#dropdown-loja .label").innerText = "Selecione...";
+            document.querySelector("#dropdown-codigo .label").innerText = "Selecione...";
+            document.querySelector("#dropdown-item .label").innerText = "Todos os Itens";
+            document.querySelector("#dropdown-family .label").innerText = "Selecione...";
+            
+            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
+            document.getElementById("filtroLojaSuperior").value = "";
+            fecharTodosDropdownisCustomizados();
+            renderizarDashboard();
+        }
+
+        function exportarParaExcel() {
+            const tabelaHTML = document.querySelector('table');
+            if (!tabelaHTML) return;
+
+            const clone = tabelaHTML.cloneNode(true);
+            const linhaFiltros = clone.querySelector('thead tr:nth-child(2)');
+            if (linhaFiltros) linhaFiltros.remove();
+
+            clone.querySelectorAll('tr').forEach((row, index) => {
+                if (index === 0) return;
+                const celulaStatus = row.cells[1];
+                if (celulaStatus) {
+                    const badge = celulaStatus.querySelector('span');
+                    if (badge) celulaStatus.innerText = badge.innerText.replace(/[🚨⚠️📅🔍]/g, '').trim();
+                }
+                const celulaItem = row.cells[4];
+                if (celulaItem) {
+                    const subtexto = celulaItem.querySelector('span');
+                    if (subtexto) {
+                        const textoPrincipal = celulaItem.childNodes[0].textContent.trim();
+                        celulaItem.innerText = `${textoPrincipal} (${subtexto.innerText.trim()})`;
+                    }
+                }
+            });
+
+            const wb = XLSX.utils.table_to_book(clone, { sheet: "Validades Analítico" });
+            const dataHoje = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
+            XLSX.writeFile(wb, `Painel_Validades_${dataHoje}.xlsx`);
+        }
     </script>
 </body>
 </html>
