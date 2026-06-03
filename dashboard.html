@@ -544,33 +544,31 @@
             });
 
             // 1. CÁLCULO E ATUALIZAÇÃO DOS CARD DE INDICADORES (KPI)
-            let totalMapeadoRs = 0;
-            let totalUrgenciaItens = 0;
-            let total3MesesRs = 0;
-            let total6MesesRs = 0;
-            let unidadesTotais = 0;
-            let codigosUnicosSet = new Set();
-            let lojasAtivasSet = new Set();
+let totalMapeadoRs = 0;
+let totalUrgenciaRs = 0; // Alterado de contagem de itens para acumular valor
+let total3MesesRs = 0;
+let total6MesesRs = 0;
+let unidadesTotais = 0;
+let codigosUnicosSet = new Set();
+let lojasAtivasSet = new Set();
 
-            dadosFiltrados.forEach(item => {
-                totalMapeadoRs += item.totalPerda;
-                unidadesTotais += item.quantidade;
-                codigosUnicosSet.add(item.codigo);
-                lojasAtivasSet.add(item.loja);
+dadosFiltrados.forEach(item => {
+    totalMapeadoRs += item.totalPerda;
+    unidadesTotais += item.quantidade;
+    codigosUnicosSet.add(item.codigo);
+    lojasAtivasSet.add(item.loja);
 
-                if (item.diasRestantes <= 45) totalUrgenciaItens++;
-                if (item.diasRestantes <= 90) total3MesesRs += item.totalPerda;
-                if (item.diasRestantes > 90 && item.diasRestantes <= 180) total6MesesRs += item.totalPerda;
-            });
+    // Se o item estiver na urgência (<= 45 dias), soma o valor da perda
+    if (item.diasRestantes <= 45) totalUrgenciaRs += item.totalPerda; 
+    if (item.diasRestantes <= 90) total3MesesRs += item.totalPerda;
+    if (item.diasRestantes > 90 && item.diasRestantes <= 180) total6MesesRs += item.totalPerda;
+});
 
-            document.getElementById("kpiTotalRs").innerText = formatarMoeda(totalMapeadoRs);
-            document.getElementById("kpiUrgencia").innerText = `${totalUrgenciaItens} itens`;
-            document.getElementById("kpi3Meses").innerText = formatarMoeda(total3MesesRs);
-            document.getElementById("kpi6Meses").innerText = formatarMoeda(total6MesesRs);
-            document.getElementById("kpiBarrasUnicos").innerText = codigosUnicosSet.size;
-            document.getElementById("kpiUnidades").innerText = unidadesTotais.toLocaleString('pt-BR');
-            document.getElementById("kpiLojas").innerText = lojasAtivasSet.size;
-
+// Atualiza a tela aplicando a formatação de moeda padrão do seu projeto
+document.getElementById("kpiTotalRs").innerText = formatarMoeda(totalMapeadoRs);
+document.getElementById("kpiUrgencia").innerText = formatarMoeda(totalUrgenciaRs); // Exibe em R$ agora
+document.getElementById("kpi3Meses").innerText = formatarMoeda(total3MesesRs);
+document.getElementById("kpi6Meses").innerText = formatarMoeda(total6MesesRs);
             // Destaques nos cards ativados por clique
             document.getElementById("cardUrgencia").className = `bg-gray-800 p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition-all duration-200 ${filtrosAtivos.status === 'Tratar item com Urgência' ? 'border-red-500 bg-red-950/20 scale-[1.02]' : 'border-gray-700 border-gray-700/60 hover:border-red-500'}`;
             document.getElementById("card3Meses").className = `bg-gray-800 p-4 rounded-xl border flex flex-col justify-between cursor-pointer transition-all duration-200 ${filtrosAtivos.status === 'Tratar item' ? 'border-amber-500 bg-amber-950/20 scale-[1.02]' : 'border-gray-700 border-gray-700/60 hover:border-amber-500'}`;
