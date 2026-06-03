@@ -888,52 +888,65 @@
             XLSX.writeFile(wb, `Planilha_Validades_Filtradas.xlsx`);
         }
 
-        function enviarFiltroWhatsApp() {
-            let baseFiltrada = aplicarFiltrosGlobais(dadosBrutos);
-            let dadosFinais = baseFiltrada.filter(item => {
-                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-                return true;
-            });
+       function enviarFiltroWhatsApp() {
+    // Obtém a lista de dados atualmente filtrados na tabela
+    const dadosFiltrados = obterDadosFiltradosTabela();
 
-            if(dadosFinais.length === 0) {
-                alert("Nenhum item filtrado na tabela para gerar o relatório.");
-                return;
-            }
+    if (dadosFiltrados.length === 0) {
+        alert("Não há dados filtrados para enviar!");
+        return;
+    }
 
-            let totalGeralRs = dadosFinais.reduce((acc, curr) => acc + curr.totalPerda, 0);
+    let mensagem = "📢 *RELATÓRIO DE VALIDADE DOS ITENS CORRENTES*\n";
+    mensagem += `📅 *Gerado em:* ${new Date().toLocaleDateString('pt-BR')}\n`;
+    mensagem += `📊 *Total de Itens:* ${dadosFiltrados.length}\n\n`;
+    mensagem += "----------------------------------------\n\n";
 
-            let texto = `*📢 RELATÓRIO CONSOLIDADO DE VALIDADES*\n`;
-            texto += `_Gerado via Painel Operacional em tempo real_\n`;
-            texto += `--------------------------------------------------\n\n`;
-            texto += `📊 *Resumo da Listagem Atual:*\n`;
-            texto += `• Total de Registros: *${dadosFinais.length}*\n`;
-            texto += `• Valor Mapeado: *${formatarMoedaBrl(totalGeralRs)}*\n\n`;
-            texto += `--------------------------------------------------\n`;
-            texto += `🚨 *ITENS EM DESTAQUE OPERACIONAL:*\n\n`;
+    dadosFiltrados.forEach((item, index) => {
+        mensagem += `*${index + 1}) Loja:* ${item.loja}\n`;
+        mensagem += `• *Item:* ${item.codigo}\n`;
+        mensagem += `• *EAN:* ${item.codigo}\n`; // Caso use a coluna código como EAN
+        mensagem += `• ${item.item}\n`; // Nome do Item / Descrição Curta
+        mensagem += `• ${item.fornecedor}\n`; // Nome do Fornecedor
+        mensagem += ` *Vencimento:* ${item.validadeTexto} (_${item.diasRestantes} dias rest._)\n`;
+        mensagem += `• *Qtd:* ${item.quantidade} un | *Perda:* R$ ${item.totalPerda.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+        mensagem += `• *Ação:* _${item.statusAcao.toUpperCase()}_\n\n`;
+    });
 
-            dadosFinais.slice(0, 15).forEach((item, index) => {
-                texto += `*${index + 1}) Loja:* ${item.loja}\n`;
-                texto += `• *Item:* ${item.item}\n`;
-                texto += `• *EAN:* ${item.codigo}\n`;
-                texto += `• *Vencimento:* ${item.validadeTexto} (_${item.diasRestantes} dias rest._)\n`;
-                texto += `• *Qtd:* ${item.quantidade} un | *Perda:* ${formatarMoedaBrl(item.totalPerda)}\n`;
-                texto += `• *Ação:* _${item.statusAcao.toUpperCase()}_\n\n`;
-            });
+    mensagem += "----------------------------------------\n";
+    mensagem += "👉 _Por favor, verificar e tratar os itens acima de acordo com a urgência._";
 
-            if(dadosFinais.length > 15) {
-                texto += `... e mais *${dadosFinais.length - 15}* itens listados no painel completo.`;
-            }
+    // Codifica a mensagem para formato de URL do WhatsApp
+    const urlUrlEncoded = encodeURIComponent(mensagem);
+    const urlWhatsApp = `https://api.whatsapp.com/send?text=${urlUrlEncoded}`;
 
-            let urlWhatsApp = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
-            window.open(urlWhatsApp, '_blank');
-        }
-    </script>
-</body>
-</html>
+    // Abre o WhatsApp em uma nova aba
+    window.open(urlWhatsApp, '_blank');
+}
+
+// Função auxiliar necessária para capturar os dados que estão visíveis após os filtros
+function obterDadosFiltradosTabela() {
+    // Retorna os dados respeitando os filtros atuais aplicados no painel
+    return dadosBrutos.filter(item => {
+        // Filtro Superior de Loja
+        const filtroLojaSup = document.getElementById("filtroLojaSuperior").value;
+        if (filtroLojaSup && item.loja !== filtroLojaSup) return false;
+
+        // Filtros do cabeçalho da tabela
+        if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
+        if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
+        if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
+        if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
+        if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
+        if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
+        if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
+        if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
+
+        // Filtros dos Cards de KPI/Gráficos se houverem ativos
+        if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
+        if (filtrosAtivos.vencimento === '3meses' && (item.diasRestantes <= 45 || item.diasRestantes > 90)) return false;
+        if (filtrosAtivos.vencimento === '6meses' && (item.diasRestantes <= 90 || item.diasRestantes > 180)) return false;
+
+        return true;
+    });
+}
