@@ -375,10 +375,10 @@
                     if (diasRestantes <= 45) {
                         statusAcao = "Tratar item com Urgência";
                         classeBadge = "bg-red-500/20 text-red-400 border border-red-500/30";
-                    } else if (diasRestantes <= 90) {
+                    } else if ((item.diasRestantes > 45 && item.diasRestantes <= 90) {
                         statusAcao = "Tratar item";
                         classeBadge = "bg-orange-500/20 text-orange-400 border border-orange-500/30";
-                    } else if (diasRestantes <= 180) {
+                    } else if ((item.diasRestantes > 90 && item.diasRestantes <= 180) {
                         statusAcao = "Acompanhar Tratativas";
                         classeBadge = "bg-blue-500/20 text-blue-400 border border-blue-500/30";
                     } else {
