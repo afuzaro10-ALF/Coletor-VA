@@ -3,920 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Pro - Controle de Validade</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Dashboard Interativo</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: #1f2937; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 20px; color: #333; }
+        .grid-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; }
+        .card h3 { margin: 0 0 10px 0; font-size: 14px; color: #666; text-transform: uppercase; }
+        .card p { margin: 0; font-size: 24px; font-weight: bold; color: #2c3e50; }
+        .grid-graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .canvas-container { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); height: 300px; position: relative; }
+        .filtro-aviso { background: #e0f7fa; color: #006064; padding: 10px; border-radius: 5px; margin-bottom: 20px; display: none; justify-content: space-between; align-items: center; }
+        .filtro-aviso button { background: #00838f; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #edf2f7; }
+        th { background-color: #f8fafc; color: #64748b; font-weight: 600; }
+        tr:hover { background-color: #f8fafc; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans antialiased p-4 sm:p-6 min-h-screen">
+<body>
 
-    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-xl mb-6 gap-4">
-        <div>
-            <h1 class="text-2xl font-black text-blue-400 tracking-tight">Painel de Validade</h1>
-            <p class="text-xs text-gray-400 mt-1">Dados consolidados em tempo real (Apenas Vencimentos Futuros)</p>
+    <div id="barraFiltro" class="filtro-aviso">
+        <span>Filtrado por: <strong id="nomeFiltro"></strong></span>
+        <button onclick="limparFiltro()">Limpar Filtro</button>
+    </div>
+
+    <div class="grid-cards">
+        <div class="card">
+            <h3>Total Itens</h3>
+            <p id="cardTotalItens">0</p>
         </div>
-        
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto justify-end">
-            <div class="w-full sm:w-64">
-                <label for="filtroLojaSuperior" class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Filtrar por Loja Principal:</label>
-                <select id="filtroLojaSuperior" onchange="alterarFiltroLojaSuperior(this.value)" class="w-full bg-gray-700 border border-gray-600 rounded-xl px-3 py-2 text-xs font-semibold text-gray-100 focus:outline-none focus:border-blue-500 transition">
-                    <option value="">✨ Todas as Lojas</option>
-                </select>
-            </div>
-            
-            <div class="flex items-center space-x-2 w-full sm:w-auto pt-4 sm:pt-0">
-                <button onclick="limparTodosFiltros()" id="btnLimparFiltros" class="hidden px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md border border-red-500">
-                    ❌ Limpar Filtros
-                </button>
-                <button onclick="window.location.href='index.html?tela=scanner'" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl text-xs font-bold text-white transition shadow-md whitespace-nowrap">
-                    ⬅️ Abrir Coletor
-                </button>
-            </div>
+        <div class="card">
+            <h3>Valor Total Negativo</h3>
+            <p id="cardValorTotal">R$ 0,00</p>
+        </div>
+        <div class="card">
+            <h3>Quantidade Total</h3>
+            <p id="cardQtdTotal">0</p>
         </div>
     </div>
 
-    <div id="loader" class="text-center py-20 max-w-7xl mx-auto bg-gray-800 rounded-2xl border border-gray-700 p-6 shadow-xl">
-        <div id="loaderIcon" class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-t-blue-500 border-gray-700 mb-4"></div>
-        <p id="loaderTexto" class="text-gray-400 font-medium">Processando dados e aplicando réguas de urgência dinâmicas...</p>
-    </div>
-
-    <div id="conteudoDash" class="max-w-7xl mx-auto space-y-6 hidden">
-        
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Mapeado R$</span>
-                <span id="kpiTotalRs" class="text-xl font-black text-emerald-400 mt-2">R$ 0,00</span>
-            </div>
-            
-            <div onclick="alternarFiltroCard('vencimento', 'urgencia')" id="cardUrgencia" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (≤ 45d)</span>
-                    <span id="dotUrg" class="h-2 w-2 rounded-full bg-transparent"></span>
-                </div>
-                <span id="kpiUrgencia" class="text-xl font-black text-red-400 mt-2">0 itens</span>
-            </div>
-
-            <div onclick="alternarFiltroCard('vencimento', '3meses')" id="card3Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Vence &le; 3 Meses</span>
-                    <span id="dot3m" class="h-2 w-2 rounded-full bg-transparent"></span>
-                </div>
-                <span id="kpi3Meses" class="text-xl font-black text-amber-300 mt-2">R$ 0,00</span>
-            </div>
-
-            <div onclick="alternarFiltroCard('vencimento', '6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
-                <div class="flex justify-between items-start">
-                    <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Vence &le; 6 Meses</span>
-                    <span id="dot6m" class="h-2 w-2 rounded-full bg-transparent"></span>
-                </div>
-                <span id="kpi6Meses" class="text-xl font-black text-orange-300 mt-2">R$ 0,00</span>
-            </div>
-
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qtd Total Itens</span>
-                <span id="kpiUnidades" class="text-xl font-black text-purple-400 mt-2">0</span>
-            </div>
-
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas</span>
-                <span id="kpiLojas" class="text-xl font-black text-gray-200 mt-2">0</span>
-            </div>
+    <div class="grid-graficos">
+        <div class="canvas-container">
+            <canvas id="graficoLojas"></canvas>
         </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
-                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
-                <div class="h-64 relative">
-                    <canvas id="chartCronograma"></canvas>
-                </div>
-            </div>
-
-            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
-                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Mapeamento Vencimento (R$) por Loja / Filial</h3>
-                <div class="h-64 relative">
-                    <canvas id="chartLojas"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Fornecedores (R$)</span>
-                    <span id="lblFiltroForn" class="text-[10px] text-blue-400 lowercase italic"></span>
-                </h3>
-                <div class="h-56 relative"><canvas id="chartFornecedores"></canvas></div>
-            </div>
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Linhas (R$)</span>
-                    <span id="lblFiltroLinha" class="text-[10px] text-emerald-400 lowercase italic"></span>
-                </h3>
-                <div class="h-56 relative"><canvas id="chartLinhas"></canvas></div>
-            </div>
-            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Famílias (R$)</span>
-                    <span id="lblFiltroFamilia" class="text-[10px] text-amber-400 lowercase italic"></span>
-                </h3>
-                <div class="h-56 relative"><canvas id="chartFamilias"></canvas></div>
-            </div>
-        </div>
-
-        <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
-            <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <div>
-                    <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Visão analítica com plano de ação real baseado das datas do coletor</p>
-                </div>
-                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    <button id="btnExportarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition duration-200 shadow-md border border-emerald-500/30">
-                        Exportar Excel
-                    </button>
-                    <button id="btnWhatsFiltro" onclick="enviarFiltroWhatsApp()" style="background-color: #25d366; color: white; border: none; padding: 8px 15px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 5px;">
-                        🟢 Enviar WhatsApp
-                    </button>
-                    <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold whitespace-nowrap"></span>
-                </div>
-            </div>
-            <div class="overflow-x-auto max-h-[550px] overflow-y-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-gray-900 text-gray-400 font-bold border-b border-gray-700">
-                            <th class="p-3 w-32">Vencimento</th>
-                            <th class="p-3 w-40">Status Ação</th>
-                            <th class="p-3 w-28">Loja</th>
-                            <th class="p-3 w-32">Código</th>
-                            <th class="p-3">Item / Descrição</th>
-                            <th class="p-3 w-36">Família</th>
-                            <th class="p-3 w-16 text-center">Qtd</th>
-                            <th class="p-3 w-28 text-right">Total Perda</th>
-                        </tr>
-                        <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-20">
-                            <th class="p-2">
-                                <div class="flex gap-1">
-                                    <select id="thFiltroMes" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
-                                        <option value="">Mês</option>
-                                        <option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option>
-                                        <option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option>
-                                        <option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option>
-                                        <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
-                                    </select>
-                                    <select id="thFiltroAno" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
-                                        <option value="">Ano</option>
-                                    </select>
-                                </div>
-                            </th>
-                            <th class="p-2">
-                                <select id="thFiltroStatus" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
-                                    <option value="">Todos os Status</option>
-                                    <option value="Tratar item com Urgência">🚨 Urgência (≤ 45d)</option>
-                                    <option value="Tratar item">⚠️ Tratar (≤ 90d)</option>
-                                    <option value="Acompanhar Tratativas">📅 Acompanhar (≤ 180d)</option>
-                                    <option value="Item Mapeado">🔍 Mapeado (&gt; 180d)</option>
-                                </select>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-loja" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-loja')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-codigo" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-codigo')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-item" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-item')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Todos os Itens</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute left-0 mt-1 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2 relative">
-                                <div id="dropdown-family" class="relative target-dropdown">
-                                    <button onclick="toggleDropdownCustomizado('dropdown-family')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
-                                        <span class="label truncate">Selecione...</span> <span>▼</span>
-                                    </button>
-                                    <div class="lista-container hidden absolute right-0 mt-1 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
-                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
-                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
-                                    </div>
-                                </div>
-                            </th>
-                            <th class="p-2"></th>
-                            <th class="p-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpoTabelaPerdas" class="divide-y divide-gray-700/50"></tbody>
-                </table>
-            </div>
+        <div class="canvas-container">
+            <canvas id="graficoMensal"></canvas>
         </div>
     </div>
+
+    <h2>Detalhamento dos Itens</h2>
+    <table id="tabelaDados">
+        <thead>
+            <tr>
+                <th>Cód. Barras</th>
+                <th>Descrição</th>
+                <th>Loja</th>
+                <th>Mês</th>
+                <th>Qtd</th>
+                <th>Vlr Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
 
     <script>
-        const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
+        // 1. SUA BASE DE DADOS GLOBAL (Simulação dos dados vindos da planilha)
+        const dadosGlobais = [
+            { barras: "78910001", descricao: "Item A", loja: "Maricá", mes: "Janeiro", qtd: -50, valor: -1500.00 },
+            { barras: "78910002", descricao: "Item B", loja: "Maricá", mes: "Fevereiro", qtd: -20, valor: -600.00 },
+            { barras: "78910003", descricao: "Item C", loja: "Recreio", mes: "Janeiro", qtd: -80, valor: -2400.00 },
+            { barras: "78910004", descricao: "Item D", loja: "Ipanema", mes: "Março", qtd: -10, valor: -350.00 },
+            { barras: "78910005", descricao: "Item E", loja: "Recreio", mes: "Fevereiro", qtd: -40, valor: -1200.00 },
+            { barras: "78910006", descricao: "Item F", loja: "Ipanema", mes: "Janeiro", qtd: -15, valor: -450.00 }
+        ];
 
-        let dadosBrutos = [];
-        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
-        let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
-        
-        // Instâncias globais dos gráficos Chart.js
-        let instanciasGraficos = { cronograma: null, lojas: null, fornecedores: null, linhas: null, familias: null };
+        // Variáveis para guardar as instâncias dos gráficos e o filtro atual
+        let chartLojas, chartMensal;
+        let filtroAtivo = { campo: null, valor: null };
 
+        // 2. INICIALIZAÇÃO DO DASHBOARD
         window.onload = function() {
-            carregarDadosDaPlanilha();
-            document.addEventListener("click", function(e) {
-                if (!e.target.closest(".target-dropdown")) {
-                    fecharTodosDropdownisCustomizados();
-                }
-            });
-            document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
+            inicializarDash(dadosGlobais);
         };
 
-        function carregarDadosDaPlanilha() {
-            fetch(URL_COLETAS)
-                .then(res => {
-                    if (!res.ok) throw new Error("Erro HTTP: " + res.status);
-                    return res.text();
-                })
-                .then(csv => {
-                    if (csv.includes("<!DOCTYPE") || csv.includes("login") || csv.length < 50) {
-                        exibirMensagemErro("⚠️ Ajuste o compartilhamento da planilha para: 'Qualquer pessoa com o link pode ler'.");
-                        return;
-                    }
-                    processarCsvBruto(csv);
-                    popularSeletorLojas();
-                    popularFiltrosSuspensosTabela();
-                    document.getElementById("loader").classList.add("hidden");
-                    document.getElementById("conteudoDash").classList.remove("hidden");
-                    renderizarDashboard();
-                })
-                .catch(err => {
-                    exibirMensagemErro("❌ Falha de Conexão: Verifique o link do arquivo Sheets ou seu acesso à internet.");
-                });
-        }
-
-        function exibirMensagemErro(mensagem) {
-            document.getElementById("loaderIcon").classList.add("hidden");
-            const txtErro = document.getElementById("loaderTexto");
-            txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
-            txtErro.innerText = mensagem;
-        }
-
-        function tratarNumeroBrasil(texto) {
-            if (!texto) return 0;
-            let limpo = String(texto).replace(/^["']|["']$/g, '').trim();
-            limpo = limpo.replace(/\./g, '').replace(',', '.');
-            let n = parseFloat(limpo);
-            return isNaN(n) ? 0 : n;
-        }
-
-        function encontrarIndexColuna(cabecalho, nomesPossiveis) {
-            for (let nome of nomesPossiveis) {
-                let idx = cabecalho.indexOf(nome.toLowerCase());
-                if (idx !== -1) return idx;
-            }
-            return -1;
-        }
-
-        function processarCsvBruto(text) {
-            const linhas = text.split(/\r?\n/);
-            if (linhas.length < 2) return;
-
-            const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+        function inicializarDash(dados) {
+            atualizarCards(dados);
+            renderizarTabela(dados);
             
-            const idxLoja = encontrarIndexColuna(cabecalho, ['loja', 'filial']);
-            const idxCod = encontrarIndexColuna(cabecalho, ['código de barras', 'codigo', 'barras', 'sku']);
-            const idxItem = encontrarIndexColuna(cabecalho, ['item/produto', 'item', 'produto', 'nome']);
-            const idxDesc = encontrarIndexColuna(cabecalho, ['descrição', 'descricao']);
-            const idxForn = encontrarIndexColuna(cabecalho, ['fornecedor', 'fabricante']);
-            const idxLinha = encontrarIndexColuna(cabecalho, ['linha']);
-            const idxFam = encontrarIndexColuna(cabecalho, ['família', 'familia']);
-            const idxQtd = encontrarIndexColuna(cabecalho, ['quantidade', 'qtd']);
-            const idxValidade = encontrarIndexColuna(cabecalho, ['data de vencimento', 'vencimento', 'validade']);
-            const idxTotalPerda = encontrarIndexColuna(cabecalho, ['total perda (r$)', 'total perda', 'perda', 'valor']);
+            // Agrupa dados para os gráficos iniciais
+            const dadosLojas = agruparPor(dados, 'loja');
+            const dadosMeses = agruparPor(dados, 'mes');
 
-            dadosBrutos = [];
-            const hojeCorte = new Date();
-            hojeCorte.setHours(0, 0, 0, 0);
-
-            for (let i = 1; i < linhas.length; i++) {
-                if (!linhas[i].trim()) continue;
-                
-                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
-                
-                let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
-                let perdaNum = idxTotalPerda !== -1 ? tratarNumeroBrasil(colunas[idxTotalPerda]) : 0;
-                
-                let dataValidadeObj = null;
-                let dataTexto = (idxValidade !== -1 && colunas[idxValidade]) ? colunas[idxValidade].trim() : "";
-                let mesTexto = "";
-                let anoTexto = "";
-
-                if (dataTexto) {
-                    let partes = [];
-                    if (dataTexto.includes("/")) {
-                        partes = dataTexto.split("/");
-                        if (partes.length === 3) {
-                            dataValidadeObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
-                            mesTexto = partes[1].padStart(2, '0');
-                            anoTexto = partes[2];
+            // Renderiza ou Atualiza Gráfico de Lojas
+            const ctxLojas = document.getElementById('graficoLojas').getContext('2d');
+            chartLojas = new Chart(ctxLojas, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dadosLojas),
+                    datasets: [{
+                        label: 'Valor por Loja (R$)',
+                        data: Object.values(dadosLojas).map(v => Math.abs(v)), // Valores absolutos para o gráfico
+                        backgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Estoque Negativo por Loja (Clique para filtrar)' } },
+                    onClick: (e, elementos, chart) => {
+                        if (elementos.length > 0) {
+                            const index = elementos[0].index;
+                            const lojaSelecionada = chart.data.labels[index];
+                            filtrarDashboard('loja', lojaSelecionada);
                         }
-                    } else if (dataTexto.includes("-")) {
-                        partes = dataTexto.split("-");
-                        if (partes.length === 3) {
-                            dataValidadeObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
-                            mesTexto = partes[1].padStart(2, '0');
-                            anoTexto = partes[0];
+                    },
+                    onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; }
+                }
+            });
+
+            // Renderiza ou Atualiza Gráfico Mensal
+            const ctxMensal = document.getElementById('graficoMensal').getContext('2d');
+            chartMensal = new Chart(ctxMensal, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(dadosMeses),
+                    datasets: [{
+                        label: 'Evolução Mensal (R$)',
+                        data: Object.values(dadosMeses).map(v => Math.abs(v)),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { title: { display: true, text: 'Evolução do Estoque Negativo (Clique para filtrar)' } },
+                    onClick: (e, elementos, chart) => {
+                        if (elementos.length > 0) {
+                            const index = elementos[0].index;
+                            const mesSelecionado = chart.data.labels[index];
+                            filtrarDashboard('mes', mesSelecionado);
                         }
-                    }
+                    },
+                    onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; }
                 }
-
-                if (dataValidadeObj && isNaN(dataValidadeObj.getTime())) dataValidadeObj = null;
-
-                if (dataValidadeObj && dataValidadeObj >= hojeCorte) {
-                    const diffTempo = dataValidadeObj.getTime() - hojeCorte.getTime();
-                    const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
-                    
-                    let statusAcao = "";
-                    let classeBadge = "";
-                    
-                    if (diasRestantes <= 45) {
-                        statusAcao = "Tratar item com Urgência";
-                        classeBadge = "bg-red-500/20 text-red-400 border border-red-500/30";
-                    } else if (diasRestantes <= 90) {
-                        statusAcao = "Tratar item";
-                        classeBadge = "bg-orange-500/20 text-orange-400 border border-orange-500/30";
-                    } else if (diasRestantes <= 180) {
-                        statusAcao = "Acompanhar Tratativas";
-                        classeBadge = "bg-blue-500/20 text-blue-400 border border-blue-500/30";
-                    } else {
-                        statusAcao = "Item Mapeado";
-                        classeBadge = "bg-gray-700/50 text-gray-400 border border-gray-600/30";
-                    }
-
-                    dadosBrutos.push({
-                        loja: idxLoja !== -1 ? (colunas[idxLoja] || "Não Identificada") : "Não Identificada",
-                        codigo: idxCod !== -1 ? colunas[idxCod] : "S/C",
-                        item: idxItem !== -1 ? (colunas[idxItem] || "Item Sem Nome") : "Item Sem Nome",
-                        descricao: idxDesc !== -1 ? (colunas[idxDesc] || "") : "",
-                        fornecedor: idxForn !== -1 ? (colunas[idxForn] || "Sem Fornecedor") : "Sem Fornecedor",
-                        linha: idxLinha !== -1 ? (colunas[idxLinha] || "Sem Linha") : "Sem Linha",
-                        familia: idxFam !== -1 ? (colunas[idxFam] || "Sem Família") : "Sem Família",
-                        quantidade: qtdNum,
-                        validade: dataValidadeObj,
-                        validadeTexto: dataTexto || "Sem Data",
-                        mes: mesTexto,
-                        ano: anoTexto,
-                        totalPerda: perdaNum,
-                        diasRestantes: diasRestantes,
-                        statusAcao: statusAcao,
-                        classeBadge: classeBadge
-                    });
-                }
-            }
-        }
-
-        function popularSeletorLojas() {
-            const seletor = document.getElementById("filtroLojaSuperior");
-            while(seletor.options.length > 1) seletor.remove(1);
-            const lojasUnicas = [...new Set(dadosBrutos.map(item => item.loja))].sort();
-            lojasUnicas.forEach(loja => {
-                const opt = document.createElement("option");
-                opt.value = loja; opt.innerText = "🏢 " + loja;
-                seletor.appendChild(opt);
             });
         }
 
-        function popularFiltrosSuspensosTabela() {
-            const anos = [...new Set(dadosBrutos.map(i => i.ano))].filter(Boolean).sort();
-            const selectAno = document.getElementById("thFiltroAno");
-            selectAno.innerHTML = '<option value="">Ano</option>';
-            anos.forEach(ano => {
-                const opt = document.createElement("option");
-                opt.value = ano; opt.innerText = ano; selectAno.appendChild(opt);
-            });
+        // 3. LÓGICA DE FILTRO DINÂMICO
+        function filtrarDashboard(campo, valor) {
+            filtroAtivo.campo = campo;
+            filtroAtivo.valor = valor;
 
-            const lojas = [...new Set(dadosBrutos.map(i => i.loja))].filter(Boolean).sort();
-            const codigos = [...new Set(dadosBrutos.map(i => i.codigo))].filter(Boolean).sort();
-            const familias = [...new Set(dadosBrutos.map(i => i.familia))].filter(Boolean).sort();
-            const itens = [...new Set(dadosBrutos.map(i => i.item))].filter(Boolean).sort();
+            // Altera visual da barra de aviso do filtro
+            document.getElementById('nomeFiltro').innerText = `${campo.toUpperCase()}: ${valor}`;
+            document.getElementById('barraFiltro').style.display = 'flex';
 
-            construirOpcoesDropdownCustom("dropdown-loja", lojas, "loja", "Selecione...");
-            construirOpcoesDropdownCustom("dropdown-codigo", codigos, "codigo", "Selecione...");
-            construirOpcoesDropdownCustom("dropdown-item", itens, "item", "Todos os Itens");
-            construirOpcoesDropdownCustom("dropdown-family", familias, "family", "Selecione...");
-        }
+            // Filtra a base de dados principal baseado no clique
+            const dadosFiltrados = dadosGlobais.filter(item => item[campo] === valor);
 
-        function construirOpcoesDropdownCustom(idDropdown, arrayValores, chaveFiltro, labelPadrao) {
-            const container = document.getElementById(idDropdown);
-            const wrapper = container.querySelector(".opcoes-wrapper");
-            wrapper.innerHTML = "";
-
-            const divLimpar = document.createElement("div");
-            divLimpar.className = "px-2 py-1.5 hover:bg-gray-700 rounded cursor-pointer text-gray-400 italic transition";
-            divLimpar.innerText = "❌ Limpar Filtro";
-            divLimpar.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, "", labelPadrao, chaveFiltro);
-            wrapper.appendChild(divLimpar);
-
-            arrayValores.forEach(valor => {
-                const divOpt = document.createElement("div");
-                divOpt.className = "opcao-item px-2 py-1.5 hover:bg-blue-600 rounded cursor-pointer text-gray-200 transition truncate";
-                divOpt.innerText = valor; divOpt.setAttribute("data-valor", valor.toLowerCase());
-                divOpt.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, valor.toLowerCase(), valor, chaveFiltro);
-                wrapper.appendChild(divOpt);
-            });
-        }
-
-        function toggleDropdownCustomizado(idDropdown) {
-            const container = document.getElementById(idDropdown);
-            const lista = container.querySelector(".lista-container");
-            const inputPesquisa = container.querySelector("input");
-            const estaAtivo = !lista.classList.contains("hidden");
-            
-            fecharTodosDropdownisCustomizados();
-            if (!estaAtivo) {
-                lista.classList.remove("hidden");
-                inputPesquisa.value = "";
-                filtrarOpcoesDropdown(inputPesquisa);
-                setTimeout(() => inputPesquisa.focus(), 50);
-            }
-        }
-
-        function fecharTodosDropdownisCustomizados() {
-            document.querySelectorAll(".lista-container").forEach(el => el.classList.add("hidden"));
-        }
-
-        function filtrarOpcoesDropdown(input) {
-            const busca = input.value.toLowerCase().trim();
-            const wrapper = input.parentElement.querySelector(".opcoes-wrapper");
-            const opcoes = wrapper.querySelectorAll(".opcao-item");
-            opcoes.forEach(opcao => {
-                const texto = opcao.getAttribute("data-valor");
-                if (texto.includes(busca)) opcao.classList.remove("hidden");
-                else classList.add("hidden");
-            });
-        }
-
-        function selecionarOpcaoDropdownCustom(idDropdown, valorArmazenar, textoExibir, chaveFiltro) {
-            const container = document.getElementById(idDropdown);
-            container.querySelector(".label").innerText = textoExibir;
-            filtrosCabecalhoTabela[chaveFiltro] = valorArmazenar;
-            fecharTodosDropdownisCustomizados();
-            renderizarDashboard();
-        }
-
-        function alterarFiltroLojaSuperior(lojaSelecionada) {
-            filtrosAtivos.loja = lojaSelecionada || null;
-            renderizarDashboard();
-        }
-
-        function executarFiltrosTabela() {
-            filtrosCabecalhoTabela.mes = document.getElementById("thFiltroMes").value;
-            filtrosCabecalhoTabela.ano = document.getElementById("thFiltroAno").value;
-            filtrosCabecalhoTabela.status = document.getElementById("thFiltroStatus").value;
-            renderizarDashboard();
-        }
-
-        function alternarFiltroCard(tipo, valor) {
-            if (filtrosAtivos[tipo] === valor) {
-                filtrosAtivos[tipo] = null;
-            } else {
-                filtrosAtivos[tipo] = valor;
-            }
-            renderizarDashboard();
-        }
-
-        function limparTodosFiltros() {
-            filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
-            filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
-            
-            document.getElementById("filtroLojaSuperior").value = "";
-            document.getElementById("thFiltroMes").value = "";
-            document.getElementById("thFiltroAno").value = "";
-            document.getElementById("thFiltroStatus").value = "";
-            
-            document.getElementById("dropdown-loja").querySelector(".label").innerText = "Selecione...";
-            document.getElementById("dropdown-codigo").querySelector(".label").innerText = "Selecione...";
-            document.getElementById("dropdown-item").querySelector(".label").innerText = "Todos os Itens";
-            document.getElementById("dropdown-family").querySelector(".label").innerText = "Selecione...";
-
-            renderizarDashboard();
-        }
-
-        function filtrarDados() {
-            return dadosBrutos.filter(item => {
-                // Filtros Superiores / Cards e Gráficos Interativos
-                if (filtrosAtivos.loja && item.loja !== filtrosAtivos.loja) return false;
-                if (filtrosAtivos.fornecedor && item.fornecedor !== filtrosAtivos.fornecedor) return false;
-                if (filtrosAtivos.linha && item.linha !== filtrosAtivos.linha) return false;
-                if (filtrosAtivos.familiaGrafico && item.familia !== filtrosAtivos.familiaGrafico) return false;
-                
-                if (filtrosAtivos.vencimento) {
-                    if (filtrosAtivos.vencimento === 'urgencia' && item.diasRestantes > 45) return false;
-                    if (filtrosAtivos.vencimento === '3meses' && item.diasRestantes > 90) return false;
-                    if (filtrosAtivos.vencimento === '6meses' && item.diasRestantes > 180) return false;
-                }
-
-                // Filtros das Colunas da Tabela Analítica
-                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.family && item.familia.toLowerCase() !== filtrosCabecalhoTabela.family) return false;
-
-                return true;
-            });
-        }
-
-        function renderizarDashboard() {
-            const dadosFiltrados = filtrarDados();
-            
-            // Exibir/Ocultar botão de limpar filtros
-            const temFiltroAtivo = Object.values(filtrosAtivos).some(v => v !== null) || Object.values(filtrosCabecalhoTabela).some(v => v !== "");
-            document.getElementById("btnLimparFiltros").classList.toggle("hidden", !temFiltroAtivo);
-
-            // Atualizar KPIs
-            atualizarKPIs(dadosFiltrados);
-
-            // Renderizar/Atualizar os 5 Gráficos Integrados
-            renderizarGraficoCronograma(dadosFiltrados);
-            renderizarGraficoLojas(dadosFiltrados);
-            renderizarGraficoFornecedores(dadosFiltrados);
-            renderizarGraficoLinhas(dadosFiltrados);
-            renderizarGraficoFamilias(dadosFiltrados);
-
-            // Atualizar Tabela Analítica
+            // Atualiza os componentes periféricos com os novos dados filtrados
+            atualizarCards(dadosFiltrados);
             renderizarTabela(dadosFiltrados);
+
+            // Destaca visualmente o item clicado no gráfico mantendo os gráficos sem sumir
+            destacarGraficos();
         }
 
-        function atualizarKPIs(dados) {
-            let totalRs = 0;
-            let totalUnidades = 0;
-            let itensUrgentes = 0;
-            let total3MesesRs = 0;
-            let total6MesesRs = 0;
-            let lojasAtivas = new Set();
+        function limparFiltro() {
+            filtroAtivo = { campo: null, valor: null };
+            document.getElementById('barraFiltro').style.display = 'none';
 
-            dados.forEach(i => {
-                totalRs += i.totalPerda;
-                totalUnidades += i.quantidade;
-                lojasAtivas.add(i.loja);
-
-                if (i.diasRestantes <= 45) itensUrgentes++;
-                if (i.diasRestantes <= 90) total3MesesRs += i.totalPerda;
-                if (i.diasRestantes <= 180) total6MesesRs += i.totalPerda;
-            });
-
-            document.getElementById("kpiTotalRs").innerText = totalRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiUrgencia").innerText = `${itensUrgentes} ${itensUrgentes === 1 ? 'item' : 'itens'}`;
-            document.getElementById("kpi3Meses").innerText = total3MesesRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpi6Meses").innerText = total6MesesRs.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            document.getElementById("kpiUnidades").innerText = totalUnidades.toLocaleString('pt-BR');
-            document.getElementById("kpiLojas").innerText = lojasAtivas.size;
-
-            // Destaques nos cards se houver filtros de tempo ativos
-            document.getElementById("cardUrgencia").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === 'urgencia' ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-red-500 transition-all duration-200`;
-            document.getElementById("card3Meses").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === '3meses' ? 'border-amber-500 ring-1 ring-amber-500' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200`;
-            document.getElementById("card6Meses").className = `bg-gray-800 p-4 rounded-xl border ${filtrosAtivos.vencimento === '6meses' ? 'border-orange-500 ring-1 ring-orange-500' : 'border-gray-700'} shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200`;
-        }
-
-        // 1. CORREÇÃO DA LINHA DO TEMPO: Agrupamento Dinâmico Reativo por Mês/Ano
-        function renderizarGraficoCronograma(dados) {
-            const agrupado = {};
-            dados.forEach(i => {
-                if (!i.mes || !i.ano) return;
-                const chave = `${i.mes}/${i.ano}`;
-                agrupado[chave] = (agrupado[chave] || 0) + i.totalPerda;
-            });
-
-            const labels = Object.keys(agrupado).sort((a, b) => {
-                const [mesA, anoA] = a.split('/').map(Number);
-                const [mesB, anoB] = b.split('/').map(Number);
-                return anoA !== anoB ? anoA - anoB : mesA - mesB;
-            });
-            const valores = labels.map(l => agrupado[l]);
-
-            if (instanciasGraficos.cronograma) {
-                instanciasGraficos.cronograma.data.labels = labels;
-                instanciasGraficos.cronograma.data.datasets[0].data = valores;
-                instanciasGraficos.cronograma.update();
-            } else {
-                const ctx = document.getElementById('chartCronograma').getContext('2d');
-                instanciasGraficos.cronograma = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Evolução Perda R$',
-                            data: valores,
-                            borderColor: '#3b82f6',
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            fill: true,
-                            tension: 0.3,
-                            borderWidth: 3
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
-        }
-
-        // 2. SOLUÇÃO COMPLETA: Ordenação Decrescente de Lojas (Maior R$ para Esquerda)
-        function renderizarGraficoLojas(dados) {
-            const agrupado = {};
-            dados.forEach(i => {
-                agrupado[i.loja] = (agrupado[i.loja] || 0) + i.totalPerda;
-            });
-
-            // Converte para array de objetos para possibilitar ordenação estável
-            let listaOrdenada = Object.keys(agrupado).map(loja => {
-                return { nomeLoja: loja, totalPerda: agrupado[loja] };
-            });
-
-            // Ordena em ordem decrescente (b - a)
-            listaOrdenada.sort((a, b) => b.totalPerda - a.totalPerda);
-
-            const labels = listaOrdenada.map(item => item.nomeLoja);
-            const valores = listaOrdenada.map(item => item.totalPerda);
-
-            if (instanciasGraficos.lojas) {
-                instanciasGraficos.lojas.data.labels = labels;
-                instanciasGraficos.lojas.data.datasets[0].data = valores;
-                instanciasGraficos.lojas.update();
-            } else {
-                const ctx = document.getElementById('chartLojas').getContext('2d');
-                instanciasGraficos.lojas = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Perda Estimada por Loja (R$)',
-                            data: valores,
-                            backgroundColor: '#10b981',
-                            borderRadius: 6
-                        }]
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } }
-                    }
-                });
-            }
-        }
-
-        function renderizarGraficoFornecedores(dados) {
-            const agrupado = {};
-            dados.forEach(i => { agrupado[i.fornecedor] = (agrupado[i.fornecedor] || 0) + i.totalPerda; });
+            // Restaura tudo para o padrão original
+            atualizarCards(dadosGlobais);
+            renderizarTabela(dadosGlobais);
             
-            let lista = Object.keys(agrupado).map(f => ({ nome: f, valor: agrupado[f] })).sort((a,b) => b.valor - a.valor).slice(0, 7);
-            
-            const labels = lista.map(i => i.nome);
-            const valores = lista.map(i => i.valor);
-
-            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `filtrado: ${filtrosAtivos.fornecedor}` : "";
-
-            if (instanciasGraficos.fornecedores) {
-                instanciasGraficos.fornecedores.data.labels = labels;
-                instanciasGraficos.fornecedores.data.datasets[0].data = valores;
-                instanciasGraficos.fornecedores.update();
-            } else {
-                const ctx = document.getElementById('chartFornecedores').getContext('2d');
-                instanciasGraficos.fornecedores = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{ data: valores, backgroundColor: ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#c084fc', '#f472b6', '#a7f3d0'] }]
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        onClick: (e, elementos) => {
-                            if (elementos.length > 0) {
-                                const idx = elementos[0].index;
-                                const fornClick = instanciasGraficos.fornecedores.data.labels[idx];
-                                alternarFiltroCard('fornecedor', fornClick);
-                            }
-                        }
-                    }
-                });
-            }
+            // Restaura cores originais dos gráficos
+            chartLojas.data.datasets[0].backgroundColor = '#3b82f6';
+            chartMensal.data.datasets[0].borderColor = '#ef4444';
+            chartLojas.update();
+            chartMensal.update();
         }
 
-        function renderizarGraficoLinhas(dados) {
-            const agrupado = {};
-            dados.forEach(i => { agrupado[i.linha] = (agrupado[i.linha] || 0) + i.totalPerda; });
-            
-            let lista = Object.keys(agrupado).map(l => ({ nome: l, valor: agrupado[l] })).sort((a,b) => b.valor - a.valor).slice(0, 7);
-            
-            const labels = lista.map(i => i.nome);
-            const valores = lista.map(i => i.valor);
-
-            document.getElementById("lblFiltroLinha").innerText = filtrosAtivos.linha ? `filtrado: ${filtrosAtivos.linha}` : "";
-
-            if (instanciasGraficos.linhas) {
-                instanciasGraficos.linhas.data.labels = labels;
-                instanciasGraficos.linhas.data.datasets[0].data = valores;
-                instanciasGraficos.linhas.update();
-            } else {
-                const ctx = document.getElementById('chartLinhas').getContext('2d');
-                instanciasGraficos.linhas = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: labels,
-                        datasets: [{ data: valores, backgroundColor: ['#34d399', '#fbbf24', '#f87171', '#60a5fa', '#a7f3d0', '#c084fc', '#e2e8f0'] }]
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        onClick: (e, elementos) => {
-                            if (elementos.length > 0) {
-                                const idx = elementos[0].index;
-                                const linhaClick = instanciasGraficos.linhas.data.labels[idx];
-                                alternarFiltroCard('linha', linhaClick);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        function renderizarGraficoFamilias(dados) {
-            const agrupado = {};
-            dados.forEach(i => { agrupado[i.familia] = (agrupado[i.familia] || 0) + i.totalPerda; });
-            
-            let lista = Object.keys(agrupado).map(f => ({ nome: f, valor: agrupado[f] })).sort((a,b) => b.valor - a.valor).slice(0, 5);
-            
-            const labels = lista.map(i => i.nome);
-            const valores = lista.map(i => i.valor);
-
-            document.getElementById("lblFiltroFamilia").innerText = filtrosAtivos.familiaGrafico ? `filtrado: ${filtrosAtivos.familiaGrafico}` : "";
-
-            if (instanciasGraficos.familias) {
-                instanciasGraficos.familias.data.labels = labels;
-                instanciasGraficos.familias.data.datasets[0].data = valores;
-                instanciasGraficos.familias.update();
-            } else {
-                const ctx = document.getElementById('chartFamilias').getContext('2d');
-                instanciasGraficos.familias = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{ label: 'Top Famílias R$', data: valores, backgroundColor: '#fbbf24', borderRadius: 4 }]
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        indexAxis: 'y',
-                        plugins: { legend: { display: false } },
-                        onClick: (e, elementos) => {
-                            if (elementos.length > 0) {
-                                const idx = elementos[0].index;
-                                const famClick = instanciasGraficos.familias.data.labels[idx];
-                                alternarFiltroCard('familiaGrafico', famClick);
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
+        // 4. ATUALIZAÇÃO DA TABELA E CARDS
         function renderizarTabela(dados) {
-            const tbody = document.getElementById("corpoTabelaPerdas");
-            tbody.innerHTML = "";
-            
-            document.getElementById("txtContagemLinhas").innerText = `${dados.length} registros exibidos`;
-
-            // Ordenação natural por criticidade de dias restantes (menor prazo primeiro)
-            dados.sort((a, b) => a.diasRestantes - b.diasRestantes);
+            const tbody = document.querySelector('#tabelaDados tbody');
+            tbody.innerHTML = ''; // Limpa tabela antiga
 
             dados.forEach(item => {
-                const tr = document.createElement("tr");
-                tr.className = "hover:bg-gray-700/40 border-b border-gray-800 transition text-gray-300";
-                
+                const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="p-3 font-semibold text-gray-200">${item.validadeTexto}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${item.classeBadge}">${item.statusAcao}</span></td>
-                    <td class="p-3 font-medium">${item.loja}</td>
-                    <td class="p-3 text-gray-400 font-mono">${item.codigo}</td>
-                    <td class="p-3 truncate max-w-xs font-medium text-gray-100" title="${item.item} ${item.descricao}">${item.item}</td>
-                    <td class="p-3 text-gray-400 truncate max-w-[120px]">${item.familia}</td>
-                    <td class="p-3 text-center font-bold text-gray-100">${item.quantidade}</td>
-                    <td class="p-3 text-right font-bold text-emerald-400">${item.totalPerda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                    <td>${item.barras}</td>
+                    <td>${item.descricao}</td>
+                    <td>${item.loja}</td>
+                    <td>${item.mes}</td>
+                    <td>${item.qtd}</td>
+                    <td>${item.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function exportarParaExcel() {
-            const dadosFiltrados = filtrarDados();
-            if (dadosFiltrados.length === 0) {
-                alert("Nenhum dado disponível para exportar no filtro atual.");
-                return;
-            }
+        function atualizarCards(dados) {
+            const totalItens = dados.length;
+            const qtdTotal = dados.reduce((acc, item) => acc + item.qtd, 0);
+            const valorTotal = dados.reduce((acc, item) => acc + item.valor, 0);
 
-            const matrizParaExcel = dadosFiltrados.map(i => ({
-                'Vencimento': i.validadeTexto,
-                'Status Ação': i.statusAcao,
-                'Loja': i.loja,
-                'Código': i.codigo,
-                'Item/Descrição': i.item,
-                'Família': i.familia,
-                'Qtd': i.quantidade,
-                'Total Perda (R$)': i.totalPerda
-            }));
-
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(matrizParaExcel);
-            XLSX.utils.book_append_sheet(wb, ws, "Validades Filtradas");
-            XLSX.writeFile(wb, "Relatorio_Validades_Dashboard.xlsx");
+            document.getElementById('cardTotalItens').innerText = totalItens;
+            document.getElementById('cardQtdTotal').innerText = qtdTotal;
+            document.getElementById('cardValorTotal').innerText = valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         }
 
-        // 3. SEGURANÇA E PROTEÇÃO CONTRA UNDEFINED NO BOTÃO WHATSAPP
-        function enviarFiltroWhatsApp() {
-            const dadosFiltrados = filtrarDados();
-            
-            // Separa os dados em arrays específicos garantindo a integridade
-            const itensCriticos45 = dadosFiltrados.filter(i => i.diasRestantes <= 45);
-            const itensAlerta90 = dadosFiltrados.filter(i => i.diasRestantes > 45 && i.diasRestantes <= 90);
-
-            // Executa a formatação protegida
-            const stringMensagem = gerarTextoParaWhatsApp(itensCriticos45, itensAlerta90);
-            
-            // Link de envio do WhatsApp
-            const urlWhats = `https://api.whatsapp.com/send?text=${encodeURIComponent(stringMensagem)}`;
-            window.open(urlWhats, '_blank');
+        // 5. FUNÇÕES AUXILIARES DE SUPORTE
+        function agruparPor(dados, propriedade) {
+            return dados.reduce((acc, item) => {
+                const chave = item[propriedade];
+                if (!acc[chave]) acc[chave] = 0;
+                acc[chave] += item.valor;
+                return acc;
+            }, {});
         }
 
-        function gerarTextoParaWhatsApp(itensCriticos45 = [], itensAlerta90 = []) {
-            // Garante instâncias de arrays se caírem como nulos/undefined por chamadas externas
-            itensCriticos45 = itensCriticos45 || [];
-            itensAlerta90 = itensAlerta90 || [];
-
-            let texto = "*🚨 ALERTA DE VALIDADES – CONSOLIDADO DIÁRIO*\n\n" +
-                        "Prezados, bom dia.\n\n" +
-                        "Segue abaixo a relação dos itens identificados pelas lojas com vencimento nos próximos 3 meses, " +
-                        "incluindo destaque para os produtos mais críticos, com vencimento em até 45 dias.\n\n" +
-                        "----------------------------------------\n\n" +
-                        "*⚠️ URGÊNCIA (≤ 45 DIAS) – CRÍTICO*\n";
-                        
-            if (itensCriticos45.length === 0) {
-                texto += "_Nenhum item nesta faixa._\n";
-            } else {
-                itensCriticos45.forEach(item => {
-                    let loja = item.loja || "Não Identificada";
-                    let desc = item.item || "Sem Descrição";
-                    let cod = item.codigo || "S/C";
-                    let data = item.validadeTexto || "Vazio";
-                    let qtd = item.quantidade || 0;
-                    texto += `• *${loja}* - ${desc} (${cod}) | Venc: *${data}* | Qtd: ${qtd}\n`;
-                });
+        function destacarGraficos() {
+            if (filtroAtivo.campo === 'loja') {
+                // Opacifica as barras não selecionadas no gráfico de lojas
+                const cores = chartLojas.data.labels.map(label => 
+                    label === filtroAtivo.valor ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'
+                );
+                chartLojas.data.datasets[0].backgroundColor = cores;
+                chartLojas.update();
+            } else if (filtroAtivo.campo === 'mes') {
+                // Altera a cor da linha para mostrar que há um filtro de mês ativo
+                chartMensal.data.datasets[0].borderColor = '#f59e0b'; // Amarelo/Laranja de aviso
+                chartMensal.update();
             }
-
-            texto += "\n----------------------------------------\n\n*📅 ATENÇÃO (46 A 90 DIAS) – MONITORAR*\n";
-
-            if (itensAlerta90.length === 0) {
-                texto += "_Nenhum item nesta faixa._\n";
-            } else {
-                itensAlerta90.forEach(item => {
-                    let loja = item.loja || "Não Identificada";
-                    let desc = item.item || "Sem Descrição";
-                    let cod = item.codigo || "S/C";
-                    let data = item.validadeTexto || "Vazio";
-                    let qtd = item.quantidade || 0;
-                    texto += `• *${loja}* - ${desc} (${cod}) | Venc: *${data}* | Qtd: ${qtd}\n`;
-                });
-            }
-
-            texto += "\n----------------------------------------\n_Painel Gerencial de Controle de Perdas_";
-            return texto;
         }
     </script>
 </body>
