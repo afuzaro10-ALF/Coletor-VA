@@ -166,9 +166,11 @@
                     if (linhas.length < 2) return;
 
                     const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
-                    const idxLoja = cabecalho.indexOf('loja');
-                    const idxUser = cabecalho.indexOf('usuario');
-                    const idxSenha = cabecalho.indexOf('senha');
+                    
+                    // Melhoria na busca das colunas (evita problemas com acentuação ou espaços)
+                    const idxLoja = cabecalho.findIndex(c => c.includes('loja'));
+                    const idxUser = cabecalho.findIndex(c => c.includes('usuario') || c.includes('usuário'));
+                    const idxSenha = cabecalho.findIndex(c => c.includes('senha'));
 
                     const select = document.getElementById("loginLoja");
                     if (!select) return; 
@@ -183,7 +185,8 @@
                         let senha = colunas[idxSenha];
 
                         if (loja && user && senha) {
-                            credenciaisLojas[loja] = { usuario: user, senate: senha };
+                            // CORRIGIDO: Modificado de 'senate' para 'senha' para alinhar com a função autenticar()
+                            credenciaisLojas[loja] = { usuario: user, senha: senha };
 
                             const opt = document.createElement("option");
                             opt.value = loja;
@@ -278,7 +281,7 @@
 
                     for (let i = 1; i < linhas.length; i++) {
                         if (!linhas[i].trim()) continue;
-                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        const colunas = lines[i] = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                         
                         let codigo = colunas[idxCod];
                         if (codigo) {
@@ -347,7 +350,7 @@
         }
 
         function buscarProduto(codigo) {
-            codigo = code = codigo.trim();
+            codigo = codigo.trim();
             if (!codigo) { resetarCamposCadastro(); return; }
 
             document.getElementById('txtCodigoExibicao').value = codigo;
@@ -405,7 +408,7 @@
             const custoTexto = document.getElementById('txtCusto').value;
             const qtd = parseInt(document.getElementById('campoQtd').value) || 0;
             if (custoTexto && produtoEncontrado) {
-                const custoNum = parseFloat(custoTexto.replace('.', '').replace(',', '.'));
+                const custoNum = parseFloat(custoTexto.replace(/\./g, '').replace(',', '.'));
                 document.getElementById('txtTotalFinanceiro').value = (custoNum * qtd).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             }
         }
