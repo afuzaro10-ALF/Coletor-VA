@@ -8,8 +8,8 @@
     
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
-        .tela { display: none; } /* Esconde as telas por padrão */
-        .ativa { display: block; } /* Mostra apenas a tela ativa */
+        .tela { display: none; } 
+        .ativa { display: block; } 
         #reader { width: 100%; max-width: 500px; margin: 0 auto; }
         .btn { padding: 10px 20px; font-size: 16px; margin-top: 10px; cursor: pointer; }
     </style>
@@ -31,7 +31,7 @@
 
     <div id="containerScanner" class="tela">
         <h2>Escaneie o Código de Barras</h2>
-        <p>Posicione o código de barras na linha verde abaixo</p>
+        <p>Posicione o código de barras na área de leitura</p>
         
         <div id="reader"></div> 
         
@@ -40,24 +40,12 @@
     </div>
 
     <script>
-        // Variáveis globais de controle
         let html5QrCode;
-        let estaProcessandoLeitura = false; 
 
-        // --- CORREÇÃO 1: EXECUTAR LOGO AO CARREGAR A PÁGINA ---
+        // Fluxo padrão de inicialização
         window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const telaForcada = urlParams.get('tela');
             const lojaSalva = localStorage.getItem('lojaSelecionada');
 
-            // Se o botão do Dashboard pediu especificamente o scanner, ignora o bloqueio
-            if (telaForcada === 'scanner') {
-                mudarTela('containerScanner');
-                inicializarScanner();
-                return; // Para a execução aqui e não deixa redirecionar para o login
-            }
-
-            // Se não veio parâmetro na URL, segue o fluxo normal de validação
             if (!lojaSalva) {
                 mudarTela('containerLogin');
             } else {
@@ -66,7 +54,6 @@
             }
         };
 
-        // Função simples para alternar a exibição das telas
         function mudarTela(idTela) {
             document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
             document.getElementById(idTela).classList.add('ativa');
@@ -83,67 +70,31 @@
             inicializarScanner();
         }
 
-        // --- CORREÇÃO 2: INICIALIZAÇÃO DO SCANNER COM FILTRO ANTICORTE ---
         function inicializarScanner() {
-            // Evita duplicar o scanner se ele já estiver rodando
             if (html5QrCode && html5QrCode.isScanning) return;
 
             html5QrCode = new Html5Qrcode("reader");
             
+            // Configuração padrão de leitura rápida
             const config = { 
-                fps: 8, // Reduzido de 15/20 para 8: lê de forma menos "desesperada", dando tempo de focar
-                qrbox: { width: 300, height: 150 } // Janela de foco focada em formatos retangulares (barras)
+                fps: 15, 
+                qrbox: { width: 250, height: 250 } 
             };
 
             html5QrCode.start(
-                { facingMode: "environment" }, // Usa a câmera traseira
+                { facingMode: "environment" }, 
                 config,
-                onScanSuccess // Função chamada ao ler algo
+                onScanSuccess
             ).catch(err => {
                 console.error("Erro ao iniciar câmera: ", err);
             });
         }
 
-        // --- FILTRO DE VELOCIDADE E TAMANHO MINIMO ---
+        // Processamento imediato sem travas de tempo ou tamanho
         function onScanSuccess(decodedText, decodedResult) {
-            // Se o script já capturou um frame há menos de 1 segundo, ignora as leituras parciais seguintes
-            if (estaProcessandoLeitura) return;
-
             const codigoLimpo = decodedText.trim();
-
-            // Proteção contra leitura cortada: Produtos comerciais (EAN/Code128) raramente tem menos de 8 dígitos
-            if (codigoLimpo.length < 8) {
-                console.warn("Código ignorado por estar muito curto/cortado:", codigoLimpo);
-                return; 
-            }
-
-            // Ativa a trava de processamento (Debounce)
-            estaProcessandoLeitura = true;
-
-            // Envia o código para o seu processamento interno (ou API do banco de dados)
             enviarCodigoAoSistema(codigoLimpo);
-
-            // Aguarda 1.2 segundos (1200ms) antes de permitir que a câmera leia o próximo produto
-            setTimeout(() => {
-                estaProcessandoLeitura = false;
-            }, 1200);
         }
 
         function enviarCodigoAoSistema(codigo) {
-            alert("Código Lido com Sucesso: " + codigo + "\nLoja: " + localStorage.getItem('lojaSelecionada'));
-            // Aqui entra o seu fetch() ou código que manda os dados para o AppSheet/Planilha
-        }
-
-        function voltarParaInicio() {
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    localStorage.removeItem('lojaSelecionada');
-                    mudarTela('containerLogin');
-                });
-            } else {
-                mudarTela('containerLogin');
-            }
-        }
-    </script>
-</body>
-</html>
+            alert("Código Lido: " + codigo + "\n
