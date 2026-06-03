@@ -107,7 +107,6 @@
     </div>
 
     <script>
-        // URL da mesma planilha master, alterando a aba dinamicamente no código
         const BASE_PLANILHA_URL = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv";
         const CADASTRO_URL = `${BASE_PLANILHA_URL}&sheet=Cadastro`;
         const USUARIOS_URL = `${BASE_PLANILHA_URL}&sheet=Usuarios`;
@@ -115,19 +114,17 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz4npNC4Bhx3cGbiuhdozsSr2-aRslAMtXm736wN74axZSmQh4Q-IqEWJAw2Na8I8uO/exec";
         
         let baseProdutos = {};
-        let credenciaisLojas = {}; // Objeto que vai armazenar os usuários carregados do Sheets
+        let credenciaisLojas = {}; 
         let usuarioLogado = "";
         let lojaSessao = "";
         let html5QrCodeScanner = null;
         let produtoEncontrado = false;
         let emPausaLeitura = false;
 
-        // Dispara o carregamento das credenciais assim que abre a página
         window.onload = function() {
             carregarCredenciaisDaNuvem();
         };
 
-        // --- BUSCA OS USUÁRIOS DIRETAMENTE DO GOOGLE SHEETS ---
         function carregarCredenciaisDaNuvem() {
             fetch(USUARIOS_URL)
                 .then(response => response.text())
@@ -141,7 +138,7 @@
                     const idxSenha = cabecalho.indexOf('senha');
 
                     const select = document.getElementById("loginLoja");
-                    select.innerHTML = ""; // Limpa a mensagem de carregando
+                    select.innerHTML = ""; 
 
                     for (let i = 1; i < linhas.length; i++) {
                         if (!linhas[i].trim()) continue;
@@ -152,10 +149,8 @@
                         let senha = colunas[idxSenha];
 
                         if (loja && user && senha) {
-                            // Alimenta o objeto interno de validação
                             credenciaisLojas[loja] = { usuario: user, senha: senha };
 
-                            // Cria a opção no menu Dropdown do login de forma automática
                             const opt = document.createElement("option");
                             opt.value = loja;
                             opt.textContent = loja;
@@ -163,7 +158,6 @@
                         }
                     }
 
-                    // Libera o botão de login após carregar tudo com sucesso
                     document.getElementById("txtStatusLogin").innerText = "Selecione sua loja e identifique-se";
                     const btnEntrar = document.getElementById("btnEntrar");
                     btnEntrar.disabled = false;
@@ -187,13 +181,11 @@
                 return;
             }
 
-            // 1. Regra Master Inviolável (Mantido fixo no código para suporte)
             if (usuarioDigitado === "admin" && senhaDigitada === "123") {
                 logarSucesso(lojaSelecionada, usuarioDigitado);
                 return;
             }
 
-            // 2. Consulta a tabela recém-carregada do Sheets
             const credencialLoja = credenciaisLojas[lojaSelecionada];
 
             if (credencialLoja && usuarioDigitado === credencialLoja.usuario && senhaDigitada === credencialLoja.senha) {
@@ -236,7 +228,7 @@
 
                     for (let i = 1; i < linhas.length; i++) {
                         if (!linhas[i].trim()) continue;
-                        const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                        const colunas = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
                         
                         let codigo = colunas[idxCod];
                         if (codigo) {
@@ -256,10 +248,11 @@
                 .catch(err => console.error("Erro ao ler aba Cadastro:", err));
         }
 
+        // --- ALTERADO: AJUSTE DE ESTABILIDADE DO SCANNER ---
         function ligarCameraAutomatica() {
             html5QrCodeScanner = new Html5Qrcode("reader");
             const config = { 
-                fps: 20, 
+                fps: 9, // Reduzido de 20 para 9: evita leituras afobadas e dá tempo para o foco da câmera agir
                 qrbox: (width, height) => { return { width: width * 0.85, height: height * 0.45 }; },
                 formatsToSupport: [ 
                     Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, 
@@ -271,9 +264,20 @@
                 { facingMode: "environment" }, config, 
                 (decodedText) => {
                     if (emPausaLeitura) return;
+
+                    const codigoLimpo = decodedText.trim();
+
+                    // Trava de tamanho mínimo: rejeita leituras parciais de códigos de barras (EAN-8 / EAN-13 / CODE-128)
+                    if (codigoLimpo.length < 7) {
+                        console.warn("Leitura ignorada (muito curta/cortada):", codigoLimpo);
+                        return;
+                    }
+
                     emPausaLeitura = true;
-                    document.getElementById('campoCodigo').value = decodedText;
-                    buscarProduto(decodedText);
+                    document.getElementById('campoCodigo').value = codigoLimpo;
+                    buscarProduto(codigoLimpo);
+                    
+                    // Mantém a pausa de 2 segundos para o operador afastar o produto lido da câmera
                     setTimeout(() => { emPausaLeitura = false; }, 2000);
                 },
                 (errorMessage) => {}
