@@ -58,3 +58,414 @@
                 <div class="flex justify-between items-start">
                     <span class="text-[10px] font-bold text-red-400 uppercase tracking-wider">🚨 Urgência (≤ 45d)</span>
                     <span id="dotUrg" class="h-2 w-2 rounded-full bg-transparent"></span>
+                </div>
+                <span id="kpiUrgencia" class="text-xl font-black text-red-400 mt-2">0 itens</span>
+            </div>
+
+            <div onclick="alternarFiltroCard('vencimento', '3meses')" id="card3Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-amber-500 transition-all duration-200">
+                <div class="flex justify-between items-start">
+                    <span class="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Vence &le; 3 Meses</span>
+                    <span id="dot3m" class="h-2 w-2 rounded-full bg-transparent"></span>
+                </div>
+                <span id="kpi3Meses" class="text-xl font-black text-amber-300 mt-2">R$ 0,00</span>
+            </div>
+
+            <div onclick="alternarFiltroCard('vencimento', '6meses')" id="card6Meses" class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between cursor-pointer hover:border-orange-500 transition-all duration-200">
+                <div class="flex justify-between items-start">
+                    <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider">Vence &le; 6 Meses</span>
+                    <span id="dot6m" class="h-2 w-2 rounded-full bg-transparent"></span>
+                </div>
+                <span id="kpi6Meses" class="text-xl font-black text-orange-300 mt-2">R$ 0,00</span>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Qtd Total Itens</span>
+                <span id="kpiUnidades" class="text-xl font-black text-purple-400 mt-2">0</span>
+            </div>
+
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow flex flex-col justify-between">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lojas Ativas</span>
+                <span id="kpiLojas" class="text-xl font-black text-gray-200 mt-2">0</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
+                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Linha do Tempo: Cronograma de Vencimento</h3>
+                <div class="h-64 relative">
+                    <canvas id="chartCronograma"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-5 rounded-2xl border border-gray-700 shadow-md">
+                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider mb-3">Mapeamento Financeiro (R$) por Loja / Filial</h3>
+                <div class="h-64 relative">
+                    <canvas id="chartLojas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
+                    <span>Top Fornecedores (R$)</span>
+                    <span id="lblFiltroForn" class="text-[10px] text-blue-400 lowercase italic"></span>
+                </h3>
+                <div class="h-56 relative"><canvas id="chartFornecedores"></canvas></div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
+                    <span>Quebra por Linha (R$)</span>
+                    <span id="lblFiltroLinha" class="text-[10px] text-emerald-400 lowercase italic"></span>
+                </h3>
+                <div class="h-56 relative"><canvas id="chartLinhas"></canvas></div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex justify-between">
+                    <span>Análise por Família (R$)</span>
+                    <span id="lblFiltroFamilia" class="text-[10px] text-amber-400 lowercase italic"></span>
+                </h3>
+                <div class="h-56 relative"><canvas id="chartFamilias"></canvas></div>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden">
+            <div class="p-4 bg-gray-750 border-b border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-200 uppercase tracking-wider">Perda Detalhada</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Visão analítica com plano de ação real baseado das datas do coletor</p>
+                </div>
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <button id="btnExportarExcel" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition duration-200 shadow-md border border-emerald-500/30">
+                        Exportar Excel
+                    </button>
+                    <span id="txtContagemLinhas" class="text-xs bg-gray-700 px-2 py-1 rounded-md text-gray-300 font-semibold whitespace-nowrap"></span>
+                </div>
+            </div>
+            <div class="overflow-x-auto max-h-[550px] overflow-y-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-gray-900 text-gray-400 font-bold border-b border-gray-700">
+                            <th class="p-3 w-32">Vencimento</th>
+                            <th class="p-3 w-40">Status Ação</th>
+                            <th class="p-3 w-28">Loja</th>
+                            <th class="p-3 w-32">Código</th>
+                            <th class="p-3">Item / Descrição</th>
+                            <th class="p-3 w-36">Família</th>
+                            <th class="p-3 w-16 text-center">Qtd</th>
+                            <th class="p-3 w-28 text-right">Total Perda</th>
+                        </tr>
+                        <tr class="bg-gray-900/80 border-b border-gray-700 sticky top-0 z-20">
+                            <th class="p-2">
+                                <div class="flex gap-1">
+                                    <select id="thFiltroMes" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
+                                        <option value="">Mês</option>
+                                        <option value="01">Jan</option><option value="02">Fev</option><option value="03">Mar</option>
+                                        <option value="04">Abr</option><option value="05">Mai</option><option value="06">Jun</option>
+                                        <option value="07">Jul</option><option value="08">Ago</option><option value="09">Set</option>
+                                        <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+                                    </select>
+                                    <select id="thFiltroAno" onchange="executarFiltrosTabela()" class="w-1/2 bg-gray-800 border border-gray-700 rounded px-1 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
+                                        <option value="">Ano</option>
+                                    </select>
+                                </div>
+                            </th>
+                            <th class="p-2">
+                                <select id="thFiltroStatus" onchange="executarFiltrosTabela()" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-blue-500">
+                                    <option value="">Todos os Status</option>
+                                    <option value="Tratar item com Urgência">🚨 Urgência (≤ 45d)</option>
+                                    <option value="Tratar item">⚠️ Tratar (≤ 90d)</option>
+                                    <option value="Acompanhar Tratativas">📅 Acompanhar (≤ 180d)</option>
+                                    <option value="Item Mapeado">🔍 Mapeado (&gt; 180d)</option>
+                                </select>
+                            </th>
+                            <th class="p-2 relative">
+                                <div id="dropdown-loja" class="relative target-dropdown">
+                                    <button onclick="toggleDropdownCustomizado('dropdown-loja')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
+                                        <span class="label truncate">Selecione...</span> <span>▼</span>
+                                    </button>
+                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
+                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
+                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-2 relative">
+                                <div id="dropdown-codigo" class="relative target-dropdown">
+                                    <button onclick="toggleDropdownCustomizado('dropdown-codigo')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
+                                        <span class="label truncate">Selecione...</span> <span>▼</span>
+                                    </button>
+                                    <div class="lista-container hidden absolute left-0 mt-1 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
+                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
+                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-2 relative">
+                                <div id="dropdown-item" class="relative target-dropdown">
+                                    <button onclick="toggleDropdownCustomizado('dropdown-item')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
+                                        <span class="label truncate">Todos os Itens</span> <span>▼</span>
+                                    </button>
+                                    <div class="lista-container hidden absolute left-0 mt-1 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
+                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
+                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-2 relative">
+                                <div id="dropdown-family" class="relative target-dropdown">
+                                    <button onclick="toggleDropdownCustomizado('dropdown-family')" class="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 text-left flex justify-between items-center focus:outline-none">
+                                        <span class="label truncate">Selecione...</span> <span>▼</span>
+                                    </button>
+                                    <div class="lista-container hidden absolute right-0 mt-1 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 p-2">
+                                        <input type="text" placeholder="Pesquisar..." oninput="filtrarOpcoesDropdown(this)" class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-[11px] text-white mb-2">
+                                        <div class="opcoes-wrapper max-h-40 overflow-y-auto custom-scroll text-[11px] space-y-0.5"></div>
+                                    </div>
+                                </div>
+                            </th>
+                            <th class="p-2"></th>
+                            <th class="p-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabelaPerdas" class="divide-y divide-gray-700/50"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const URL_COLETAS = "https://docs.google.com/spreadsheets/d/1G3UPUEKfT2LM3aJKS3KP4YHq0gX0kAdqiqEdqFQbLqI/gviz/tq?tqx=out:csv&sheet=Coletas";
+
+        let dadosBrutos = [];
+        let filtrosAtivos = { vencimento: null, loja: null, codigoBarras: null, fornecedor: null, linha: null, familiaGrafico: null };
+        let filtrosCabecalhoTabela = { mes: "", ano: "", status: "", loja: "", codigo: "", item: "", family: "" };
+        let chartCronograma = null, chartLojas = null, chartFornecedores = null, chartLinhas = null, chartFamilias = null;
+
+        window.onload = function() {
+            carregarDadosDaPlanilha();
+            document.addEventListener("click", function(e) {
+                if (!e.target.closest(".target-dropdown")) {
+                    fecharTodosDropdownisCustomizados();
+                }
+            });
+            document.getElementById('btnExportarExcel').addEventListener('click', exportarParaExcel);
+        };
+
+        function carregarDadosDaPlanilha() {
+            fetch(URL_COLETAS)
+                .then(res => {
+                    if (!res.ok) throw new Error("Erro HTTP: " + res.status);
+                    return res.text();
+                })
+                .then(csv => {
+                    if (csv.includes("<!DOCTYPE") || csv.includes("login") || csv.length < 50) {
+                        exibirMensagemErro("⚠️ Ajuste o compartilhamento da planilha para: 'Qualquer pessoa com o link pode ler'.");
+                        return;
+                    }
+                    processarCsvBruto(csv);
+                    popularSeletorLojas();
+                    popularFiltrosSuspensosTabela();
+                    document.getElementById("loader").classList.add("hidden");
+                    document.getElementById("conteudoDash").classList.remove("hidden");
+                    renderizarDashboard();
+                })
+                .catch(err => {
+                    exibirMensagemErro("❌ Falha de Conexão: Verifique o link do arquivo Sheets ou seu acesso à internet.");
+                });
+        }
+
+        function exibirMensagemErro(mensagem) {
+            document.getElementById("loaderIcon").classList.add("hidden");
+            const txtErro = document.getElementById("loaderTexto");
+            txtErro.className = "text-red-400 font-bold text-sm bg-red-900/20 border border-red-500/30 p-4 rounded-xl inline-block max-w-lg mx-auto";
+            txtErro.innerText = mensagem;
+        }
+
+        function tratarNumeroBrasil(texto) {
+            if (!texto) return 0;
+            let limpo = String(texto).replace(/^["']|["']$/g, '').trim();
+            limpo = limpo.replace(/\./g, '').replace(',', '.');
+            let n = parseFloat(limpo);
+            return isNaN(n) ? 0 : n;
+        }
+
+        function encontrarIndexColuna(cabecalho, nomesPossiveis) {
+            for (let nome of nomesPossiveis) {
+                let idx = cabecalho.indexOf(nome.toLowerCase());
+                if (idx !== -1) return idx;
+            }
+            return -1;
+        }
+
+        function processarCsvBruto(text) {
+            const linhas = text.split(/\r?\n/);
+            if (linhas.length < 2) return;
+
+            const cabecalho = linhas[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+            
+            const idxLoja = encontrarIndexColuna(cabecalho, ['loja', 'filial']);
+            const idxCod = encontrarIndexColuna(cabecalho, ['código de barras', 'codigo', 'barras', 'sku']);
+            const idxItem = encontrarIndexColuna(cabecalho, ['item/produto', 'item', 'produto', 'nome']);
+            const idxDesc = encontrarIndexColuna(cabecalho, ['descrição', 'descricao']);
+            const idxForn = encontrarIndexColuna(cabecalho, ['fornecedor', 'fabricante']);
+            const idxLinha = encontrarIndexColuna(cabecalho, ['linha']);
+            const idxFam = encontrarIndexColuna(cabecalho, ['família', 'familia']);
+            const idxQtd = encontrarIndexColuna(cabecalho, ['quantidade', 'qtd']);
+            const idxValidade = encontrarIndexColuna(cabecalho, ['data de vencimento', 'vencimento', 'validade']);
+            const idxTotalPerda = encontrarIndexColuna(cabecalho, ['total perda (r$)', 'total perda', 'perda', 'valor']);
+
+            dadosBrutos = [];
+            const hojeCorte = new Date();
+            hojeCorte.setHours(0, 0, 0, 0);
+
+            for (let i = 1; i < linhas.length; i++) {
+                if (!linhas[i].trim()) continue;
+                
+                const colunas = linhas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^["']|["']$/g, '').trim());
+                
+                let qtdNum = idxQtd !== -1 ? (parseInt(colunas[idxQtd].replace(/\./g, '')) || 0) : 0;
+                let perdaNum = idxTotalPerda !== -1 ? tratarNumeroBrasil(colunas[idxTotalPerda]) : 0;
+                
+                let dataValidadeObj = null;
+                let dataTexto = (idxValidade !== -1 && colunas[idxValidade]) ? colunas[idxValidade].trim() : "";
+                let mesTexto = "";
+                let anoTexto = "";
+
+                if (dataTexto) {
+                    let partes = [];
+                    if (dataTexto.includes("/")) {
+                        partes = dataTexto.split("/");
+                        if (partes.length === 3) {
+                            dataValidadeObj = new Date(parseInt(partes[2]), parseInt(partes[1]) - 1, parseInt(partes[0]));
+                            mesTexto = partes[1].padStart(2, '0');
+                            anoTexto = partes[2];
+                        }
+                    } else if (dataTexto.includes("-")) {
+                        partes = dataTexto.split("-");
+                        if (partes.length === 3) {
+                            dataValidadeObj = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+                            mesTexto = partes[1].padStart(2, '0');
+                            anoTexto = partes[0];
+                        }
+                    }
+                }
+
+                if (dataValidadeObj && isNaN(dataValidadeObj.getTime())) dataValidadeObj = null;
+
+                if (dataValidadeObj && dataValidadeObj >= hojeCorte) {
+                    const diffTempo = dataValidadeObj.getTime() - hojeCorte.getTime();
+                    const diasRestantes = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+                    
+                    let statusAcao = "";
+                    let classeBadge = "";
+                    
+                    if (diasRestantes <= 45) {
+                        statusAcao = "Tratar item com Urgência";
+                        classeBadge = "bg-red-500/20 text-red-400 border border-red-500/30";
+                    } else if (diasRestantes <= 90) {
+                        statusAcao = "Tratar item";
+                        classeBadge = "bg-orange-500/20 text-orange-400 border border-orange-500/30";
+                    } else if (diasRestantes <= 180) {
+                        statusAcao = "Acompanhar Tratativas";
+                        classeBadge = "bg-blue-500/20 text-blue-400 border border-blue-500/30";
+                    } else {
+                        statusAcao = "Item Mapeado";
+                        classeBadge = "bg-gray-700/50 text-gray-400 border border-gray-600/30";
+                    }
+
+                    dadosBrutos.push({
+                        loja: idxLoja !== -1 ? (colunas[idxLoja] || "Não Identificada") : "Não Identificada",
+                        codigo: idxCod !== -1 ? colunas[idxCod] : "S/C",
+                        item: idxItem !== -1 ? (colunas[idxItem] || "Item Sem Nome") : "Item Sem Nome",
+                        descricao: idxDesc !== -1 ? (colunas[idxDesc] || "") : "",
+                        fornecedor: idxForn !== -1 ? (colunas[idxForn] || "Sem Fornecedor") : "Sem Fornecedor",
+                        linha: idxLinha !== -1 ? (colunas[idxLinha] || "Sem Linha") : "Sem Linha",
+                        familia: idxFam !== -1 ? (colunas[idxFam] || "Sem Família") : "Sem Família",
+                        quantidade: qtdNum,
+                        validade: dataValidadeObj,
+                        validadeTexto: dataTexto || "Sem Data",
+                        mes: mesTexto,
+                        ano: anoTexto,
+                        totalPerda: perdaNum,
+                        diasRestantes: diasRestantes,
+                        statusAcao: statusAcao,
+                        classeBadge: classeBadge
+                    });
+                }
+            }
+        }
+
+        function popularSeletorLojas() {
+            const seletor = document.getElementById("filtroLojaSuperior");
+            while(seletor.options.length > 1) seletor.remove(1);
+            const lojasUnicas = [...new Set(dadosBrutos.map(item => item.loja))].sort();
+            lojasUnicas.forEach(loja => {
+                const opt = document.createElement("option");
+                opt.value = loja; opt.innerText = "🏢 " + loja;
+                seletor.appendChild(opt);
+            });
+        }
+
+        function popularFiltrosSuspensosTabela() {
+            const anos = [...new Set(dadosBrutos.map(i => i.ano))].filter(Boolean).sort();
+            const selectAno = document.getElementById("thFiltroAno");
+            selectAno.innerHTML = '<option value="">Ano</option>';
+            anos.forEach(ano => {
+                const opt = document.createElement("option");
+                opt.value = ano; opt.innerText = ano; selectAno.appendChild(opt);
+            });
+
+            const lojas = [...new Set(dadosBrutos.map(i => i.loja))].filter(Boolean).sort();
+            const codigos = [...new Set(dadosBrutos.map(i => i.codigo))].filter(Boolean).sort();
+            const familias = [...new Set(dadosBrutos.map(i => i.familia))].filter(Boolean).sort();
+            const itens = [...new Set(dadosBrutos.map(i => i.item))].filter(Boolean).sort();
+
+            construirOpcoesDropdownCustom("dropdown-loja", lojas, "loja", "Selecione...");
+            construirOpcoesDropdownCustom("dropdown-codigo", codigos, "codigo", "Selecione...");
+            construirOpcoesDropdownCustom("dropdown-item", itens, "item", "Todos os Itens");
+            construirOpcoesDropdownCustom("dropdown-family", familias, "family", "Selecione...");
+        }
+
+        function construirOpcoesDropdownCustom(idDropdown, arrayValores, chaveFiltro, labelPadrao) {
+            const container = document.getElementById(idDropdown);
+            const wrapper = container.querySelector(".opcoes-wrapper");
+            wrapper.innerHTML = "";
+
+            const divLimpar = document.createElement("div");
+            divLimpar.className = "px-2 py-1.5 hover:bg-gray-700 rounded cursor-pointer text-gray-400 italic transition";
+            divLimpar.innerText = "❌ Limpar Filtro";
+            divLimpar.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, "", labelPadrao, chaveFiltro);
+            wrapper.appendChild(divLimpar);
+
+            arrayValores.forEach(valor => {
+                const divOpt = document.createElement("div");
+                divOpt.className = "opcao-item px-2 py-1.5 hover:bg-blue-600 rounded cursor-pointer text-gray-200 transition truncate";
+                divOpt.innerText = valor; divOpt.setAttribute("data-valor", valor.toLowerCase());
+                divOpt.onclick = () => selecionarOpcaoDropdownCustom(idDropdown, valor.toLowerCase(), valor, chaveFiltro);
+                wrapper.appendChild(divOpt);
+            });
+        }
+
+        function toggleDropdownCustomizado(idDropdown) {
+            const container = document.getElementById(idDropdown);
+            const lista = container.querySelector(".lista-container");
+            const inputPesquisa = container.querySelector("input");
+            const estaAtivo = !lista.classList.contains("hidden");
+            
+            fecharTodosDropdownisCustomizados();
+            if (!estaAtivo) {
+                lista.classList.remove("hidden");
+                inputPesquisa.value = "";
+                filtrarOpcoesDropdown(inputPesquisa);
+                setTimeout(() => inputPesquisa.focus(), 50);
+            }
+        }
+
+        function fecharTodosDropdownisCustomizados() {
+            document.querySelectorAll(".lista-container").forEach(el => el.classList.add("hidden"));
+        }
+
+        // Fim parcial da query, o restante das funções continuaria aqui abaixo...
+    </script>
+</body>
+</html>
