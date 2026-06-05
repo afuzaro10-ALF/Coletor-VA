@@ -701,7 +701,7 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Perda Projetada (R$)',
+                        label: 'Mapeamento (R$)',
                         data: valores,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -1038,7 +1038,7 @@
 
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(linhasExcel);
-            XLSX.utils.book_append_sheet(wb, ws, "Perda Detalhada");
+            XLSX.utils.book_append_sheet(wb, ws, "Mapeamento Detalhado");
             XLSX.writeFile(wb, `Planilha_Validades_Filtradas.xlsx`);
         }
 
