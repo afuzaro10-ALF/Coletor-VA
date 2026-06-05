@@ -690,7 +690,16 @@
                 return new Date(pa[1], pa[0]-1) - new Date(pb[1], pb[0]-1);
             });
 
-            let labels = ordenados;
+            const mesesAbrev = [
+    'jan', 'fev', 'mar', 'abr',
+    'mai', 'jun', 'jul', 'ago',
+    'set', 'out', 'nov', 'dez'
+];
+
+let labels = ordenados.map(item => {
+    const [mes, ano] = item.split('/');
+    return `${mesesAbrev[parseInt(mes) - 1]}/${ano.slice(-2)}`;
+});
             let valores = ordenados.map(k => agorMesAno[k]);
 
             if(instanciasGraficos.cronograma) instanciasGraficos.cronograma.destroy();
