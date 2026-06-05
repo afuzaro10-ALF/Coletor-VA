@@ -774,42 +774,116 @@
         }
 
         function atualizarGraficoFornecedores(dados) {
-            let mapa = {};
-            dados.forEach(i => mapa[i.fornecedor] = (mapa[i.fornecedor] || 0) + i.totalPerda);
 
-            let keysOrd = Object.keys(mapa).sort((a,b) => mapa[b] - mapa[a]).slice(0, 5);
-            let labels = keysOrd;
-            let valores = keysOrd.map(k => mapa[k]);
+    let mapa = {};
 
-            document.getElementById("lblFiltroForn").innerText = filtrosAtivos.fornecedor ? `filtrado: ${filtrosAtivos.fornecedor}` : "top 5 mais críticos";
+    dados.forEach(i => {
+        mapa[i.fornecedor] = (mapa[i.fornecedor] || 0) + i.totalPerda;
+    });
 
-            if(instanciasGraficos.fornecedores) instanciasGraficos.fornecedores.destroy();
+    let keysOrd = Object.keys(mapa)
+        .sort((a,b) => mapa[b] - mapa[a])
+        .slice(0, 5);
 
-            const ctx = document.getElementById('chartFornecedores').getContext('2d');
-            instanciasGraficos.fornecedores = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: valores,
-                        backgroundColor: ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981']
-                    }]
+    let labels = keysOrd;
+    let valores = keysOrd.map(k => mapa[k]);
+
+    document.getElementById("lblFiltroForn").innerText =
+        filtrosAtivos.fornecedor
+            ? `filtrado: ${filtrosAtivos.fornecedor}`
+            : "top 5 mais críticos";
+
+    if (instanciasGraficos.fornecedores) {
+        instanciasGraficos.fornecedores.destroy();
+    }
+
+    const ctx = document
+        .getElementById('chartFornecedores')
+        .getContext('2d');
+
+    instanciasGraficos.fornecedores = new Chart(ctx, {
+        type: 'polarArea',
+
+        data: {
+            labels: labels,
+            datasets: [{
+                data: valores,
+                backgroundColor: [
+                    'rgba(59,130,246,0.7)',
+                    'rgba(139,92,246,0.7)',
+                    'rgba(236,72,153,0.7)',
+                    'rgba(245,158,11,0.7)',
+                    'rgba(16,185,129,0.7)'
+                ],
+                borderColor: [
+                    '#3b82f6',
+                    '#8b5cf6',
+                    '#ec4899',
+                    '#f59e0b',
+                    '#10b981'
+                ],
+                borderWidth: 2
+            }]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        color: '#9ca3af',
+                        font: {
+                            size: 10
+                        }
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'right', labels: { color: '#9ca3af', font: { size: 10 } } } },
-                    onClick: (e, elementos) => {
-                        if (elementos.length > 0) {
-                            let idx = elementos[0].index;
-                            let fornClicado = labels[idx];
-                            filtrosAtivos.fornecedor = filtrosAtivos.fornecedor === fornClicado ? null : fornClicado;
-                            renderizarDashboard();
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' +
+                                context.raw.toLocaleString(
+                                    'pt-BR',
+                                    {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    }
+                                );
                         }
                     }
                 }
-            });
+            },
+
+            scales: {
+                r: {
+                    ticks: {
+                        color: '#9ca3af'
+                    },
+                    grid: {
+                        color: '#374151'
+                    }
+                }
+            },
+
+            onClick: (e, elementos) => {
+                if (elementos.length > 0) {
+
+                    let idx = elementos[0].index;
+                    let fornClicado = labels[idx];
+
+                    filtrosAtivos.fornecedor =
+                        filtrosAtivos.fornecedor === fornClicado
+                            ? null
+                            : fornClicado;
+
+                    renderizarDashboard();
+                }
+            }
         }
+    });
+}
 
         function atualizarGraficoLinhas(dados) {
             let mapa = {};
