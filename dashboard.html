@@ -724,9 +724,32 @@ let labels = ordenados.map(item => {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                   plugins: {
+    legend: { display: false },
+
+    tooltip: {
+        callbacks: {
+            label: function(context) {
+                return 'R$ ' + context.raw.toLocaleString('pt-BR', {
+                    maximumFractionDigits: 0
+                });
+            }
+        }
+    }
+},
                     scales: {
-                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
+                        y: {
+    grid: { color: '#374151' },
+    ticks: {
+        color: '#9ca3af',
+        font: { size: 10 },
+        callback: function(value) {
+            return value.toLocaleString('pt-BR', {
+                maximumFractionDigits: 0
+            });
+        }
+    }
+},
                         x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
                     },
                                         onClick: (e, elementos) => {
