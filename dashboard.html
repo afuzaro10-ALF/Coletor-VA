@@ -729,23 +729,24 @@ let labels = ordenados.map(item => {
                         y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
                         x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
                     },
-                    onClick: (e, elementos) => {
-    if (elementos.length > 0) {
+                                        onClick: (e, elementos) => {
+                        if (elementos.length > 0) {
 
-        let idx = elementos[0].index;
+                            let idx = elementos[0].index;
 
-        // usa o valor original para filtrar
-        let mesAnoClicado = ordenados[idx];
+                            let mesAnoClicado = ordenados[idx];
 
-        filtrosAtivos.cronogramaMesAno =
-            filtrosAtivos.cronogramaMesAno === mesAnoClicado
-                ? null
-                : mesAnoClicado;
+                            filtrosAtivos.cronogramaMesAno =
+                                filtrosAtivos.cronogramaMesAno === mesAnoClicado
+                                    ? null
+                                    : mesAnoClicado;
 
-        renderizarDashboard();
-    }
-}
-
+                            renderizarDashboard();
+                        }
+                    }
+                }
+            });
+        }
         function atualizarGraficoLojas(dados) {
             let mapaLojas = {};
             dados.forEach(i => mapaLojas[i.loja] = (mapaLojas[i.loja] || 0) + i.totalPerda);
