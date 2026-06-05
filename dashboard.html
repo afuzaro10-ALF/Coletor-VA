@@ -691,15 +691,15 @@
             });
 
             const mesesAbrev = [
-    'jan', 'fev', 'mar', 'abr',
-    'mai', 'jun', 'jul', 'ago',
-    'set', 'out', 'nov', 'dez'
-];
+                'jan', 'fev', 'mar', 'abr',
+                'mai', 'jun', 'jul', 'ago',
+                'set', 'out', 'nov', 'dez'
+            ];
 
-let labels = ordenados.map(item => {
-    const [mes, ano] = item.split('/');
-    return `${mesesAbrev[parseInt(mes) - 1]}/${ano.slice(-2)}`;
-});
+            let labels = ordenados.map(item => {
+                const [mes, ano] = item.split('/');
+                    return `${mesesAbrev[parseInt(mes) - 1]}/${ano.slice(-2)}`;
+            });
             let valores = ordenados.map(k => agorMesAno[k]);
 
             if(instanciasGraficos.cronograma) instanciasGraficos.cronograma.destroy();
@@ -725,31 +725,30 @@ let labels = ordenados.map(item => {
                     responsive: true,
                     maintainAspectRatio: false,
                    plugins: {
-    legend: { display: false },
+                    legend: { display: false },
 
-    tooltip: {
-        callbacks: {
-            label: function(context) {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
                 return 'R$ ' + context.raw.toLocaleString('pt-BR', {
                     maximumFractionDigits: 0
                 });
-            }
-        }
-    }
-},
+                            }
+                        }
+                    }
+                },
                     scales: {
-                        y: {
-    grid: { color: '#374151' },
-    ticks: {
-        color: '#9ca3af',
-        font: { size: 10 },
-        callback: function(value) {
-            return value.toLocaleString('pt-BR', {
-                maximumFractionDigits: 0
-            });
-        }
-    }
-},
+                        y: {grid: { color: '#374151' },
+                            ticks: {
+                            color: '#9ca3af',
+                            font: { size: 10 },
+                            callback: function(value) {
+                            return value.toLocaleString('pt-BR', {
+                            maximumFractionDigits: 0
+                            });
+                        }
+                    }
+                },
                         x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
                     },
                                         onClick: (e, elementos) => {
@@ -794,11 +793,41 @@ let labels = ordenados.map(item => {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af', font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 9 } } }
-                    },
+                    plugins: {
+    legend: { display: false },
+
+    tooltip: {
+        callbacks: {
+            label: function(context) {
+                return 'R$ ' + context.raw.toLocaleString('pt-BR', {
+                    maximumFractionDigits: 0
+                });
+            }
+        }
+    }
+},
+
+scales: {
+    y: {
+        grid: { color: '#374151' },
+        ticks: {
+            color: '#9ca3af',
+            font: { size: 10 },
+            callback: function(value) {
+                return value.toLocaleString('pt-BR', {
+                    maximumFractionDigits: 0
+                });
+            }
+        }
+    },
+    x: {
+        grid: { display: false },
+        ticks: {
+            color: '#9ca3af',
+            font: { size: 9 }
+        }
+    }
+},
                     onClick: (e, elementos) => {
                         if (elementos.length > 0) {
                             let idx = elementos[0].index;
