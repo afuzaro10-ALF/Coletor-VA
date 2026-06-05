@@ -721,16 +721,21 @@
                         x: { grid: { display: false }, ticks: { color: '#9ca3af', font: { size: 10 } } }
                     },
                     onClick: (e, elementos) => {
-                        if (elementos.length > 0) {
-                            let idx = elementos[0].index;
-                            let mesAnoClicado = labels[idx];
-                            filtrosAtivos.cronogramaMesAno = filtrosAtivos.cronogramaMesAno === mesAnoClicado ? null : mesAnoClicado;
-                            renderizarDashboard();
-                        }
-                    }
-                }
-            });
-        }
+    if (elementos.length > 0) {
+
+        let idx = elementos[0].index;
+
+        // usa o valor original para filtrar
+        let mesAnoClicado = ordenados[idx];
+
+        filtrosAtivos.cronogramaMesAno =
+            filtrosAtivos.cronogramaMesAno === mesAnoClicado
+                ? null
+                : mesAnoClicado;
+
+        renderizarDashboard();
+    }
+}
 
         function atualizarGraficoLojas(dados) {
             let mapaLojas = {};
