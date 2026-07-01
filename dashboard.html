@@ -1109,57 +1109,61 @@ scales: {
         }
 
         function enviarFiltroWhatsApp() {
-            let baseFiltrada = aplicarFiltrosGlobais(dadosBrutos);
-            let dadosFinais = baseFiltrada.filter(item => {
-                if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
-                if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
-                if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
-                if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
-                if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
-                if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
-                if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
-                if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
-                return true;
-            });
 
-            if(dadosFinais.length === 0) {
-                alert("Nenhum item filtrado na tabela para gerar o relatório.");
-                return;
-            }
+    let baseFiltrada = aplicarFiltrosGlobais(dadosBrutos);
 
-            let totalGeralRs = dadosFinais.reduce((acc, curr) => acc + curr.totalPerda, 0);
+    let dadosFinais = baseFiltrada.filter(item => {
+        if (filtrosCabecalhoTabela.mes && item.mes !== filtrosCabecalhoTabela.mes) return false;
+        if (filtrosCabecalhoTabela.ano && item.ano !== filtrosCabecalhoTabela.ano) return false;
+        if (filtrosCabecalhoTabela.status && item.statusAcao !== filtrosCabecalhoTabela.status) return false;
+        if (filtrosCabecalhoTabela.loja && item.loja.toLowerCase() !== filtrosCabecalhoTabela.loja) return false;
+        if (filtrosCabecalhoTabela.codigo && item.codigo.toLowerCase() !== filtrosCabecalhoTabela.codigo) return false;
+        if (filtrosCabecalhoTabela.item && item.item.toLowerCase() !== filtrosCabecalhoTabela.item) return false;
+        if (filtrosCabecalhoTabela.linha && item.linha.toLowerCase() !== filtrosCabecalhoTabela.linha) return false;
+        if (filtrosCabecalhoTabela.fornecedor && item.fornecedor.toLowerCase() !== filtrosCabecalhoTabela.fornecedor) return false;
 
-            let texto = `*📢 RELATÓRIO CONSOLIDADO DE VALIDADES*\n`;
-            texto += `_Gerado via Painel Operacional em tempo real_\n`;
-            texto += `--------------------------------------------------\n\n`;
-            texto += `📊 *Resumo da Listagem Atual:*\n`;
-            texto += `• Total de Registros: *${dadosFinais.length}*\n`;
-            texto += `• Valor Mapeado: *${formatarMoedaBrl(totalGeralRs)}*\n\n`;
-            texto += `--------------------------------------------------\n`;
-            texto += `🚨 *ITENS EM DESTAQUE OPERACIONAL:*\n\n`;
-            texto += `\n--------------------------------------------------\n`;
-            texto += `⚠️ *Favor verificar se existem itens com a mesma validade em sua loja e realizar as tratativas necessárias.*`;
+        return true;
+    });
 
-dadosFinais.slice(0, 15).forEach((item, index) => {
-    texto += `*${index + 1}) Loja:* ${item.loja}\n`;
-    texto += `• *EAN:* ${item.codigo}\n`;
-    texto += `• *Item:* ${item.item}\n`;
-    texto += `• *Descrição:* ${item.descricao || "Não informada"}\n`;
-    texto += `• *Fornecedor:* ${item.fornecedor || "Não informado"}\n`;
-    texto += `• *Linha:* ${item.linha || "Não informada"}\n`;
-    texto += `• *Vencimento:* ${item.validadeTexto} (_${item.diasRestantes} dias rest._)\n`;
-    texto += `• *Qtd:* ${item.quantidade} un\n`;
-    texto += `• *Perda:* ${formatarMoedaBrl(item.totalPerda)}\n`;
-    texto += `• *Ação:* _${item.statusAcao.toUpperCase()}_\n\n`;
-});
+    if (dadosFinais.length === 0) {
+        alert("Nenhum item filtrado na tabela para gerar o relatório.");
+        return;
+    }
 
-            if(dadosFinais.length > 15) {
-                texto += `... e mais *${dadosFinais.length - 15}* itens listados no painel completo.`;
-            }
+    let totalGeralRs = dadosFinais.reduce((acc, curr) => acc + curr.totalPerda, 0);
 
-            let urlWhatsApp = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
-            window.open(urlWhatsApp, '_blank');
-        }
+    let texto = `*📢 RELATÓRIO CONSOLIDADO DE VALIDADES*\n`;
+    texto += `_Gerado via Painel Operacional em tempo real_\n`;
+    texto += `--------------------------------------------------\n\n`;
+    texto += `📊 *Resumo da Listagem Atual:*\n`;
+    texto += `• Total de Registros: *${dadosFinais.length}*\n`;
+    texto += `• Valor Mapeado: *${formatarMoedaBrl(totalGeralRs)}*\n\n`;
+    texto += `--------------------------------------------------\n`;
+    texto += `🚨 *ITENS EM DESTAQUE OPERACIONAL:*\n\n`;
+
+    // ===========================
+    // MANTENHA AQUI O SEU FOR/EACH
+    // ===========================
+
+    dadosFinais.forEach(item => {
+        texto += `🏪 *Loja:* ${item.loja}\n`;
+        texto += `📦 *Código:* ${item.codigo}\n`;
+        texto += `📝 *Item:* ${item.item}\n`;
+        texto += `🏷️ *Linha:* ${item.linha}\n`;
+        texto += `🏭 *Fornecedor:* ${item.fornecedor}\n`;
+        texto += `📅 *Validade:* ${item.validade}\n`;
+        texto += `📦 *Estoque:* ${item.estoque}\n`;
+        texto += `💰 *Perda:* ${formatarMoedaBrl(item.totalPerda)}\n`;
+        texto += `--------------------------------------------------\n`;
+    });
+
+    // Mensagem final
+    texto += `\n⚠️ *Favor verificar se existem itens com a mesma validade em sua loja e realizar as tratativas necessárias.*`;
+
+    // Envio para WhatsApp
+    let url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    window.open(url, "_blank");
+}
     </script>
 </body>
 </html>
