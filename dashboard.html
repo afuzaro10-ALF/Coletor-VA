@@ -1158,8 +1158,11 @@ scales: {
     });
 
     // Mensagem final
-    texto += `\n⚠️ *Favor verificar se existem itens com a mesma validade em sua loja e realizar as tratativas necessárias.*`;
-
+    texto += `\n--------------------------------------------------\n`;
+    texto += `⚠️ *Favor verificar se existem itens com a mesma validade em sua loja.*\n`;
+    texto += `🔎 *Caso existam, avaliar a necessidade de tratativa para evitar perdas.*`;
+    texto += `\n--------------------------------------------------\n`;
+            
     // Envio para WhatsApp
     let url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
     window.open(url, "_blank");
